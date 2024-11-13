@@ -10,15 +10,11 @@ interface CustomResponse extends Omit<OpenAI.Chat.Completions.ChatCompletionMess
     prompt?: string;
 }
 
-// const client = new OpenAI({
-//     baseURL: process.env.OPENAI_BASE_URL,
-//     apiKey: process.env.OPENAI_API_KEY,
-// });
-
 const client = new OpenAI({
-    baseURL: "https://api.mistral.ai/v1",
-    apiKey: "DdcGRKnBET55js4ruWpCPoXDs0KJ30Ka",
-})
+    baseURL: process.env.OPENAI_BASE_URL,
+    apiKey: process.env.OPENAI_API_KEY,
+});
+
 
 async function generateKeys() {
     console.log('Generating keys...');
