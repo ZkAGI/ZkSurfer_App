@@ -44,7 +44,7 @@ interface GeneratedTweet {
 }
 
 //type Command = 'image-gen' | 'create-agent' | 'content';
-type Command = 'image-gen' | 'create-agent' | 'select' | 'post' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen' | 'launch' | 'train';
+type Command = 'image-gen' | 'create-agent' | 'select' | 'post' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen' | 'launch' | 'train' | 'video-lypsing';
 
 interface TickerPopupProps {
     tickers: string[];
@@ -93,11 +93,21 @@ declare global {
     }
 }
 
+// interface FileObject {
+//     file: File;
+//     preview: string;
+//     isPdf: boolean;
+//     isVideoOrAudio?: boolean;
+// }
+
+
 interface FileObject {
     file: File;
     preview: string;
     isPdf: boolean;
+    isVideoOrAudio?: boolean;
 }
+
 
 interface Message {
     role: 'user' | 'assistant';
@@ -163,6 +173,8 @@ const HomeContent: FC = () => {
     const [commandPart, setCommandPart] = useState('');
     const [normalPart, setNormalPart] = useState('');
     // const inputRef = useRef<HTMLInputElement>(null);
+    const [mergedVideoUrl, setMergedVideoUrl] = useState<string | null>(null);
+
 
     const { editMode, setEditMode } = useCharacterEditStore();
     const { messages, addMessage, setMessages } = useConversationStore.getState();
@@ -739,48 +751,147 @@ const HomeContent: FC = () => {
     };
 
 
+    // const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     if (e.target.files) {
+    //         const selectedFiles = Array.from(e.target.files);
+
+    //         if (files.length + selectedFiles.length <= 4) {
+    //             const newFiles = await Promise.all(
+    //                 selectedFiles.map(async (file) => {
+    //                     if (file.type === 'application/pdf') {
+    //                         const pdfText = await extractTextFromPdf(file);
+    //                         console.log('pdfText length:', pdfText.toString().length);
+
+    //                         // Check if the PDF text exceeds the character limit
+    //                         if (pdfText.toString().length > 125000) {
+    //                             toast.error('File too big to process'); // Sonner toast notification
+    //                             return null; // Skip this file
+    //                         }
+
+    //                         setPdfContent(pdfText);
+    //                         setCurrentPdfName(file.name);
+    //                         return {
+    //                             file,
+    //                             preview: URL.createObjectURL(file),
+    //                             isPdf: true,
+    //                         };
+    //                     } else {
+    //                         return {
+    //                             file,
+    //                             preview: await fileToBase64(file),
+    //                             isPdf: false,
+    //                         };
+    //                     }
+    //                 })
+    //             );
+
+    //             // Filter out null values from skipped files
+    //             const validFiles = newFiles.filter(file => file !== null);
+    //             setFiles([...files, ...validFiles]);
+    //         } else {
+    //             toast.error('You can only upload up to 4 files'); // Sonner toast notification
+    //         }
+    //     }
+    // };
+
+    const processFilesForVideoLypsing = async (video: File, audio: File) => {
+        const formData = new FormData();
+        formData.append('videoFile', video);
+        formData.append('audioFile', audio);
+
+        try {
+            const response = await fetch('/api/merge-media', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error('File processing failed');
+            }
+
+            const blob = await response.blob();
+            const videoUrl = URL.createObjectURL(blob);
+
+            setMergedVideoUrl(videoUrl); // Set the merged video URL to display or download
+        } catch (error) {
+            console.error('Error processing video and audio files:', error);
+        }
+    };
+
+
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const selectedFiles = Array.from(e.target.files);
 
-            if (files.length + selectedFiles.length <= 4) {
-                const newFiles = await Promise.all(
-                    selectedFiles.map(async (file) => {
-                        if (file.type === 'application/pdf') {
-                            const pdfText = await extractTextFromPdf(file);
-                            console.log('pdfText length:', pdfText.toString().length);
+            const newFilesOrNull: (FileObject | null)[] = await Promise.all(
+                selectedFiles.map(async (file) => {
+                    if (file.type === 'application/pdf') {
+                        // Handle PDFs
+                        return {
+                            file,
+                            preview: URL.createObjectURL(file),
+                            isPdf: true,
+                            isVideoOrAudio: false, // Explicitly false
+                        };
+                    } else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+                        // Handle video and audio files
+                        return {
+                            file,
+                            preview: URL.createObjectURL(file),
+                            isPdf: false, // Explicitly false
+                            isVideoOrAudio: true,
+                        };
+                    } else if (file.type.startsWith('image/')) {
+                        // Handle images
+                        return {
+                            file,
+                            preview: await fileToBase64(file),
+                            isPdf: false, // Explicitly false
+                            isVideoOrAudio: false, // Explicitly false
+                        };
+                    } else {
+                        // Unsupported file types
+                        return null;
+                    }
+                })
+            );
 
-                            // Check if the PDF text exceeds the character limit
-                            if (pdfText.toString().length > 125000) {
-                                toast.error('File too big to process'); // Sonner toast notification
-                                return null; // Skip this file
-                            }
+            // Filter out null values
+            const validFiles = newFilesOrNull.filter((file): file is FileObject => file !== null);
 
-                            setPdfContent(pdfText);
-                            setCurrentPdfName(file.name);
-                            return {
-                                file,
-                                preview: URL.createObjectURL(file),
-                                isPdf: true,
-                            };
-                        } else {
-                            return {
-                                file,
-                                preview: await fileToBase64(file),
-                                isPdf: false,
-                            };
-                        }
-                    })
-                );
-
-                // Filter out null values from skipped files
-                const validFiles = newFiles.filter(file => file !== null);
-                setFiles([...files, ...validFiles]);
-            } else {
-                toast.error('You can only upload up to 4 files'); // Sonner toast notification
-            }
+            // Update state with valid files
+            setFiles((prevFiles) => [...prevFiles, ...validFiles]);
         }
     };
+
+
+    const uploadFilesToMergeMedia = async (video: File, audio: File): Promise<string | null> => {
+        const formData = new FormData();
+        formData.append('videoFile', video);
+        formData.append('audioFile', audio);
+
+        try {
+            const response = await fetch('/api/merge-media', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to process files: ${response.statusText}`);
+            }
+
+            const blob = await response.blob();
+            const videoUrl = URL.createObjectURL(blob); // Create a URL for the returned blob
+            return videoUrl;
+        } catch (error) {
+            console.error('Error uploading files:', error);
+            return null;
+        }
+    };
+
+
+
+
     const removeFile = (index: number) => {
         const newFiles = [...files];
         URL.revokeObjectURL(newFiles[index].preview);
@@ -1014,6 +1125,77 @@ const HomeContent: FC = () => {
             }
             return;
         }
+
+
+        // if (fullMessage.startsWith('/video-lypsing')) {
+        //     const videoFile = files.find((file) => file.file.type.startsWith('video/'));
+        //     const audioFile = files.find((file) => file.file.type.startsWith('audio/'));
+
+        //     if (videoFile && audioFile) {
+        //         // Process the video and audio files
+        //         await processFilesForVideoLypsing(videoFile.file, audioFile.file);
+
+        //         // Clear the uploaded files
+        //         setFiles([]);
+        //     } else {
+        //         const errorMessage: Message = {
+        //             role: 'assistant',
+        //             content: 'Please upload one video file and one audio file.',
+        //             type: 'text',
+        //         };
+        //         setDisplayMessages((prev) => [...prev, errorMessage]);
+        //     }
+        //     setInputMessage('');
+        //     return;
+        // }
+
+        if (fullMessage.startsWith('/video-lypsing')) {
+            const videoFile = files.find((file) => file.file.type.startsWith('video/'));
+            const audioFile = files.find((file) => file.file.type.startsWith('audio/'));
+
+            if (videoFile && audioFile) {
+                // Call the API to process video and audio files
+                const videoUrl = await uploadFilesToMergeMedia(videoFile.file, audioFile.file);
+
+                if (videoUrl) {
+                    const successMessage: Message = {
+                        role: 'assistant',
+                        content: (
+                            <div>
+                                <video src={videoUrl} controls className="w-full h-auto rounded-md" />
+                                <a href={videoUrl} download="merged-video.mp4" className="text-blue-500 underline">
+                                    Download Merged Video
+                                </a>
+                            </div>
+                        ),
+                        type: 'text',
+                    };
+                    setDisplayMessages((prev) => [...prev, successMessage]);
+                } else {
+                    const errorMessage: Message = {
+                        role: 'assistant',
+                        content: 'Error processing your video and audio. Please try again.',
+                        type: 'text',
+                    };
+                    setDisplayMessages((prev) => [...prev, errorMessage]);
+                }
+
+                // Clear the uploaded files
+                setFiles([]);
+            } else {
+                const errorMessage: Message = {
+                    role: 'assistant',
+                    content: 'Please upload one video file and one audio file.',
+                    type: 'text',
+                };
+                setDisplayMessages((prev) => [...prev, errorMessage]);
+            }
+
+            setInputMessage('');
+            return;
+        }
+
+
 
 
         // Command handling for /token
@@ -3373,21 +3555,64 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                     <div className={`bg-gradient-to-tr from-[#000D33] via-[#9A9A9A] to-[#000D33] p-0.5 rounded-lg ${!isMobile ? 'w-2/5' : 'w-full'} w-3/4`}>
                         <form onSubmit={handleSubmit} className="w-full flex flex-col bg-[#08121f] rounded-lg">
                             {files.length > 0 && (
+                                // <div className="flex flex-wrap gap-2 p-2">
+                                //     {files.map((file, index) => (
+                                //         <div key={index} className="relative w-20 h-20">
+                                //             {file.isPdf ? (
+                                //                 <div className="w-full h-full flex items-center justify-center bg-[#24284E] rounded-lg text-xs text-[#BDA0FF] text-center overflow-hidden p-1 border border-[#BDA0FF]">
+                                //                     {file.file.name}
+                                //                 </div>
+                                //             ) : (
+                                //                 <Image
+                                //                     src={file.preview}
+                                //                     alt={`Preview ${index}`}
+                                //                     width={500}
+                                //                     height={500}
+                                //                     className="w-full h-full object-cover rounded-lg"
+                                //                     layout="responsive"
+                                //                 />
+                                //             )}
+                                //             <button
+                                //                 onClick={() => removeFile(index)}
+                                //                 className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
+                                //                 type="button"
+                                //             >
+                                //                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                //                     <line x1="18" y1="6" x2="6" y2="18"></line>
+                                //                     <line x1="6" y1="6" x2="18" y2="18"></line>
+                                //                 </svg>
+                                //             </button>
+                                //         </div>
+                                //     ))}
+                                // </div>
                                 <div className="flex flex-wrap gap-2 p-2">
                                     {files.map((file, index) => (
                                         <div key={index} className="relative w-20 h-20">
                                             {file.isPdf ? (
-                                                <div className="w-full h-full flex items-center justify-center bg-[#24284E] rounded-lg text-xs text-[#BDA0FF] text-center overflow-hidden p-1 border border-[#BDA0FF]">
+                                                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-xs text-white rounded-lg">
                                                     {file.file.name}
                                                 </div>
+                                            ) : file.isVideoOrAudio ? (
+                                                <div className="w-full h-full">
+                                                    {file.file.type.startsWith('video/') ? (
+                                                        <video
+                                                            src={file.preview}
+                                                            controls
+                                                            className="w-full h-full object-cover rounded-lg"
+                                                        />
+                                                    ) : (
+                                                        <audio
+                                                            src={file.preview}
+                                                            controls
+                                                            className="w-full object-cover rounded-lg"
+                                                        />
+                                                    )}
+                                                </div>
                                             ) : (
-                                                <Image
+                                                <img
                                                     src={file.preview}
                                                     alt={`Preview ${index}`}
-                                                    width={500}
-                                                    height={500}
                                                     className="w-full h-full object-cover rounded-lg"
-                                                    layout="responsive"
                                                 />
                                             )}
                                             <button
@@ -3395,14 +3620,12 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                                                 className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
                                                 type="button"
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                </svg>
+                                                ✖
                                             </button>
                                         </div>
                                     ))}
                                 </div>
+
                             )}
 
 
@@ -3410,7 +3633,8 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                                 <input
                                     type="file"
                                     onChange={handleFileChange}
-                                    accept="image/*,.pdf"
+                                    //accept="image/*,.pdf"
+                                    accept="image/*,.pdf,video/*,audio/*"
                                     className="hidden"
                                     id="fileInput"
                                     multiple
