@@ -39,6 +39,7 @@ import CharecterJsonEditor from '@/component/ui/CharecterJsonEditor';
 import { useFormStore } from '@/stores/form-store';
 import useSWR, { mutate } from 'swr';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
 
 
 interface GeneratedTweet {
@@ -200,6 +201,7 @@ const HomeContent: FC = () => {
     const [normalPart, setNormalPart] = useState('');
     // const inputRef = useRef<HTMLInputElement>(null);
     const [mergedVideoUrl, setMergedVideoUrl] = useState<string | null>(null);
+    const [imageResultType, setImageResultType] = useState<string | null>(null);
 
     const { editMode, setEditMode } = useCharacterEditStore();
     const { messages, addMessage, setMessages } = useConversationStore.getState();
@@ -214,6 +216,7 @@ const HomeContent: FC = () => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const [launchMode, setLaunchMode] = useState<boolean>(false);
+    const [processingCommand, setProcessingCommand] = useState<boolean>(false);
     const [launchCoins, setLaunchCoins] = useState<any[]>([]);
 
     const [isInitialView, setIsInitialView] = useState(true);
@@ -1236,23 +1239,6 @@ const HomeContent: FC = () => {
         });
     };
 
-
-    const fileToBinaryString = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-                if (typeof reader.result === "string") {
-                    resolve(reader.result);
-                } else {
-                    reject(new Error("Failed to convert file to binary string."));
-                }
-            };
-            reader.onerror = reject;
-            reader.readAsBinaryString(file);
-        });
-    };
-
-
     const removeFile = (index: number) => {
         const newFiles = [...files];
         URL.revokeObjectURL(newFiles[index].preview);
@@ -1398,6 +1384,18 @@ const HomeContent: FC = () => {
         if (isInitialView) {
             setIsInitialView(false); // Remove the initial boxes on first submit
         }
+
+        const getImageResultType = () => {
+            if (inputMessage.startsWith('/image-gen')) {
+                return "image-gen";
+            } else if (inputMessage.startsWith('/create-agent')) {
+                return "create-agent";
+            }
+            return "default"; // Fallback if neither matches
+        };
+
+        const resultType = getImageResultType();
+        setImageResultType(resultType);
 
         const fullMessage = inputMessage.trim();
 
@@ -2317,172 +2315,6 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
             return;
         }
 
-
-        // if (fullMessage.startsWith('/launch')) {
-        //     const { selectedTicker } = useTickerStore.getState();
-
-        //     // Step 1: Check if a ticker is selected
-        //     if (!selectedTicker) {
-        //         const errorMessage: Message = {
-        //             role: 'assistant',
-        //             content: 'No ticker selected. Please use /select command first to choose a ticker.',
-        //             type: 'text',
-        //         };
-        //         setDisplayMessages((prev) => [...prev, errorMessage]);
-        //         return;
-        //     }
-
-        //     // Step 2: Fetch coin info for the selected ticker
-        //     try {
-        //         const response = await fetch('https://zynapse.zkagi.ai/api/coins', {
-        //             method: 'GET',
-        //             headers: {
-        //                 'Content-Type': 'application/json',
-        //                 'api-key': 'zk-123321',
-        //             },
-        //         });
-
-        //         if (!response.ok) {
-        //             throw new Error('Failed to fetch coin info.');
-        //         }
-
-        //         const coins = await response.json();
-
-        //         // Filter coins that match the selected ticker and have `memcoin_address` as `null`
-        //         const filteredCoins = coins.data.filter(
-        //             (coin: { ticker: string; memcoin_address: any; }) => coin.ticker === selectedTicker && !coin.memcoin_address
-        //         );
-        //         console.log('filteredCoins', filteredCoins)
-
-        //         // Step 3: Show filtered coin options
-        //         // const coinOptionsMessage: Message = {
-        //         //     role: 'assistant',
-        //         //     content: (
-        //         //         <div>
-        //         //             <p>Select a coin to launch:</p>
-        //         //             <ul>
-        //         //                 {filteredCoins.map((coin: { _id: string; coin_name: string }) => (
-        //         //                     <li key={coin._id}>
-        //         //                         <button
-        //         //                             onClick={() => handleLaunchCoin(coin._id)}
-        //         //                             className="text-blue-500 underline"
-        //         //                         >
-        //         //                             {coin.coin_name}
-        //         //                         </button>
-        //         //                     </li>
-        //         //                 ))}
-        //         //             </ul>
-        //         //         </div>
-        //         //     ),
-        //         //     type: 'text',
-        //         // };
-
-        //         // setDisplayMessages((prev) => [...prev, coinOptionsMessage]);
-        //         // const coinOptionsMessage: Message = {
-        //         //     role: 'assistant',
-        //         //     content: (
-        //         //         <div>
-        //         //             <p>Select a coin to launch:</p>
-        //         //             <table className="min-w-full bg-white border-collapse border border-gray-200">
-        //         //                 <thead>
-        //         //                     <tr>
-        //         //                         <th className="border border-gray-300 px-4 py-2">ID</th>
-        //         //                         <th className="border border-gray-300 px-4 py-2">Coin Name</th>
-        //         //                         <th className="border border-gray-300 px-4 py-2">Action</th>
-        //         //                     </tr>
-        //         //                 </thead>
-        //         //                 <tbody>
-        //         //                     {filteredCoins.length > 0 ? (
-        //         //                         filteredCoins.map((coin: { _id: string; coin_name: string }) => (
-        //         //                             <tr key={coin._id} className="hover:bg-gray-100">
-        //         //                                 <td className="border border-gray-300 px-4 py-2">{coin._id}</td>
-        //         //                                 <td className="border border-gray-300 px-4 py-2">{coin.coin_name}</td>
-        //         //                                 <td className="border border-gray-300 px-4 py-2">
-        //         //                                     <button
-        //         //                                         onClick={() => handleLaunchCoin(coin._id)}
-        //         //                                         className="text-blue-500 underline hover:text-blue-700"
-        //         //                                     >
-        //         //                                         Launch
-        //         //                                     </button>
-        //         //                                 </td>
-        //         //                             </tr>
-        //         //                         ))
-        //         //                     ) : (
-        //         //                         <tr>
-        //         //                             <td colSpan={3} className="border border-gray-300 px-4 py-2 text-center">
-        //         //                                 No coins available
-        //         //                             </td>
-        //         //                         </tr>
-        //         //                     )}
-        //         //                 </tbody>
-        //         //             </table>
-        //         //         </div>
-        //         //     ),
-        //         //     type: 'text',
-        //         // };
-
-        //         // setDisplayMessages((prev) => [...prev, coinOptionsMessage]);
-        //         const coinOptionsMessage: Message = {
-        //             role: 'assistant',
-        //             content: (
-        //                 <div className="w-full max-w-2xl bg-[#171D3D] rounded-lg p-4 shadow-lg">
-        //                     <div className="mb-4 text-white font-semibold">Available Coins:</div>
-        //                     <table className="w-full border-collapse">
-        //                         <thead>
-        //                             <tr className="text-left text-gray-400">
-        //                                 <th className="p-2">#</th>
-        //                                 <th className="p-2">Coin Name</th>
-        //                                 <th className="p-2">Action</th>
-        //                             </tr>
-        //                         </thead>
-        //                         <tbody>
-        //                             {filteredCoins.length > 0 ? (
-        //                                 filteredCoins.map((coin: { _id: string; coin_name: string }, index: number) => (
-        //                                     <tr
-        //                                         key={coin._id}
-        //                                         className="border-t border-gray-700 hover:bg-[#24284E] cursor-pointer"
-        //                                         onClick={() => handleLaunchCoin(coin._id)}
-        //                                     >
-        //                                         <td className="p-2 text-gray-400">{index + 1}</td>
-        //                                         <td className="p-2 text-white">{coin.coin_name}</td>
-        //                                         <td className="p-2">
-        //                                             <button className="text-blue-500 underline hover:text-blue-700">
-        //                                                 Launch
-        //                                             </button>
-        //                                         </td>
-        //                                     </tr>
-        //                                 ))
-        //                             ) : (
-        //                                 <tr>
-        //                                     <td colSpan={3} className="p-2 text-center text-gray-400">
-        //                                         No coins available
-        //                                     </td>
-        //                                 </tr>
-        //                             )}
-        //                         </tbody>
-        //                     </table>
-        //                     <div className="mt-4 text-gray-400 text-sm">
-        //                         Enter /select [number] to choose a coin
-        //                     </div>
-        //                 </div>
-        //             ),
-        //             type: 'text',
-        //         };
-
-        //         setDisplayMessages((prev) => [...prev, coinOptionsMessage]);
-
-
-        //     } catch (error) {
-        //         const errorMessage: Message = {
-        //             role: 'assistant',
-        //             content: `Error: ${error}`,
-        //             type: 'text',
-        //         };
-        //         setDisplayMessages((prev) => [...prev, errorMessage]);
-        //     }
-        //     return;
-        // }
-
         if (fullMessage.startsWith('/launch')) {
             const { selectedTicker } = useTickerStore.getState();
 
@@ -2534,306 +2366,9 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
 
         if (isImageGen || isMemeGen || isContent) {
 
-            // if (fullMessage.startsWith('/content')) {
-            //     // const ticker = fullMessage.split('content')[1]?.split('tweet')[0]?.trim() || '';
-            //     const tickerSection = fullMessage.split('content')[1]?.trim() || '';
-            //     const ticker = tickerSection && /(tweet|tweets)/.test(tickerSection)
-            //         ? tickerSection.split(/\s+/)[0].trim()
-            //         : '';
-
-            //     console.log('ticker', ticker)
-            //     const isImagePrompt = fullMessage.includes('image');
-
-            //     try {
-            //         // Get ticker info from stored map
-            //         const tickerInfo = tickerInfoMap.get(ticker);
-            //         console.log('tickerInfo', tickerInfo)
-
-
-            //         if (!tickerInfo) throw new Error('Ticker info not found');
-
-            //         // Extract training data and Twitter URL
-            //         const trainingData = tickerInfo.training_data || [];
-            //         let twitterUrl = '';
-            //         let twitterData = null;
-
-            //         // Process Twitter data if available
-            //         if (tickerInfo.urls && Array.isArray(tickerInfo.urls)) {
-            //             twitterUrl = tickerInfo.urls.find((url: string) => url.includes('twitter.com')) || '';
-            //             if (twitterUrl) {
-            //                 const username = twitterUrl.split('twitter.com/').pop()?.split('/')[0] || '';
-            //                 if (username) {
-            //                     twitterData = await processTwitterData(username);
-            //                 }
-            //             }
-            //         }
-
-            //         // Rest of the content generation logic remains the same
-            //         const combinedData = {
-            //             training_data: trainingData,
-            //             twitter_data: twitterData
-            //         };
-
-            //         // Add user message and make API call
-            //         const userMessage: Message = {
-            //             role: 'user',
-            //             content: fullMessage
-            //         };
-            //         setDisplayMessages(prev => [...prev, userMessage]);
-            //         console.log('fullMessage', fullMessage)
-
-            //         const cleanedMessage = fullMessage.replace(/^\/content\s+\S+\s+/, '').trim();
-            //         const imageUrl = `data:image/png;base64,${tickerInfo.image_base64}`;
-
-
-            //         const textGenResponse = await fetch('/api/chat', {
-            //             method: 'POST',
-            //             headers: { 'Content-Type': 'application/json' },
-            //             body: JSON.stringify({
-            //                 messages: [{ role: "system", content: `you are an helpful AI assistant which  can generate content using the given knowledge base. If the user asks to generate tweets give the response in given json format: {"tweet":<generated_tweet>}. If the user asks to generate image related to tweet then generate a prompt that should have a character consistency given in attached image and content related to tweet. Always create a prompt with character and tweet related to user requirements and respond in given format: {"prompt": <generated_prompt>} strictly follow the response format  ${JSON.stringify(combinedData)}` },
-            //                 {
-            //                     role: 'user',
-            //                     content: [{
-            //                         type: 'text',
-            //                         text: cleanedMessage,
-            //                     }, {
-            //                         type: 'image_url',
-            //                         image_url: {
-            //                             url: imageUrl
-            //                         }
-            //                     }]
-
-            //                 }]
-
-            //             })
-            //         });
-
-            //         // Process and display response
-            //         if (!textGenResponse.ok) throw new Error('Failed to generate text');
-            //         const textGenData = await textGenResponse.json();
-
-            //         // Check if the response contains a prompt for image generation
-            //         let promptMatch;
-            //         try {
-            //             // Try to parse the content as JSON
-            //             const contentObj = JSON.parse(textGenData.content);
-            //             console.log('contentObj', contentObj)
-            //             if (contentObj.arguments.prompt) {
-            //                 promptMatch = contentObj.argumesnts.prompt;
-            //             }
-            //         } catch (e) {
-            //             // If parsing fails, check for prompt using regex
-            //             promptMatch = textGenData.content.match(/"prompt"\s*:\s*"([^"]+)"/)?.[1];
-            //         }
-
-            //         if (promptMatch) {
-            //             const tickerSeed = tickerInfo ? tickerInfo.seed : -1;
-            //             const tickerImage = tickerInfo ? tickerInfo.image_base64 : '';
-            //             const tickerUserPrompt = tickerInfo ? tickerInfo.user_prompt : '';
-
-            //             console.log('tickerImage', tickerImage)
-            //             const fullPrompt = tickerUserPrompt ? `${promptMatch} with character ${tickerUserPrompt}` : promptMatch;
-            //             // If prompt is found, call image generation
-            //             const imageGenResponse = await fetch('/api/chat', {
-            //                 method: 'POST',
-            //                 headers: { 'Content-Type': 'application/json' },
-            //                 body: JSON.stringify({
-            //                     messages: [...apiMessages],
-            //                     directCommand: {
-            //                         type: 'image-gen',
-            //                         prompt: fullPrompt,
-            //                         seed: tickerSeed,
-            //                         // id_image: tickerImage
-            //                     }
-            //                 })
-            //             });
-
-            //             if (!imageGenResponse.ok) throw new Error('Failed to generate image');
-            //             const imageData = await imageGenResponse.json();
-
-            //             // Display both the text and image response
-            //             const textMessage: Message = {
-            //                 role: 'assistant',
-            //                 content: textGenData.content,
-            //                 type: 'text'
-            //             };
-
-            //             const imageMessage: Message = {
-            //                 role: 'assistant',
-            //                 content: imageData.content,
-            //                 type: 'image',
-            //                 command: 'image-gen'
-            //             };
-
-            //             setDisplayMessages(prev => [...prev, textMessage, imageMessage]);
-            //         } else {
-
-            //             const assistantMessage: Message = {
-            //                 role: 'assistant',
-            //                 content: textGenData.content,
-            //                 type: 'text'
-            //             };
-            //             setDisplayMessages(prev => [...prev, assistantMessage]);
-            //         }
-            //         setInputMessage('');
-            //     }
-
-
-
-            //-----------------------------------------------------------------------------------------------------s
-            // if (activeNavbarTicker && !isImageGen && !isMemeGen && !isContent) {
-            //     // Create the content command message
-            //     const processedMessage = `/content ${activeNavbarTicker} ${fullMessage}`;
-
-            //     // For display purposes, we'll show the original message
-            //     const displayMessage: Message = {
-            //         role: 'user',
-            //         content: fullMessage
-            //     };
-
-            //     setDisplayMessages(prev => [...prev, displayMessage]);
-
-            //     try {
-            //         // Get ticker info from stored map
-            //         const tickerInfo = tickerInfoMap.get(activeNavbarTicker);
-
-            //         if (!tickerInfo) throw new Error('Ticker info not found');
-
-            //         const trainingData = tickerInfo.training_data || [];
-            //         let twitterUrl = '';
-            //         let twitterData = null;
-
-            //         if (tickerInfo.urls && Array.isArray(tickerInfo.urls)) {
-            //             twitterUrl = tickerInfo.urls.find((url: string) => url.includes('twitter.com')) || '';
-            //             if (twitterUrl) {
-            //                 const username = twitterUrl.split('twitter.com/').pop()?.split('/')[0] || '';
-            //                 if (username) {
-            //                     twitterData = await processTwitterData(username);
-            //                 }
-            //             }
-            //         }
-
-            //         const combinedData = {
-            //             training_data: trainingData,
-            //             twitter_data: twitterData
-            //         };
-
-            //         // Use the original message without the /content prefix for display
-            //         console.log('fullMessage', fullMessage);
-
-            //         const cleanedMessage = fullMessage.trim();
-            //         const imageUrl = `data:image/png;base64,${tickerInfo.image_base64}`;
-
-            //         const textGenResponse = await fetch('/api/chat', {
-            //             method: 'POST',
-            //             headers: { 'Content-Type': 'application/json' },
-            //             body: JSON.stringify({
-            //                 messages: [
-            //                     {
-            //                         role: "system",
-            //                         content: `you are an helpful AI assistant which can generate content using the given knowledge base. If the user asks to generate tweets give the response in given json format: {"tweet":<generated_tweet>}. If the user asks to generate image related to tweet then generate a prompt that should have a character consistency given in attached image and content related to tweet. Always create a prompt with character and tweet content related to user requirements and respond in given format: {"prompt": <generated_prompt>} strictly follow the response format  ${JSON.stringify(combinedData)}`
-            //                     },
-            //                     {
-            //                         role: 'user',
-            //                         content: [{
-            //                             type: 'text',
-            //                             text: cleanedMessage,
-            //                         }, {
-            //                             type: 'image_url',
-            //                             image_url: {
-            //                                 url: imageUrl
-            //                             }
-            //                         }]
-            //                     }
-            //                 ]
-            //             })
-            //         });
-
-            //         // Process and display response
-            //         if (!textGenResponse.ok) throw new Error('Failed to generate text');
-            //         const textGenData = await textGenResponse.json();
-
-            //         const tweetContent = textGenData.content.match(/"tweet":\s*"([^"]*)"/g);
-
-            //         if (tweetContent) {
-            //             const tweets = tweetContent.map((match: string) => match.split('"tweet":')[1].trim().replace(/(^"|"$)/g, ''));
-            //             tweets.forEach((tweet: any) => {
-            //                 setGeneratedTweets(prev => [...prev, { tweet }]);
-            //             });
-            //             setShowTweetPanel(true);
-            //         }
-
-            //         // Handle image generation if needed
-            //         let promptMatch;
-            //         try {
-            //             const contentObj = JSON.parse(textGenData.content);
-
-            //             if (contentObj.arguments?.prompt) {
-            //                 promptMatch = contentObj.arguments.prompt;
-            //             }
-            //         } catch (e) {
-            //             promptMatch = textGenData.content.match(/"prompt"\s*:\s*"([^"]+)"/)?.[1];
-            //             console.log("ok")
-            //         }
-
-            //         if (promptMatch) {
-            //             const tickerSeed = tickerInfo ? tickerInfo.seed : -1;
-            //             const tickerUserPrompt = tickerInfo ? tickerInfo.user_prompt : '';
-
-            //             const fullPrompt = tickerUserPrompt ? `${promptMatch} with character ${tickerUserPrompt}` : promptMatch;
-
-            //             const imageGenResponse = await fetch('/api/chat', {
-            //                 method: 'POST',
-            //                 headers: { 'Content-Type': 'application/json' },
-            //                 body: JSON.stringify({
-            //                     messages: [...apiMessages],
-            //                     directCommand: {
-            //                         type: 'image-gen',
-            //                         prompt: fullPrompt,
-            //                         seed: tickerSeed,
-            //                     }
-            //                 })
-            //             });
-
-            //             if (!imageGenResponse.ok) throw new Error('Failed to generate image');
-            //             const imageData = await imageGenResponse.json();
-
-            //             const textMessage: Message = {
-            //                 role: 'assistant',
-            //                 content: textGenData.content,
-            //                 type: 'text'
-            //             };
-
-            //             const imageMessage: Message = {
-            //                 role: 'assistant',
-            //                 content: imageData.content,
-            //                 type: 'image',
-            //                 command: 'image-gen'
-            //             };
-
-            //             setDisplayMessages(prev => [...prev, textMessage, imageMessage]);
-            //         } else {
-            //             const assistantMessage: Message = {
-            //                 role: 'assistant',
-            //                 content: textGenData.content,
-            //                 type: 'text'
-            //             };
-            //             setDisplayMessages(prev => [...prev, assistantMessage]);
-            //         }
-            //         setInputMessage('');
-            //     }
-            //     catch (error) {
-            //         console.error('Error in content command:', error);
-            //         // Add error message to display
-            //         const errorMessage: Message = {
-            //             role: 'assistant',
-            //             content: 'Sorry, there was an error processing your request.',
-            //             type: 'text'
-            //         };
-            //         setDisplayMessages(prev => [...prev, errorMessage]);
-            //     }
-            //     return; // Exit here to prevent further processing
-            // }
+            if (isImageGen) {
+                setProcessingCommand(true);
+            }
 
             const commandType = isImageGen ? 'image-gen' : 'create-agent';
             setCurrentCommand(commandType);
@@ -2889,7 +2424,9 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                     if (data.content && typeof data.content === 'string') {
                         await handleMemeImageGeneration(data.content, promptText);
                     }
+                    setProcessingCommand(true);
                 }
+
 
                 const assistantMessage: Message = {
                     role: 'assistant',
@@ -3030,55 +2567,6 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                 }
             } else {
                 // Existing text-only handling
-
-                // if (editMode) {
-                //     // Add the user message to conversation store
-                //     addMessage({ role: 'user', content: inputMessage });
-
-                //     // Send the entire conversation (including character gen request + all edits)
-                //     const response = await fetch('/api/chat', {
-                //         method: 'POST',
-                //         headers: { 'Content-Type': 'application/json' },
-                //         body: JSON.stringify({ messages }), // send entire history
-                //     });
-
-                //     // Parse and add the assistant response
-                //     const data = await response.json();
-                //     addMessage({ role: 'assistant', content: data.content });
-
-                //     const payload = JSON.stringify({ messages });
-
-
-                //     const size = getByteSize(payload);
-                //     console.log('size', size)
-                //     console.log('messages.length', messages.length)
-
-                //     let assistantMessageForDisplay: Message;
-                //     let assistantMessageForAPI: Message;
-
-                //     setProofData(data.proof);
-
-                //     if (data.type === 'img') {
-                //         setResultType(data.type)
-                //         assistantMessageForDisplay = {
-                //             role: 'assistant',
-                //             content: data.content,
-                //         };
-                //         assistantMessageForAPI = {
-                //             role: 'assistant',
-                //             content: data.prompt,
-                //         };
-                //     } else {
-                //         assistantMessageForDisplay = {
-                //             role: 'assistant',
-                //             content: data.content,
-                //         };
-                //         assistantMessageForAPI = assistantMessageForDisplay;
-                //     }
-
-                //     setDisplayMessages((prev) => [...prev, assistantMessageForDisplay]);
-                //     setApiMessages((prev) => [...prev, assistantMessageForAPI]);
-                // }
                 if (editMode) {
                     // Add the user message to conversation store
                     addMessage({ role: 'user', content: inputMessage });
@@ -3320,6 +2808,8 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                 return coin._id === coinId;
             });
 
+            console.log('selectedCoin', selectedCoin)
+
             let memecoinAddress = '';
             if (wallet) {
                 const tokenResult = await TokenCreator({
@@ -3346,6 +2836,7 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'api-key': 'zk-123321',
                 },
                 body: JSON.stringify({
                     ticker: selectedTicker,
@@ -3373,49 +2864,6 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
             setDisplayMessages((prev) => [...prev, errorMessage]);
         }
     };
-
-    // const handleLaunchCoin = async (coinId: string) => {
-    //     const { selectedTicker } = useTickerStore.getState();
-
-    //     if (!selectedTicker) {
-    //         console.error('Ticker not selected.');
-    //         return;
-    //     }
-
-    //     try {
-    //         // Perform the POST request to launch the coin on pump.fun
-    //         const launchResponse = await fetch('https://pump.fun/api/launch', {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //                 'api-key': 'your-pump-fun-api-key', // Replace with actual API key if needed
-    //             },
-    //             body: JSON.stringify({
-    //                 ticker: selectedTicker,
-    //                 coin_id: coinId,
-    //             }),
-    //         });
-
-    //         if (!launchResponse.ok) {
-    //             throw new Error('Failed to launch coin.');
-    //         }
-
-    //         // Notify the user about the success
-    //         const successMessage: Message = {
-    //             role: 'assistant',
-    //             content: `Successfully launched coin for ticker: ${selectedTicker}`,
-    //             type: 'text',
-    //         };
-    //         setDisplayMessages((prev) => [...prev, successMessage]);
-    //     } catch (error) {
-    //         const errorMessage: Message = {
-    //             role: 'assistant',
-    //             content: `Error: ${error}`,
-    //             type: 'text',
-    //         };
-    //         setDisplayMessages((prev) => [...prev, errorMessage]);
-    //     }
-    // };
 
 
     const setMemeData = useMemeStore((state) => state.setMemeData);
@@ -3486,7 +2934,6 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
             // console.log('signature', txSignature)
             // console.log('result', result)
             const response = await createNft(base64Image, 'NFT', wallet);
-            toast.success('NFT minted successfully!')
 
             console.log(response);
             // const metaplexUrl = `https://core.metaplex.com/explorer/${assetPublicKey}?env=devnet`;
@@ -3619,6 +3066,7 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                         type="image"
                         onMintNFT={handleMintNFT}
                         onDownloadProof={handleDownload}
+                        loading={loading}
                     />
                 );
             } else {
@@ -3629,17 +3077,13 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
         return null;
     };
 
-
     const renderTextContent = (content: string) => {
         const parts = content.split('```');
         return parts.map((part, index) => {
             if (index % 2 === 0) {
-                // This is regular text
-                return (
-                    <div key={index} className="mb-4">
-                        {part.trim()}
-                    </div>
-                );
+                const formattedPart = part.replace(/\n/g, '\n\n');
+                // This is regular text - pass the current part, not the whole content
+                return <ReactMarkdown key={index}>{formattedPart}</ReactMarkdown>;
             } else {
                 // This is a code block
                 return (
@@ -3654,6 +3098,7 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
             }
         });
     };
+
 
     return (
         <div className="flex min-h-screen bg-[#000000] overflow-hidden text-white">
@@ -4047,11 +3492,35 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                                 </div>
                             </div>
 
-                            <div className="p-4 flex-shrink-0">
-                                <div>
-                                    <CustomWalletButton />
+                            <a
+                                href="https://app.gitbook.com/o/rmFFGxpNLUTqMbbTMW3k/s/cD3hqS7a0U5cMxQQhMo6/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block"
+                            >
+                                <div className="p-3 flex-shrink-0 mb-2">
+                                    <div className="flex flex-row gap-2 p-[1px] rounded-lg bg-gradient-to-r from-[#FFFFFF] via-[#6AD7FF] via-35% to-[#FFFFFF]">
+                                        <div className="flex flex-row gap-5 bg-[#08131f] p-3 rounded-lg w-full">
+                                            <div>
+                                                <Image
+                                                    src="images/Group.svg"
+                                                    alt="Docs"
+                                                    width={30}
+                                                    height={30}
+                                                />
+                                            </div>
+                                            <div>
+                                                <div className="font-ttfirs bg-gradient-to-b from-[#2AF698] to-[#5BBFCD] text-transparent bg-clip-text text-sm">
+                                                    Need Help?
+                                                </div>
+                                                <div className="text-xs font-ttfirs">Check our docs</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
+
+
                         </div>
                     </div>
 
@@ -4084,7 +3553,7 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                                                 <div className="flex-shrink-0 mr-3">
                                                     <div className="w-10 h-10 rounded-full bg-[#171D3D] border flex items-center justify-center">
                                                         {message.role === 'user' ? (
-                                                            userEmail.charAt(0).toUpperCase()
+                                                            <span>U</span>
                                                         ) : (
                                                             <Image
                                                                 src="images/tiger.svg"
@@ -4104,7 +3573,7 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                                                                 'bg-gradient-to-br from-zkIndigo via-zkLightPurple to-zkPurple bg-clip-text text-transparent'
                                                                 } ${!isMobile ? `mt-0.5` : ``}`}
                                                         >
-                                                            {message.role === 'user' ? userEmail : 'ZkTerminal'}
+                                                            {message.role === 'user' ? 'User' : 'ZkTerminal'}
 
                                                         </span>
                                                         {message.role !== 'user' && (
@@ -4139,6 +3608,7 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                                                             imageResultType={message.command}
                                                             // onLaunchMemeCoin={message.command === 'meme-coin' ? () => router.push('/memelaunch') : undefined}
                                                             onLaunchMemeCoin={message.command === 'create-agent' ? handleLaunchMemeCoin : undefined}
+                                                            loading={loading}
                                                         />
                                                     ) : (
                                                         <div className="inline-block p-1 rounded-lg text-white">
@@ -4150,11 +3620,19 @@ In addition to the tweets, use ${JSON.stringify(trainingData)} as supplementary 
                                             </div>
                                         </div>
                                     ))}
+
                                     {isLoading && (
-                                        <div className="text-center">
-                                            <span className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></span>
-                                            <p>Processing your query. This may take up to 5 minutes...</p>
-                                        </div>
+                                        processingCommand ? (
+                                            // Custom loader for /create-agent and /image-gen
+                                            <ResultBlock type="image" processing={true}
+                                                onDownloadProof={handleDownload} imageResultType={imageResultType} onMintNFT={handleMintNFT} onLaunchMemeCoin={handleLaunchMemeCoin} />
+                                        ) : (
+                                            // Default loader
+                                            <div className="text-center">
+                                                <span className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></span>
+                                                <p>Processing your query. This may take up to 5 minutes...</p>
+                                            </div>
+                                        )
                                     )}
                                 </div>
                             )}

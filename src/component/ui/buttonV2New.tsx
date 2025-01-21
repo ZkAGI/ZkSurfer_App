@@ -1,16 +1,18 @@
 "use client";
 
-const ButtonV1New = ({
-    children,
+const ButtonV2New = ({
+    isSubmitting,
     onClick,
-    width = "w-full",
 }: {
-    children: React.ReactNode;
+    isSubmitting: boolean;
     onClick: () => void;
-    width?: string;
 }) => {
     return (
-        <button onClick={onClick} className={width}>
+        <button
+            onClick={onClick}
+            disabled={isSubmitting}
+            className="w-full disabled:opacity-50 disabled:pointer-events-none"
+        >
             <div
                 className="transition-all ease-out duration-250 group min-w-32 w-full overflow-hidden border-[1px] border-transparent bg-white text-white active:brightness-[85%]"
                 style={{
@@ -26,7 +28,7 @@ const ButtonV1New = ({
                     }}
                 >
                     <div className="transition-all ease-out duration-250 px-5 md:px-7 py-2 text-xs lg:text-base min-w-max text-center">
-                        {children}
+                        {isSubmitting ? "PROCESSING..." : "NEXT"}
                     </div>
                 </div>
             </div>
@@ -34,4 +36,4 @@ const ButtonV1New = ({
     );
 };
 
-export default ButtonV1New;
+export default ButtonV2New;

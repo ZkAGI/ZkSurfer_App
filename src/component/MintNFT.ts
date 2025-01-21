@@ -7,10 +7,16 @@ import {
 } from "@metaplex-foundation/mpl-token-metadata";
 import { generateSigner, percentAmount } from "@metaplex-foundation/umi";
 import bs58 from 'bs58';
+import { toast } from 'sonner';
 
 const uploadToPinata = async (base64Image: string, address: string) => {
-    const pinataApiKey = '687b32db4856209f2275';
-    const pinataSecretApiKey = '542f2768d67cd63fc4d2fb5f383d887717e6a05e9150fe0a941ae98e4a7e888a';
+    const pinataApiKey = process.env.NEXT_PUBLIC_NFT_PINATA_API_KEY;
+    const pinataSecretApiKey = process.env.NEXT_PUBLIC_NFT_PINATA_API_SECRET;
+
+    if (!pinataApiKey || !pinataSecretApiKey) {
+        throw new Error("Pinata API keys are not defined. Please check your environment variables.");
+    }
+
     const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
 
     const base64ToBlob = (base64: string, contentType: string) => {
@@ -99,7 +105,8 @@ const CreateNft = async (base64Image: any, name: string, wallet: any) => {
     const handleMint = async () => {
 
         if (wallet.publicKey && wallet.connected) {
-            const umi = createUmi("https://mainnet.helius-rpc.com/?api-key=ed5e8bee-19c0-4b10-bf9c-f4693aafe339");
+            const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT?.trim() || "";
+            const umi = createUmi(rpcEndpoint);
             umi.use(walletAdapterIdentity(wallet)).use(mplTokenMetadata());
             const address = wallet.publicKey?.toBase58();
             console.log("address", address);
@@ -120,7 +127,7 @@ const CreateNft = async (base64Image: any, name: string, wallet: any) => {
 
                 const txSignature = bs58.encode(signature)
                 console.log("NFT minted with signature:", txSignature, "Result:", result);
-                console.log('hello')
+                toast.success('NFT minted successfully!')
                 return txSignature
             } catch (error) {
                 console.error("Error minting NFT:", error);

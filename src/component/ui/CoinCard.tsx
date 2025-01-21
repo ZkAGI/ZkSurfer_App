@@ -91,6 +91,7 @@ import { toast } from 'sonner'; // Import Sonner's toast
 
 interface CoinCardProps {
     coin: Coin;
+    onClick?: () => void;
 }
 
 const Description: FC<{ text: string }> = ({ text }) => {

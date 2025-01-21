@@ -11,9 +11,18 @@ type PinataResponse = {
 };
 const uploadToPinata = async (base64Image: string, name: string, symbol: string, description: string) => {
 
-    const pinataApiKey = 'd5e949a5faa656f9b0cb';
-    const pinataSecretApiKey = '68fec412fb311cec60dea2f12e97eadb6b9cc227d40796d6038d66800fd89992';
+    const pinataApiKey = process.env.NEXT_PUBLIC_PINATA_API_KEY;
+    const pinataSecretApiKey = process.env.NEXT_PUBLIC_PINATA_API_SECRET;
     const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+
+    if (!pinataApiKey) {
+        throw new Error("NEXT_PUBLIC_PINATA_API_KEY is not defined in the environment variables.");
+    }
+
+    if (!pinataSecretApiKey) {
+        throw new Error("NEXT_PUBLIC_PINATA_API_SECRET is not defined in the environment variables.");
+    }
+
 
     try {
         console.log('base64Image', base64Image)
@@ -95,7 +104,11 @@ export const TokenCreator = async ({
     wallet: any;
 }) => {
     try {
-        const RPC_ENDPOINT = "https://mainnet.helius-rpc.com/?api-key=144968c1-56dd-4d50-a47b-f9fe9e9aafc6".trim();
+        const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT?.trim();
+
+        if (!RPC_ENDPOINT) {
+            throw new Error("NEXT_PUBLIC_RPC_ENDPOINT is not defined in the environment variables.");
+        }
 
         try {
             const web3Connection = new Connection(RPC_ENDPOINT, { commitment: 'confirmed' });
@@ -168,6 +181,9 @@ export const TokenCreator = async ({
         if (pumpResponse.status === 200) {
             const data = await pumpResponse.arrayBuffer();
             const tx = VersionedTransaction.deserialize(new Uint8Array(data));
+
+            const { blockhash } = await web3Connection.getLatestBlockhash('finalized');
+            tx.message.recentBlockhash = blockhash;
 
             tx.sign([mintKeypair]);
 
