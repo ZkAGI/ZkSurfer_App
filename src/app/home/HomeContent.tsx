@@ -46,6 +46,7 @@ import ApiKeyBlock from '@/component/ui/ApiKeyBlock';
 import ConnectWalletModal from '../../component/ui/ConnectWalletModal';
 import PresaleBanner from '@/component/ui/PreSaleBanner';
 import { useWhitelistStore } from '@/stores/use-whitelist-store';
+import { FcAudioFile } from 'react-icons/fc';
 
 
 interface GeneratedTweet {
@@ -294,6 +295,9 @@ const HomeContent: FC = () => {
 
     const [tweets, setTweets] = useState([]);
     const [filteredCoins, setFilteredCoins] = useState([]);
+
+    const [videoLipsyncOption, setVideoLipsyncOption] = useState<string | null>(null);
+    const [showVideoLipsyncOption, setShowVideoLipsyncOption] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -797,6 +801,14 @@ const HomeContent: FC = () => {
         const value = e.target.value;
         setInputMessage(value);
 
+
+        if (value.startsWith('/video-lipsync ') && !videoLipsyncOption) {
+            setShowVideoLipsyncOption(true);
+        } else {
+            // Optionally, hide the popup if the command is removed.
+            setShowVideoLipsyncOption(false);
+        }
+
         // Show AgentTypePopup if "/create-agent" is detected
         if (value === '/create-agent') {
             // setShowAgentTypePopup(true);
@@ -807,6 +819,7 @@ const HomeContent: FC = () => {
         //  else {
         //     setShowAgentTypePopup(false);
         // }
+
 
         // Show CommandPopup if "/" is typed alone
         if (value === '/') {
@@ -959,7 +972,13 @@ const HomeContent: FC = () => {
 
 
     const handleCommandSelect = (command: Command) => {
-        if (command === 'UGC') {
+
+        if (command === 'video-lipsync') {
+            // Set the input field and trigger the popup regardless of how the command was set.
+            setInputMessage('/video-lipsync ');
+            setShowCommandPopup(false);
+            setShowVideoLipsyncOption(true);
+        } else if (command === 'UGC') {
             setInputMessage(`/ugc `); // Add `/ugc` to the input field
             const displayMessage: Message = {
                 role: 'assistant',
@@ -1502,6 +1521,83 @@ const HomeContent: FC = () => {
         return await response.json();
     };
 
+    const processVideoLipsync = async () => {
+        // Look for an image file (jpg/jpeg/png) and an audio file in your uploaded files.
+        const imageFile = files.find((file) => file.file.type.startsWith('image/'));
+        const audioFile = files.find((file) => file.file.type.startsWith('audio/'));
+
+        if (!imageFile || !audioFile) {
+            toast.error("Please upload one image file and one audio file.");
+            return;
+        }
+
+        // Validate the audio file's duration.
+        const isAudioValid = await validateMediaDuration(audioFile.file);
+        if (!isAudioValid) {
+            toast.error("Audio file must be 15 seconds or shorter.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('reference_image', imageFile.file);
+        formData.append('input_audio', audioFile.file);
+        formData.append('animation_mode', videoLipsyncOption!.toLowerCase());
+
+        // Ensure these values match what your API expects (they could come from state or constants)
+        formData.append('driving_multiplier', '1.0'); // or your dynamic value
+        formData.append('scale', '2.3'); // or your dynamic value
+
+        try {
+            const response = await fetch('http://47.80.4.197:30902/generate-video/', {
+                method: 'POST',
+                body: formData,
+            });
+
+            console.log('response', response);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+
+            // Create a URL from the returned video blob.
+            const blob = await response.blob();
+            const videoUrl = URL.createObjectURL(blob);
+
+            const successMessage: Message = {
+                role: 'assistant',
+                content: (
+                    <div>
+                        <video src={videoUrl} controls className="w-full h-auto rounded-md" />
+                        <a href={videoUrl} download="merged-video.mp4" className="text-blue-500 underline">
+                            Download Merged Video
+                        </a>
+                    </div>
+                ),
+                type: 'text',
+            };
+            setDisplayMessages((prev) => [...prev, successMessage]);
+        } catch (error: any) {
+            const errorMessage: Message = {
+                role: 'assistant',
+                content: `Error processing your video and audio. Please try again. Error: ${error.message}`,
+                type: 'text',
+            };
+            setDisplayMessages((prev) => [...prev, errorMessage]);
+        }
+
+        // Clear the uploaded files and reset the input.
+        setFiles([]);
+        setInputMessage('');
+        if (inputRef.current) {
+            inputRef.current.style.height = '2.5rem';
+        }
+        // Reset the option for future submissions.
+        setVideoLipsyncOption(null);
+        setShowVideoLipsyncOption(false);
+    };
+
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -1597,8 +1693,8 @@ const HomeContent: FC = () => {
 
             setInputMessage('');
             if (inputRef.current) {
-                inputRef.current.style.height = '2.5rem'; 
-              }
+                inputRef.current.style.height = '2.5rem';
+            }
             setFiles([]);
             return;
         }
@@ -1753,8 +1849,8 @@ const HomeContent: FC = () => {
                     setActiveNavbarTicker(selectedTicker);
                     setInputMessage('');
                     if (inputRef.current) {
-                        inputRef.current.style.height = '2.5rem'; 
-                      }
+                        inputRef.current.style.height = '2.5rem';
+                    }
 
                     // Add a system message to show the selection
                     const systemMessage: Message = {
@@ -1784,69 +1880,118 @@ const HomeContent: FC = () => {
             return;
         }
 
+        // if (fullMessage.startsWith('/video-lipsync')) {
+        //     const videoFile = files.find((file) => file.file.type.startsWith('video/'));
+        //     const audioFile = files.find((file) => file.file.type.startsWith('audio/'));
+
+        //     if (!videoFile || !audioFile) {
+        //         toast.error("Please upload one video file and one audio file.");
+        //         return;
+        //     }
+
+        //     const isVideoValid = await validateMediaDuration(videoFile.file);
+        //     const isAudioValid = await validateMediaDuration(audioFile.file);
+
+        //     if (!isVideoValid || !isAudioValid) {
+        //         toast.error("Video and audio files must be 15 seconds or shorter.");
+        //         return;
+        //     }
+
+        //     if (videoFile && audioFile) {
+        //         // Call the API to process video and audio files
+        //         const videoUrl = await uploadFilesToMergeMedia(videoFile.file, audioFile.file);
+        //         console.log('videoUrl', videoUrl)
+
+        //         if (videoUrl) {
+        //             const successMessage: Message = {
+        //                 role: 'assistant',
+        //                 content: (
+        //                     <div>
+        //                         <video src={videoUrl} controls className="w-full h-auto rounded-md" />
+        //                         <a href={videoUrl} download="merged-video.mp4" className="text-blue-500 underline">
+        //                             Download Merged Video
+        //                         </a>
+        //                     </div>
+        //                 ),
+        //                 type: 'text',
+        //             };
+        //             setDisplayMessages((prev) => [...prev, successMessage]);
+        //         } else {
+        //             const errorMessage: Message = {
+        //                 role: 'assistant',
+        //                 content: 'Error processing your video and audio. Please try again.',
+        //                 type: 'text',
+        //             };
+        //             setDisplayMessages((prev) => [...prev, errorMessage]);
+        //         }
+
+        //         // Clear the uploaded files
+        //         setFiles([]);
+        //     } else {
+        //         const errorMessage: Message = {
+        //             role: 'assistant',
+        //             content: 'Please upload one video file and one audio file.',
+        //             type: 'text',
+        //         };
+        //         setDisplayMessages((prev) => [...prev, errorMessage]);
+        //     }
+
+        //     setInputMessage('');
+        //     if (inputRef.current) {
+        //         inputRef.current.style.height = '2.5rem'; 
+        //       }
+        //     return;
+        // }
+
+
         if (fullMessage.startsWith('/video-lipsync')) {
-            const videoFile = files.find((file) => file.file.type.startsWith('video/'));
+            // If no option is chosen, do nothing (the popup should be visible).
+            if (!videoLipsyncOption) {
+                return;
+            }
+
+            const imageFile = files.find((file) => file.file.type.startsWith('image/'));
             const audioFile = files.find((file) => file.file.type.startsWith('audio/'));
 
-            if (!videoFile || !audioFile) {
-                toast.error("Please upload one video file and one audio file.");
-                return;
+            // Build an array for the user prompt content.
+            const userContent: (string | React.ReactNode)[] = [fullMessage];
+
+            if (imageFile) {
+                // Render a small preview of the uploaded image.
+                userContent.push(
+                    <img
+                        key="img"
+                        src={imageFile.preview}
+                        alt="Uploaded Image"
+                        className="w-16 h-16 object-cover rounded-md ml-2"
+                    />
+                );
             }
 
-            const isVideoValid = await validateMediaDuration(videoFile.file);
-            const isAudioValid = await validateMediaDuration(audioFile.file);
-
-            if (!isVideoValid || !isAudioValid) {
-                toast.error("Video and audio files must be 15 seconds or shorter.");
-                return;
+            if (audioFile) {
+                // Render the FcAudioFile icon for the uploaded audio file.
+                userContent.push(
+                    <FcAudioFile key="audio" size={32} className="ml-2" />
+                );
             }
-
-            if (videoFile && audioFile) {
-                // Call the API to process video and audio files
-                const videoUrl = await uploadFilesToMergeMedia(videoFile.file, audioFile.file);
-                console.log('videoUrl', videoUrl)
-
-                if (videoUrl) {
-                    const successMessage: Message = {
-                        role: 'assistant',
-                        content: (
-                            <div>
-                                <video src={videoUrl} controls className="w-full h-auto rounded-md" />
-                                <a href={videoUrl} download="merged-video.mp4" className="text-blue-500 underline">
-                                    Download Merged Video
-                                </a>
-                            </div>
-                        ),
-                        type: 'text',
-                    };
-                    setDisplayMessages((prev) => [...prev, successMessage]);
-                } else {
-                    const errorMessage: Message = {
-                        role: 'assistant',
-                        content: 'Error processing your video and audio. Please try again.',
-                        type: 'text',
-                    };
-                    setDisplayMessages((prev) => [...prev, errorMessage]);
-                }
-
-                // Clear the uploaded files
-                setFiles([]);
-            } else {
-                const errorMessage: Message = {
-                    role: 'assistant',
-                    content: 'Please upload one video file and one audio file.',
-                    type: 'text',
-                };
-                setDisplayMessages((prev) => [...prev, errorMessage]);
-            }
-
+            // Add a user message showing what was sent.
+            const userMessage: Message = {
+                role: 'user',
+                content: fullMessage,
+                type: 'text',
+            };
+            setDisplayMessages((prev) => [...prev, userMessage]);
             setInputMessage('');
-            if (inputRef.current) {
-                inputRef.current.style.height = '2.5rem'; 
-              }
+            setFiles([]);
+            setIsLoading(true);
+
+
+            // Process the command.
+            await processVideoLipsync();
+
+            setIsLoading(false);
             return;
         }
-
 
 
 
@@ -1860,8 +2005,8 @@ const HomeContent: FC = () => {
             setDisplayMessages(prev => [...prev, tokenMessage]);
             setInputMessage('');
             if (inputRef.current) {
-                inputRef.current.style.height = '2.5rem'; 
-              }
+                inputRef.current.style.height = '2.5rem';
+            }
             return;
         }
 
@@ -1894,8 +2039,8 @@ const HomeContent: FC = () => {
 
             setInputMessage('');
             if (inputRef.current) {
-                inputRef.current.style.height = '2.5rem'; 
-              }
+                inputRef.current.style.height = '2.5rem';
+            }
             return;
         }
 
@@ -1903,8 +2048,8 @@ const HomeContent: FC = () => {
             await handleTweetCommand(fullMessage);
             setInputMessage('');
             if (inputRef.current) {
-                inputRef.current.style.height = '2.5rem'; 
-              }
+                inputRef.current.style.height = '2.5rem';
+            }
             return;
         }
 
@@ -1931,8 +2076,8 @@ const HomeContent: FC = () => {
             setDisplayMessages(prev => [...prev, characterMessage]);
             setInputMessage('');
             if (inputRef.current) {
-                inputRef.current.style.height = '2.5rem'; 
-              }
+                inputRef.current.style.height = '2.5rem';
+            }
             return;
         }
 
@@ -1949,8 +2094,8 @@ const HomeContent: FC = () => {
                 setDisplayMessages((prev) => [...prev, errorMessage]);
                 setInputMessage('');
                 if (inputRef.current) {
-                    inputRef.current.style.height = '2.5rem'; 
-                  }
+                    inputRef.current.style.height = '2.5rem';
+                }
                 return;
             }
 
@@ -1965,7 +2110,7 @@ const HomeContent: FC = () => {
                 setInputMessage('');
                 if (inputRef.current) {
                     inputRef.current.style.height = '2.5rem';
-                  }
+                }
                 return;
             }
 
@@ -2022,7 +2167,7 @@ const HomeContent: FC = () => {
             setInputMessage('');
             if (inputRef.current) {
                 inputRef.current.style.height = '2.5rem';
-              }
+            }
             setFiles([]);
             setPdfContent(null);
             setCurrentPdfName(null);
@@ -2235,7 +2380,7 @@ const HomeContent: FC = () => {
             setInputMessage('');
             if (inputRef.current) {
                 inputRef.current.style.height = '2.5rem';
-              }
+            }
             setIsLoading(true);
 
             const controller = new AbortController();
@@ -2421,7 +2566,7 @@ const HomeContent: FC = () => {
                 setInputMessage('');
                 if (inputRef.current) {
                     inputRef.current.style.height = '2.5rem';
-                  }
+                }
                 setFiles([]);
                 setPdfContent(null);
                 setCurrentPdfName(null);
@@ -2517,8 +2662,8 @@ const HomeContent: FC = () => {
 
                 setInputMessage('');
                 if (inputRef.current) {
-                    inputRef.current.style.height = '2.5rem'; 
-                  }
+                    inputRef.current.style.height = '2.5rem';
+                }
                 setIsLoading(true);
 
                 const controller = new AbortController();
@@ -3922,6 +4067,37 @@ const HomeContent: FC = () => {
                                             {showTickerPopup && (
                                                 <TickerPopup tickers={tickers} onSelect={handleTickerSelect} />
                                             )}
+
+                                            {showVideoLipsyncOption && (
+                                                <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-[#171D3D] rounded-lg shadow-lg z-50 p-2">
+                                                    <p className="mb-2 text-sm text-white">Select animation type:</p>
+                                                    <div className="flex flex-col gap-2">
+                                                        <button
+                                                            className="px-4 py-2 bg-blue-500 text-white rounded"
+                                                            onClick={() => {
+                                                                // Set option and update the input field.
+                                                                setVideoLipsyncOption('Animal');
+                                                                setInputMessage('/video-lipsync animation mode animal');
+                                                                setShowVideoLipsyncOption(false);
+                                                            }}
+                                                        >
+                                                            Animal
+                                                        </button>
+                                                        <button
+                                                            className="px-4 py-2 bg-blue-500 text-white rounded"
+                                                            onClick={() => {
+                                                                setVideoLipsyncOption('Human');
+                                                                setInputMessage('/video-lipsync animation mode human');
+                                                                setShowVideoLipsyncOption(false);
+                                                            }}
+                                                        >
+                                                            Human
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+
                                         </div>
 
                                         {/* Submit button */}
@@ -3941,9 +4117,9 @@ const HomeContent: FC = () => {
                                 </form>
                             </div>
                         </footer>
-                    </div>
-                </div>
-            </div>
+                    </div >
+                </div >
+            </div >
 
             <CreateAgentModal
                 visible={showCreateAgentModal}
@@ -3962,7 +4138,7 @@ const HomeContent: FC = () => {
             </div> */}
 
 
-        </div>
+        </div >
     );
 };
 
