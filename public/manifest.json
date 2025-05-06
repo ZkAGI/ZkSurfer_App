@@ -1,7 +1,7 @@
 {
-    "name": "ZkSurfer",
-    "short_name": "App",
-    "description": "Your app description",
+    "name": "ZkTerminal",
+    "short_name": "ZkTerminal",
+    "description": "Autonomous Agent Creator",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#152376",

@@ -38,7 +38,14 @@
 
 //     const handleEmailLogin = async (e: React.FormEvent) => {
 //         e.preventDefault();
+        
+//         if (!email.trim()) {
+//             toast.error("Please enter a valid email address");
+//             return;
+//         }
+        
 //         setLoading(true);
+        
 //         try {
 //             console.log("Starting Magic Link authentication process");
 
@@ -57,6 +64,7 @@
 //                     return;
 //                 } catch (error) {
 //                     console.error("Error connecting with Magic adapter:", error);
+//                     throw error; // Re-throw to handle in the catch block below
 //                 }
 //             }
 
@@ -79,6 +87,7 @@
 //                     return;
 //                 } catch (error) {
 //                     console.error("Error connecting with Magic adapter from list:", error);
+//                     throw error; // Re-throw to handle in the catch block below
 //                 }
 //             } else {
 //                 console.log("Magic adapter not found in wallet list");
@@ -116,13 +125,12 @@
 
 //                         // If we're using direct Magic SDK without adapter, we need to 
 //                         // refresh to pick up the connection
-//                         window.location.reload();
+//                         setTimeout(() => {
+//                             window.location.reload();
+//                         }, 1000);
 //                     }
 
 //                     toast.success(`Magic wallet connected: ${userInfo.publicAddress.slice(0, 6)}...${userInfo.publicAddress.slice(-4)}`);
-//                     setTimeout(() => {
-//                         window.location.reload();
-//                       }, 1500);
 //                     onClose();
 //                     return;
 //                 }
@@ -130,10 +138,15 @@
 
 //             toast.success("Successfully authenticated with Magic Link!");
 //             onClose();
+            
+//             // Force reload after successful login to ensure consistency
+//             setTimeout(() => {
+//                 window.location.reload();
+//             }, 1500);
 
 //         } catch (error: any) {
 //             console.error("Magic Link error:", error);
-//             toast.error("Error with Magic Link. Please try again.");
+//             toast.error(error?.message || "Error with Magic Link. Please try again.");
 //         } finally {
 //             setLoading(false);
 //         }
@@ -162,7 +175,7 @@
 
 //                 {/* "Don't Have a Wallet" Section */}
 //                 <div>
-//                     <h3 className="text-lg font-semibold mb-2">Don't Have a Wallet</h3>
+//                     <h3 className="text-lg font-semibold mb-2">Don&apos;t Have a Wallet</h3>
 //                     <p className="mb-4 text-xs">
 //                         Enter your email address to receive a Magic link for an OTP. A new Solana wallet will be automatically created for you upon successful authentication.
 //                     </p>
@@ -197,7 +210,7 @@ import { toast } from "sonner";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { MagicWalletName } from '../MagicWalletAdapter';
 import { MagicAdapterContext } from '../AppWalletProvider';
-import { PublicKey } from '@solana/web3.js';
+import { useWalletStore } from '@/stores/wallet-store';
 
 interface WalletModalProps {
     isVisible: boolean;
@@ -219,6 +232,9 @@ export const WalletModal = ({ isVisible, onClose }: WalletModalProps) => {
     const [loading, setLoading] = useState(false);
     const { wallets, select, publicKey, connecting } = useWallet();
     const magicAdapter = useContext(MagicAdapterContext);
+    
+    // Use our existing wallet store from the app
+    const { setWallet } = useWalletStore();
 
     useEffect(() => {
         // If we connected successfully, close the modal
@@ -250,6 +266,11 @@ export const WalletModal = ({ isVisible, onClose }: WalletModalProps) => {
                     console.log("Selecting Magic wallet adapter");
                     select(MagicWalletName);
 
+                    // Store wallet information in the zustand store if we have a public key
+                    if (publicKey) {
+                        setWallet(publicKey.toString(), MagicWalletName);
+                    }
+
                     toast.success("Successfully connected with Magic Link");
                     onClose();
                     return;
@@ -272,6 +293,11 @@ export const WalletModal = ({ isVisible, onClose }: WalletModalProps) => {
 
                     // Select the Magic wallet in the adapter
                     select(MagicWalletName);
+                    
+                    // Store in zustand store if public key is available
+                    if (publicKey) {
+                        setWallet(publicKey.toString(), MagicWalletName);
+                    }
 
                     toast.success("Successfully connected with Magic Link");
                     onClose();
@@ -309,10 +335,9 @@ export const WalletModal = ({ isVisible, onClose }: WalletModalProps) => {
                         // Force-select the Magic wallet
                         select(MagicWalletName);
                     } else {
-                        // Manual setup if adapter not available
-                        localStorage.setItem('connectedWalletAddress', userInfo.publicAddress);
-                        localStorage.setItem('walletName', MagicWalletName);
-                        console.log("Stored wallet address in localStorage");
+                        // Store wallet data in Zustand store instead of localStorage
+                        setWallet(userInfo.publicAddress, MagicWalletName);
+                        console.log("Stored wallet address in Zustand store");
 
                         // If we're using direct Magic SDK without adapter, we need to 
                         // refresh to pick up the connection

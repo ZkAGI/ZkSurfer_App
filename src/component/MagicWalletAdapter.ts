@@ -700,6 +700,8 @@ import {
 } from '@solana/web3.js';
 import { Magic } from 'magic-sdk';
 import { SolanaExtension } from '@magic-ext/solana';
+import { useWalletStore } from '@/stores/wallet-store';
+
 
 // Use a simpler name to avoid potential mismatches
 export const MagicWalletName = 'Magic' as WalletName<'Magic'>;
@@ -821,12 +823,19 @@ export class MagicWalletAdapter extends BaseMessageSignerWalletAdapter {
     }
     
     // Clear stored connection data
+    // private _clearStoredConnection(): void {
+    //     localStorage.removeItem('connectedWalletAddress');
+    //     localStorage.removeItem('walletName');
+    //     this._connected = false;
+    //     this._publicKey = null;
+    // }
+    
     private _clearStoredConnection(): void {
-        localStorage.removeItem('connectedWalletAddress');
-        localStorage.removeItem('walletName');
-        this._connected = false;
-        this._publicKey = null;
-    }
+                // wipe both address & name in the zustand store
+                useWalletStore.getState().clearWallet();
+                this._connected = false;
+                this._publicKey = null;
+            }
 
     get publicKey(): PublicKey | null {
         return this._publicKey;

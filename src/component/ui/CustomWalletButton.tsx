@@ -289,6 +289,7 @@ import { MagicWalletName } from '../MagicWalletAdapter';
 import { PublicKey } from '@solana/web3.js';
 import { MagicAdapterContext } from '../AppWalletProvider';
 import { WalletName } from '@solana/wallet-adapter-base';
+import { useWalletStore } from '@/stores/wallet-store';
 
 // Add TypeScript declarations for wallet browser properties
 declare global {
@@ -316,10 +317,19 @@ const LABELS = {
 export const CustomWalletButton = () => {
   const router = useRouter();
   const { setVisible } = useWalletModal();
+  // const { publicKey, wallet, connecting, disconnecting, wallets, select } = useWallet();
+  // const { walletAddress, walletName, setWallet, clearWallet } = useWalletStore()
+  // const [storedWalletAddress, setStoredWalletAddress] = useState<string | null>(null);
   const { publicKey, wallet, connecting, disconnecting, wallets, select } = useWallet();
+  // alias the store's walletAddress so it doesn’t collide
+  const {
+    walletAddress: storedAddress,
+    walletName,
+    setWallet,
+    clearWallet
+  } = useWalletStore();
   const [isModalVisible, setModalVisible] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-  const [storedWalletAddress, setStoredWalletAddress] = useState<string | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   // Get Magic adapter from context
@@ -338,61 +348,85 @@ export const CustomWalletButton = () => {
   }, [wallets]);
 
   // Initialization logic: check localStorage and try to connect Magic wallet if necessary
+  // useEffect(() => {
+  //   if (!isFirstLoad) return;
+
+  //   setIsFirstLoad(false);
+  //   console.log("First load completed");
+
+  //   const storedAddress = localStorage.getItem('connectedWalletAddress');
+  //   const storedWalletName = localStorage.getItem('walletName');
+
+  //   if (storedAddress) {
+  //     setStoredWalletAddress(storedAddress);
+
+  //     // If no publicKey yet but we have stored address from Magic, try to connect
+  //     if (!publicKey && storedWalletName === MagicWalletName) {
+  //       console.log("Found stored Magic wallet address:", storedAddress);
+
+  //       // Try to trigger a wallet selection after a delay
+  //       setTimeout(() => {
+  //         if (!publicKey && wallets.some(w => (w as any)?.name === MagicWalletName)) {
+  //           console.log("Selecting Magic wallet");
+  //           select(MagicWalletName);
+  //         }
+  //       }, 1000);
+  //     }
+  //   }
+  // }, [isFirstLoad, publicKey, wallets, select]);
   useEffect(() => {
-    if (!isFirstLoad) return;
+    if (isFirstLoad) {
+      setIsFirstLoad(false)
 
-    setIsFirstLoad(false);
-    console.log("First load completed");
-
-    const storedAddress = localStorage.getItem('connectedWalletAddress');
-    const storedWalletName = localStorage.getItem('walletName');
-
-    if (storedAddress) {
-      setStoredWalletAddress(storedAddress);
-
-      // If no publicKey yet but we have stored address from Magic, try to connect
-      if (!publicKey && storedWalletName === MagicWalletName) {
-        console.log("Found stored Magic wallet address:", storedAddress);
-
-        // Try to trigger a wallet selection after a delay
-        setTimeout(() => {
-          if (!publicKey && wallets.some(w => (w as any)?.name === MagicWalletName)) {
-            console.log("Selecting Magic wallet");
-            select(MagicWalletName);
-          }
-        }, 1000);
+      if (storedAddress && walletName === MagicWalletName) {
+        // try to select Magic again…
+        select(MagicWalletName)
       }
     }
-  }, [isFirstLoad, publicKey, wallets, select]);
+  }, [isFirstLoad, select, storedAddress, walletName])
 
   // Update stored address when public key changes
+  // useEffect(() => {
+  //   if (publicKey) {
+  //     const publicKeyString = publicKey.toString();
+  //     setStoredWalletAddress(publicKeyString);
+  //     localStorage.setItem('connectedWalletAddress', publicKeyString);
+  //     console.log("Public key updated:", publicKeyString);
+  //   }
+  // }, [publicKey]);
   useEffect(() => {
     if (publicKey) {
-      const publicKeyString = publicKey.toString();
-      setStoredWalletAddress(publicKeyString);
-      localStorage.setItem('connectedWalletAddress', publicKeyString);
-      console.log("Public key updated:", publicKeyString);
+      setWallet(publicKey.toString(), MagicWalletName);
     }
-  }, [publicKey]);
+  }, [publicKey, setWallet]);
+
 
   // Handle wallet disconnection without triggering a refresh
+  // useEffect(() => {
+  //   if (disconnecting || (!publicKey && !connecting && !isFirstLoad)) {
+  //     const hasWalletName = localStorage.getItem('walletName');
+  //     if (hasWalletName) {
+  //       console.log("Wallet disconnected, removing walletName");
+  //       localStorage.removeItem('walletName');
+  //       localStorage.removeItem('connectedWalletAddress');
+  //       setStoredWalletAddress(null);
+  //     }
+  //   }
+  // }, [publicKey, disconnecting, connecting, isFirstLoad]);
+
   useEffect(() => {
     if (disconnecting || (!publicKey && !connecting && !isFirstLoad)) {
-      const hasWalletName = localStorage.getItem('walletName');
-      if (hasWalletName) {
-        console.log("Wallet disconnected, removing walletName");
-        localStorage.removeItem('walletName');
-        localStorage.removeItem('connectedWalletAddress');
-        setStoredWalletAddress(null);
-      }
+      clearWallet()
     }
-  }, [publicKey, disconnecting, connecting, isFirstLoad]);
+  }, [publicKey, connecting, disconnecting, isFirstLoad, clearWallet])
 
   // Check both publicKey and storedWalletAddress for display
-  const walletAddress = publicKey?.toString() || storedWalletAddress;
+  // const walletAddress = publicKey?.toString() || storedWalletAddress;
+  const displayAddress = publicKey?.toString() || storedAddress;
 
   // Check connection status
-  const isConnected = !!publicKey || (!!storedWalletAddress && localStorage.getItem('walletName') === MagicWalletName);
+  // const isConnected = !!publicKey || (!!storedWalletAddress && localStorage.getItem('walletName') === MagicWalletName);
+  const isConnected = !!publicKey || (storedAddress !== null && walletName === MagicWalletName);
 
   // Create a custom wallet button component for Magic Link wallets
   const CustomConnectedButton = ({ address }: { address: string }) => {
@@ -422,10 +456,12 @@ export const CustomWalletButton = () => {
           await (adapterFromList as any).disconnect();
         } else {
           // Fallback to localStorage removal
-          console.log("Magic adapter not found, using localStorage fallback");
-          localStorage.removeItem('walletName');
-          localStorage.removeItem('connectedWalletAddress');
-          setStoredWalletAddress(null);
+          // console.log("Magic adapter not found, using localStorage fallback");
+          // localStorage.removeItem('walletName');
+          // localStorage.removeItem('connectedWalletAddress');
+          // setStoredWalletAddress(null);
+          console.log("Magic adapter not found, clearing wallet store");
+          +      clearWallet();
 
           // Force reload to clear the wallet state completely
           window.location.reload();
@@ -433,7 +469,7 @@ export const CustomWalletButton = () => {
       } catch (error) {
         console.error("Error during disconnect:", error);
         toast.error("Failed to disconnect wallet. Please try again.");
-        
+
         // Force reload as last resort
         window.location.reload();
       } finally {
@@ -503,9 +539,12 @@ export const CustomWalletButton = () => {
             animation: "spinGradient 3s linear infinite",
           }}
         />
-      ) : walletAddress && !publicKey ? (
-        // Show custom button for Magic Link wallet if we have a walletAddress but no publicKey
-        <CustomConnectedButton address={walletAddress} />
+        // ) : walletAddress && !publicKey ? (
+        //   // Show custom button for Magic Link wallet if we have a walletAddress but no publicKey
+        //   <CustomConnectedButton address={walletAddress} />
+      ) : displayAddress && !publicKey ? (
+        // Show custom button for Magic Link wallet
+        <CustomConnectedButton address={displayAddress} />
       ) : (
         <div
           className="transition-all ease-out duration-500 relative cursor-pointer group block w-full overflow-hidden border-transparent bg-gradient-to-br from-zkLightPurple via-zkLightPurple to-zkIndigo p-[1px] hover:p-0"

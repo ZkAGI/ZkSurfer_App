@@ -19,6 +19,8 @@ import { useSearchParams } from 'next/navigation';
 import { useModelStore } from '@/stores/useModel-store';
 import { z } from "zod";
 import { Dictionary } from '@/app/i18n/types';
+import FileUploadSection from '@/component/ui/FileUploadSection';
+import { TrainingDataSection } from '@/component/ui/TrainingDataSection';
 
 export interface MemeLaunchPageProps {
     dictionary: Dictionary;
@@ -3061,8 +3063,41 @@ Example Output Structure:
                                             </div>
 
                                             <div className="mr-4 space-y-5">
+                                                <TrainingDataSection
+                                                    trainingPdfs={formData.trainingPdfs}
+                                                    trainingImages={formData.trainingImages}
+                                                    urls={formData.trainingUrls}
+                                                    maxSizeMB={MAX_FILE_SIZE_MB}
+                                                    totalSizeMB={
+                                                        calculateTotalFileSize(formData.trainingPdfs) +
+                                                        calculateTotalFileSize(formData.trainingImages)
+                                                    }
+                                                    onPdfUpload={(file: File) =>
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            trainingPdfs: [...prev.trainingPdfs, file],
+                                                        }))
+                                                    }
+                                                    onImageUpload={(file: File) =>
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            trainingImages: [...prev.trainingImages, file],
+                                                        }))
+                                                    }
+                                                    onRemovePdf={(idx: number) => removeTrainingFile('pdf', idx)}
+                                                    onRemoveImage={(idx: number) => removeTrainingFile('image', idx)}
+                                                    onAddUrl={() =>
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            trainingUrls: [...prev.trainingUrls, ''],
+                                                        }))
+                                                    }
+                                                    onChangeUrl={(idx: number, val: string) => handleTwitterUrlChange(idx, val)}
+                                                    onRemoveUrl={(idx: number) => removeTrainingUrl(idx)}
+                                                />
 
-                                                <div className="border-2 border-[#B9B9B9] rounded-lg bg-[#343B4F] p-4">
+
+                                                {/* <div className="border-2 border-[#B9B9B9] rounded-lg bg-[#343B4F] p-4">
                                                     <div className="mb-4">
                                                         <div className="text-[#7E7CCF] font-ttfirs text-xl">
                                                             TRAIN YOUR AGENT
@@ -3072,35 +3107,27 @@ Example Output Structure:
                                                     <label className="block mb-2 text-sm">Training Data <span className="text-xs text-gray-400 mt-2">
                                                         Maximum total upload size: 5 MB (including PDFs and images).
                                                     </span></label>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setShowTrainingOptions(true)}
-                                                        className="bg-blue-500 text-white px-4 py-2 rounded"
-                                                    >
-                                                        + Add Training Data
-                                                    </button>
-                                                    {showTrainingOptions && (
-                                                        <div className="mt-2 space-y-2">
-                                                            <button
-                                                                onClick={() => handleAddTrainingData('pdf')}
-                                                                className="block w-full bg-gray-700 text-white px-4 py-2 rounded"
-                                                            >
-                                                                Add PDF
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleAddTrainingData('image')}
-                                                                className="block w-full bg-gray-700 text-white px-4 py-2 rounded"
-                                                            >
-                                                                Add Image
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleAddTrainingData('twitter')}
-                                                                className="block w-full bg-gray-700 text-white px-4 py-2 rounded"
-                                                            >
-                                                                Add Twitter URL
-                                                            </button>
-                                                        </div>
-                                                    )}
+
+                                                    <div className="mt-2 space-y-2">
+                                                        <button
+                                                            onClick={() => handleAddTrainingData('pdf')}
+                                                            className="block w-full bg-gray-700 text-white px-4 py-2 rounded"
+                                                        >
+                                                            Add PDF
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleAddTrainingData('image')}
+                                                            className="block w-full bg-gray-700 text-white px-4 py-2 rounded"
+                                                        >
+                                                            Add Image
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleAddTrainingData('twitter')}
+                                                            className="block w-full bg-gray-700 text-white px-4 py-2 rounded"
+                                                        >
+                                                            Add Twitter URL
+                                                        </button>
+                                                    </div>
 
                                                     {showPdfUpload && (
                                                         <div className="relative mt-5">
@@ -3140,18 +3167,6 @@ Example Output Structure:
                                                         </div>
                                                     )}
 
-                                                    {/* Display uploaded files */}
-                                                    {/* {formData.trainingPdfs.length > 0 && (
-                            <div className="mt-4">
-                                <p className="text-sm font-medium">Uploaded Training PDFs:</p>
-                                <ul className="list-disc pl-5">
-                                    {formData.trainingPdfs.map((file, index) => (
-                                        <li key={index} className="text-sm">{file.name}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )} */}
-
                                                     {formData.trainingPdfs.length > 0 && (
                                                         <div className="mt-4">
                                                             <p className="text-sm font-medium">Uploaded Training PDFs:</p>
@@ -3170,17 +3185,7 @@ Example Output Structure:
                                                             </ul>
                                                         </div>
                                                     )}
-                                                    {/* 
-                        {formData.trainingImages.length > 0 && (
-                            <div className="mt-4">
-                                <p className="text-sm font-medium">Uploaded Training Images:</p>
-                                <ul className="list-disc pl-5">
-                                    {formData.trainingImages.map((file, index) => (
-                                        <li key={index} className="text-sm">{file.name}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}*/}
+                     
                                                 </div>
                                                 {formData.trainingImages.length > 0 && (
                                                     <div className="mt-4">
@@ -3199,21 +3204,10 @@ Example Output Structure:
                                                             ))}
                                                         </ul>
                                                     </div>
-                                                )}
+                                                )} */}
+
 
                                                 {/* {formData.trainingUrls.map((url, index) => (
-                        <div key={index} className="mt-2">
-                            <label className="block mb-2 text-sm">Twitter URL {index + 1} for training data</label>
-                            <input
-                                type="text"
-                                name="twitter"
-                                value={url}
-                                onChange={(e) => handleTwitterUrlChange(index, e.target.value)}
-                                className="w-full bg-gray-800/50 rounded-lg p-3 border border-gray-700"
-                            />
-                        </div>
-                    ))} */}
-                                                {formData.trainingUrls.map((url, index) => (
                                                     <div key={index} className="flex items-center mt-2">
                                                         <label className="block mb-2 text-sm">Upload Twitter URL {index + 1} for training data:</label>
                                                         <input
@@ -3230,18 +3224,8 @@ Example Output Structure:
                                                             ✕
                                                         </button>
                                                     </div>
-                                                ))}
-                                                {/* <div>
-                        <label className="block mb-2 text-sm">Webpage URL</label>
-                        <input
-                            type="url"
-                            name="webpageUrl"
-                            value={formData.webpageUrl}
-                            onChange={handleChange}
-                            className="w-full bg-gray-800/50 rounded-lg p-3 border border-gray-700"
-                            placeholder="(upload Link)"
-                        />
-                    </div> */}
+                                                ))} */}
+
                                                 <div className='border-2 border-[#B9B9B9] rounded-lg bg-[#343B4F] p-4'>
                                                     <div className="mb-4">
                                                         <div className="text-[#7E7CCF] font-ttfirs text-xl">
