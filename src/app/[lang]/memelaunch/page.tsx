@@ -945,7 +945,7 @@ const MemeLaunchPageContent = ({ searchParams, dictionary }: { searchParams: URL
                             <button
                                 onClick={() => handleTradeModeChange('authentication')}
                                 // onClick={() =>
-                                //     toast.error("Self-signed mode is curently unavailable. Please use Autonomous mode for micro-agent.")
+                                //     toast.error("Self-signed mode is currently unavailable. Please use Autonomous mode for micro-agent.")
                                 // }
                                 className={`px-2 py-1 rounded-md transition-colors text-xs ${tradeMode === 'authentication'
                                     ? 'bg-blue-500 text-white'

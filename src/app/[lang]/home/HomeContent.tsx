@@ -4619,7 +4619,7 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
 
                 } catch (error) {
                     console.error('Error:', error);
-                    toast.error('Due to unexpected capacity contraints ZkTerminal is unable to process this prompt. Please try again later or open a new chat window and retry.')
+                    toast.error('Due to unexpected capacity constraints ZkTerminal is unable to process this prompt. Please try again later or open a new chat window and retry.')
                 } finally {
                     setIsLoading(false);
                 }

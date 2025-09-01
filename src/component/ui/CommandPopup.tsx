@@ -104,7 +104,7 @@ const CommandPopup: React.FC<CommandPopupProps> = ({ onSelect }) => {
         },
         {
             command: 'generate-voice-clone',
-            description: 'Add a reference audio and text, to geenrate a cloned voice base don reference for given text'
+            description: 'Add a reference audio and text, to generate a cloned voice base don reference for given text'
         },
         {
             command: 'video-gen',
