@@ -38,6 +38,7 @@ import { useCharacterStore } from '@/stores/charecter-store';
 import CharecterJsonEditor from '@/component/ui/CharecterJsonEditor';
 import { useFormStore } from '@/stores/form-store';
 import useSWR, { mutate } from 'swr';
+import useSWRInfinite from 'swr/infinite';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import { CreateAgentModal } from '@/component/ui/AgentModal';
@@ -67,7 +68,9 @@ import DynamicSubscriptionWidgit from '@/component/ui/DynamicSubscriptionWidgit'
 import SubscriptionModal from '@/component/ui/SubscriptionModal';
 import ReportPaymentModal from '@/component/ui/ReportPaymentModal';
 import { useSubscriptionStore } from '@/stores/subscription-store';
+import { CircularProgress } from '@mui/material';
 import { OnboardingTour } from '@/component/ui/OnBoardingTour';
+
 
 
 interface GeneratedTweet {
@@ -480,6 +483,8 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
 
     const walletAddress = wallet.publicKey ? wallet.publicKey.toString() : '';
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Coins pagination removed
 
     const [isReportOpen, setIsReportOpen] = useState(false);
     const [reportData, setReportData] = useState<FullReportData | PastPredictionData | null>(null);
@@ -1313,15 +1318,52 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
     };
 
 
-    const { data: tickersData } = useSWR(
+    const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+    const { data: tickersData, isLoading: isTickersLoading } = useSWR(
         walletAddress ? [AGENTS_API_URL, apiKey, walletAddress] : null,
-        ([url, key, addr]) => fetcher(url, key, addr),
-        {
-            refreshInterval: 15000,
-        }
+      async ([url, key, addr]) => {
+        return fetcher(url, key, addr);
+      },
+      { refreshInterval: 15000 }
     );
 
     let content;
+    const agents = Array.isArray(tickersData) ? tickersData : [];
+    const showLoading = isTickersLoading || (walletAddress && tickersData === undefined);
+
+    // Sidebar Agents pagination (SWR Infinite)
+    const AGENTS_PAGE_SIZE = 20;
+    const getAgentsKey = (pageIndex: number, previousPageData: any) => {
+        if (!isDropdownOpen) return null; // only fetch when sidebar is open
+        if (previousPageData && previousPageData.length === 0) return null; // reached end
+        if (!walletAddress) return null;
+        return [`${AGENTS_API_URL}?page=${pageIndex + 1}&limit=${AGENTS_PAGE_SIZE}`, apiKey, walletAddress];
+    };
+    const {
+        data: agentsPages,
+        isLoading: isAgentsLoading,
+        isValidating: isAgentsValidating,
+        size: agentsSize,
+        setSize: setAgentsSize,
+        error: agentsError
+    } = useSWRInfinite(getAgentsKey, ([url, key, addr]) => fetcher(url, key, addr), {
+        revalidateOnMount: true,
+        revalidateIfStale: true,
+        keepPreviousData: true,
+    });
+    const agentPagesSafe = agentsPages ?? [];
+    const agentsList = agentPagesSafe.flatMap((p: any) => Array.isArray(p) ? p : (p?.data ?? []));
+    const pagesLength = agentPagesSafe.length;
+    const lastAgentsPage: any = pagesLength > 0 ? agentPagesSafe[pagesLength - 1] : undefined;
+    const lastCount: number = Array.isArray(lastAgentsPage)
+        ? lastAgentsPage.length
+        : (lastAgentsPage?.data?.length ?? 0);
+    const isAgentsLoadingInitial = isAgentsLoading && pagesLength === 0;
+    const isAgentsLoadingMore = isAgentsValidating && pagesLength > 0;
+    const agentsReachedEnd = pagesLength > 0 && lastCount < AGENTS_PAGE_SIZE;
+
+    // Loading and pagination state for agents (no mocks)
 
     useEffect(() => {
         if (!wallet.connected) {
@@ -1332,12 +1374,17 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
         }
     }, [wallet.connected]);
 
-    if (!tickersData) {
-        content = <div>Loading...</div>;
-    } else {
+    if (showLoading) {
+        content = (
+            <div className="flex items-center justify-center p-6" role="status" aria-label="Loading agents">
+                <CircularProgress size={24} thickness={4} />
+                <span className="sr-only">Loading...</span>
+            </div>
+        );
+    } else if (agents.length > 0) {
         content = (
             <div>
-                {tickersData.map((item: any, index: number) => (
+                {agents.map((item: any, index: number) => (
                     <div
                         key={index}
                         className="cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center space-x-2"
@@ -1351,6 +1398,10 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
                     </div>
                 ))}
             </div>
+        );
+    } else {
+        content = (
+            <div className="text-gray-500 text-sm text-center p-4 italic">No agents found</div>
         );
     }
 
@@ -5758,7 +5809,7 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
                                         </h3>
                                         {isDropdownOpen && (
                                             <div
-                                                className="flex-grow overflow-y-auto mb-[4px] max-h-[calc(70vh-200px)] scrollbar-track-gray-700 scrollbar-thumb-gray-500"
+                                                className="flex-grow overflow-y-auto mb-[4px] max-h-[calc(70vh-200px)] pr-4 agents-scroll scrollbar-track-gray-700 scrollbar-thumb-gray-500"
                                             >
                                                 {/* {mergedTickers.length > 0 ? (
                                                     mergedTickers.map(({ ticker, status }) => (
@@ -5804,15 +5855,19 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
                                                     <div className="text-gray-500 text-sm text-center p-4 italic">No agents created yet</div>
                                                 )} */}
 
-                                                {tickersData && tickersData.length > 0 ? (
-                                                    tickersData.map(({ ticker, status }: { ticker: string; status: boolean | null }) => (
+                                                {isAgentsLoadingInitial ? (
+                                                    <div className="flex items-center justify-center p-4" role="status" aria-label="Loading agents">
+                                                        <CircularProgress size={20} thickness={4} />
+                                                        <span className="sr-only">Loading...</span>
+                                                    </div>
+                                                ) : agentsList && agentsList.length > 0 ? (
+                                                    agentsList.map(({ ticker, status }: { ticker: string; status: boolean | null }) => (
                                                         <div
                                                             key={ticker}
                                                             className={`relative cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center justify-between ${status === null ? 'cursor-not-allowed' : ''
                                                                 }`}
                                                             onClick={() => toggleTickerStatus(ticker, status)}
                                                         >
-
                                                             <div className="flex items-center space-x-2">
                                                                 <span
                                                                     className={`inline-block w-3 h-3 rounded-full ${status === null
@@ -5824,8 +5879,6 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
                                                                 />
                                                                 <span>{ticker}</span>
                                                             </div>
-
-
                                                             <button
                                                                 type="button"
                                                                 className="rounded-full hover:bg-gray-800"
@@ -5836,8 +5889,6 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
                                                             >
                                                                 <HiDotsVertical />
                                                             </button>
-
-
                                                             {showAgentOptions === ticker && (
                                                                 <div
                                                                     ref={popUpRef}
@@ -5867,7 +5918,6 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
                                                                             Edit Agent
                                                                         </button>
                                                                     </div>
-
                                                                 </div>
                                                             )}
                                                         </div>
@@ -5876,6 +5926,21 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
                                                     <div className="text-gray-500 text-sm text-center p-4 italic">
                                                         No agents created yet
                                                     </div>
+                                                )}
+
+                                                {!agentsReachedEnd && agentsList.length > 0 && (
+                                                    <button
+                                                        className="mt-2 w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white disabled:opacity-60 hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                                        onClick={() => setAgentsSize(agentsSize + 1)}
+                                                        disabled={isAgentsLoadingMore}
+                                                        aria-label="Load more agents"
+                                                    >
+                                                        {isAgentsLoadingMore ? (
+                                                            <span className="inline-flex items-center gap-2">
+                                                                <CircularProgress size={14} thickness={4} /> Loading…
+                                                            </span>
+                                                        ) : 'Load more agents'}
+                                                    </button>
                                                 )}
 
                                             </div>
