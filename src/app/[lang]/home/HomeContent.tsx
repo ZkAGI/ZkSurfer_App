@@ -6830,31 +6830,10 @@ if (isCreateAgent) {
             </div >
 
       {/* ZEE entry modal */}
-{flowGateOpen && (
-  <FlowGate
-    onSelect={(choice /* 'enterprise' | 'coin' */) => {
-      setFlowGateOpen(false);
-      setPickerOpen(true);        // go to picker after choosing
-    }}
-    onClose={() => setFlowGateOpen(false)}
-  />
-)}
+{flowGateOpen && <FlowGate />}
+{pickerOpen && <AgentPicker />}
 
-{pickerOpen && (
-  <AgentPicker
-    onContinue={() => {
-      setPickerOpen(false);
-      setFormOpen(true);          // proceed to onboarding form
-    }}
-    onClose={() => setPickerOpen(false)}
-  />
-)}
-
-{formOpen && (
-  <CreateAgentModal
-    onClose={() => setFormOpen(false)}
-  />
-)}
+{formOpen && <CreateAgentModal/>}
 
 
 

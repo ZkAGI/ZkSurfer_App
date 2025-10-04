@@ -352,7 +352,7 @@ export default function VoiceStep() {
       {showOptions && (
         <div className="mt-6 p-4 bg-[#1A1F3A] rounded-lg">
           <p className="text-xs text-gray-400 text-center">
-            💡 <strong>Tip:</strong> Voice selection is optional. You can skip this step if you don't need voice functionality for your agent.
+            💡 <strong>Tip:</strong> Voice selection is optional. You can skip this step if you don&apost need voice functionality for your agent.
           </p>
         </div>
       )}

@@ -300,7 +300,7 @@ export default function VisualStep() {
 
       {showOptions && (
         <p className="text-xs text-gray-500 text-center mt-4">
-          Visual selection is optional. You can skip this step if you don't need a visual avatar.
+          Visual selection is optional. You can skip this step if you don&apost need a visual avatar.
         </p>
       )}
     </div>
