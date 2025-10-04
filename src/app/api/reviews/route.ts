@@ -1,44 +1,98 @@
-// app/api/reviews/route.ts
+
+
+// import { NextRequest, NextResponse } from "next/server";
+
+// const BACKEND_URL = process.env.REVIEWS_API_URL; // e.g. http://127.0.0.1:8000/reviews
+
+// export async function POST(req: NextRequest) {
+//   try {
+//     if (!BACKEND_URL) {
+//       return new NextResponse("Missing REVIEWS_API_URL", { status: 500 });
+//     }
+
+//     // read incoming form
+//     const inFd = await req.formData();
+
+//     // rebuild outgoing form so we can massage fields
+//     const outFd = new FormData();
+//     for (const [k, v] of inFd.entries()) {
+//       // we’ll rewrite voiceType below
+//       if (k !== "voiceType") outFd.append(k, v as any);
+//     }
+
+//     const rawVoiceType = (inFd.get("voiceType") || "").toString();
+//     if (rawVoiceType === "upload") {
+//       // backend expects "custom" when a file is provided
+//       outFd.append("voiceType", "custom");
+//     } else {
+//       outFd.append("voiceType", rawVoiceType); // "preset" or ''
+//     }
+
+//     // forward to backend
+//     const res = await fetch(BACKEND_URL, { method: "POST", body: outFd });
+//     const text = await res.text();
+
+//     if (!res.ok) {
+//       return new NextResponse(`Backend error (${res.status}): ${text || "Unknown"}`, { status: res.status });
+//     }
+
+//     try {
+//       return NextResponse.json(JSON.parse(text));
+//     } catch {
+//       return new NextResponse(text, { status: 200 });
+//     }
+//   } catch (err: any) {
+//     return new NextResponse(`Proxy failed: ${err?.message || String(err)}`, { status: 500 });
+//   }
+// }
+s
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "nodejs"; // ensure Node runtime (not edge)
-
-const BACKEND_URL = process.env.REVIEWS_API_URL!;
-if (!BACKEND_URL) {
-  throw new Error("REVIEWS_API_URL is not set. Add it to .env.local");
-}
+const BACKEND_URL = process.env.REVIEWS_API_URL; // e.g. http://127.0.0.1:8000/reviews
 
 export async function POST(req: NextRequest) {
   try {
-    // Parse incoming multipart/form-data from the browser
-    const incoming = await req.formData();
-
-    // Rebuild a fresh FormData to forward (files included)
-    const forward = new FormData();
-    for (const [key, value] of incoming.entries()) {
-      // value can be string or File
-      forward.append(key, value as any);
+    if (!BACKEND_URL) {
+      return new NextResponse("Missing REVIEWS_API_URL", { status: 500 });
     }
 
-    // Forward to your Python API
-    const upstream = await fetch(BACKEND_URL, {
-      method: "POST",
-      body: forward, // Don't set Content-Type; fetch will set with proper boundary
-      // headers: { Authorization: `Bearer ${token}` } // if you need to pass auth
-    });
+    // Just pass through the FormData as-is since buildReviewFormData already
+    // handles the field naming correctly
+    const formData = await req.formData();
+    
+    // Debug logging (remove in production)
+    console.log("API Route - Forwarding to backend:");
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}: [File: ${value.name}]`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    }
 
-    const contentType = upstream.headers.get("content-type") || "";
-    const bodyText = await upstream.text(); // safe for JSON or text
-
-    return new NextResponse(bodyText, {
-      status: upstream.status,
-      headers: { "content-type": contentType },
+    // Forward to backend
+    const res = await fetch(BACKEND_URL, { 
+      method: "POST", 
+      body: formData 
     });
+    
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.error("Backend error:", text);
+      return new NextResponse(text, { 
+        status: res.status,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    try {
+      return NextResponse.json(JSON.parse(text));
+    } catch {
+      return new NextResponse(text, { status: 200 });
+    }
   } catch (err: any) {
-    console.error("Proxy /api/reviews error:", err);
-    return NextResponse.json(
-      { error: "Failed to submit review", detail: String(err?.message || err) },
-      { status: 500 }
-    );
+    console.error("Proxy error:", err);
+    return new NextResponse(`Proxy failed: ${err?.message || String(err)}`, { status: 500 });
   }
 }

@@ -6109,7 +6109,12 @@ if (isCreateAgent) {
       }
     }}
                                                     >
-                                                        <h3 className="text-xl font-bold mb-2">{cmd.label}</h3>
+                                                       <h3 className="text-xl font-bold mb-2">
+  {cmd.label?.trim().toLowerCase() === 'create agent'
+    ? 'Create AI First Agents'
+    : cmd.label}
+</h3>
+
                                                         <p className="text-sm text-gray-300 text-center">{cmd.description}</p>
                                                     </div>
                                                 ))}
