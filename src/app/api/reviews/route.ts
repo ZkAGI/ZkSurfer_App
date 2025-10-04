@@ -45,7 +45,7 @@
 //     return new NextResponse(`Proxy failed: ${err?.message || String(err)}`, { status: 500 });
 //   }
 // }
-s
+
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.REVIEWS_API_URL; // e.g. http://127.0.0.1:8000/reviews
