@@ -10,7 +10,7 @@ export default function JurisdictionStep() {
     <div className="space-y-6">
       <div className="text-center mb-8">
         {/* <Image src="/images/cubs/notary.png" width={20} height={20} alt="notary"/> */}
-        <h3 className="text-2xl font-bold mb-2">Where's your home base? 🌍</h3>
+        <h3 className="text-2xl font-bold mb-2">Where&apos;s your home base? 🌍</h3>
       </div>
 
 

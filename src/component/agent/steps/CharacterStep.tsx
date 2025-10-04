@@ -22,7 +22,7 @@ export default function CharacterStep() {
       <div>
         <label className="block text-sm font-medium mb-2">🎭 Master Personality Prompt</label>
         <p className="text-xs text-gray-400 mb-3">
-          Describe your ZEE's personality, tone, and communication style
+          Describe your ZEE&apos;s personality, tone, and communication style
         </p>
         <textarea
           {...register("masterPrompt")}

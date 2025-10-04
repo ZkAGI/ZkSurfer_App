@@ -39,7 +39,7 @@ export default function VisualStep() {
         className="text-center mb-8"
       >
         {/* <div className="text-6xl mb-4">🐯🎨✨</div> */}
-        <h3 className="text-2xl font-bold mb-2">Who's the face of your enterprise?</h3>
+        <h3 className="text-2xl font-bold mb-2">Who&apos;s the face of your enterprise?</h3>
         {/* <p className="text-gray-400">Cub painting on glowing easel, image appears above</p> */}
       </motion.div>
 
@@ -152,7 +152,7 @@ export default function VisualStep() {
 
       <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
         <p className="text-sm text-gray-300">
-          💡 This will be your ZEE's avatar across all platforms and interactions
+          💡 This will be your ZEE&apos;s avatar across all platforms and interactions
         </p>
       </div>
     </div>

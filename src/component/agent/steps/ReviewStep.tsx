@@ -393,7 +393,7 @@ export default function ReviewStep({ onEditStep }: ReviewStepProps) {
       <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-lg p-6 text-center">
         <h4 className="text-lg font-semibold mb-2">🎉 Ready to Launch!</h4>
         <p className="text-sm text-gray-300">
-          Your ZEE is configured and ready to go. Click "Launch My ZEE" below to bring it to life!
+          Your ZEE is configured and ready to go. Click &apos;Launch My ZEE&apos; below to bring it to life!
         </p>
       </div>
     </div>
