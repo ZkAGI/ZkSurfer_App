@@ -26,9 +26,9 @@
   "inputPlaceholder":"Message ZkTerminal or type / to invoke command pallete",
   "commands": [
     {
-      "label": "Create Agent",
+      "label": "Create AI First Agents",
       "command": "/create-agent: ",
-      "description": "Click to use the /create-agent: command. Enter your custom instruction and press enter or click submit to execute.",
+      "description": "Click to create your AGI swarm to run and grow your business",
       "type": "create-agent"
     },
     {

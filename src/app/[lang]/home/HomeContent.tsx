@@ -40,7 +40,7 @@ import { useFormStore } from '@/stores/form-store';
 import useSWR, { mutate } from 'swr';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
-import { CreateAgentModal } from '@/component/ui/AgentModal';
+// import { CreateAgentModal } from '@/component/ui/AgentModal';
 import { useModelStore } from '@/stores/useModel-store';
 import ApiKeyBlock from '@/component/ui/ApiKeyBlock';
 import ConnectWalletModal from '@/component/ui/ConnectWalletModal';
@@ -68,6 +68,12 @@ import SubscriptionModal from '@/component/ui/SubscriptionModal';
 import ReportPaymentModal from '@/component/ui/ReportPaymentModal';
 import { useSubscriptionStore } from '@/stores/subscription-store';
 import { OnboardingTour } from '@/component/ui/OnBoardingTour';
+
+import { useAgentCart } from '@/stores/agent-cart-store';
+import AgentPicker from '@/component/zee/AgentPicker';
+import FlowGate from '@/component/zee/FlowGate';
+import CreateAgentModal from '@/component/agent/CreateAgentModal';
+import { useZeeUiStore } from '@/stores/zee-ui-store';
 
 
 interface GeneratedTweet {
@@ -391,6 +397,11 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
 
     // const [showAgentTypePopup, setShowAgentTypePopup] = useState(false);
     const [selectedAgentType, setSelectedAgentType] = useState<string | null>(null);
+    const {
+  flowGateOpen, pickerOpen, formOpen,
+  setFlowGateOpen, setPickerOpen, setFormOpen
+} = useAgentCart();
+
 
     const { editMode, setEditMode } = useCharacterEditStore();
     const { messages, addMessage, setMessages } = useConversationStore.getState();
@@ -486,6 +497,9 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
 
     // const [activeMobileTab, setActiveMobileTab] = useState<'terminal' | 'prediction'>('terminal');
 
+    // const { showFlowGate, showAgentPicker, showCreateAgentForm, openFromCTA, openAgentPicker, openCreateAgentForm, closeAll } = useZeeUiStore();
+
+
 
     const generateUUID = (): string => {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -504,7 +518,35 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
     const [showChainGptPopup, setShowChainGptPopup] = useState(false);
     const [showPluginsPopup, setShowPluginsPopup] = useState(false);
 
+    // ZEE modal state
+const [showFlowGate, setShowFlowGate] = useState(false);
+const [showAgentPicker, setShowAgentPicker] = useState(false);
+const [showCreateAgentForm, setShowCreateAgentForm] = useState(false);
 
+const closeAll = () => {
+  setShowFlowGate(false);
+  setShowAgentPicker(false);
+  setShowCreateAgentForm(false);
+};
+
+const openFlowGate = () => {
+  setShowFlowGate(true);
+  setShowAgentPicker(false);
+  setShowCreateAgentForm(false);
+};
+
+const openAgentPicker = () => {
+  setShowFlowGate(false);
+  setShowAgentPicker(true);
+};
+
+const openCreateAgentForm = () => {
+  setShowFlowGate(false);
+  setShowAgentPicker(false);
+  setShowCreateAgentForm(true);
+};
+
+  
 
     const normalizeSentiment = (score: number): 'bearish' | 'neutral' | 'bullish' => {
         if (score <= 1.6) return 'bearish';
@@ -530,6 +572,11 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
     // const openReport = async () => {
     //     setShowSubscriptionModal(true);
     // };
+
+    
+    const [hasHydrated, setHasHydrated] = useState(false);
+  useEffect(() => setHasHydrated(true), []);
+
 
     const openReport = async () => {
         console.log('openReport called on mobile:', isMobile);
@@ -1449,8 +1496,20 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
         setIsInitialView(true);
     }, []);
 
+  const startCreateAgentFlow = () => {
+  setFlowGateOpen(true);
+  setPickerOpen(false);
+  setFormOpen(false);
+};
+
     const handleCommandBoxClick = (command: string) => {
-        if (command === 'pre-sale') {
+
+if (command === '/create-agent') {
+    startCreateAgentFlow();  
+    return;
+  }
+  
+if (command === 'pre-sale') {
             // Redirect to the pre-sale page when the middle box is clicked.
             router.push('/pre-sale');
         } else {
@@ -1763,6 +1822,9 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
         const value = e.target.value;
         setInputMessage(value);
 
+          if (value.trim().startsWith('/create-agent')) {
+   startCreateAgentFlow
+  }
 
         if (value.startsWith('/video-lipsync ') && !videoLipsyncOption) {
             setShowVideoLipsyncOption(true);
@@ -1778,12 +1840,12 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
         }
 
         // Show AgentTypePopup if "/create-agent" is detected
-        if (value === '/create-agent') {
-            // setShowAgentTypePopup(true);
-            setShowCommandPopup(false);
-            setShowTickerPopup(false);
-            return;
-        }
+        // if (value === '/create-agent') {
+        //     // setShowAgentTypePopup(true);
+        //     setShowCommandPopup(false);
+        //     setShowTickerPopup(false);
+        //     return;
+        // }
         //  else {
         //     setShowAgentTypePopup(false);
         // }
@@ -3075,6 +3137,14 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
             return;
         }
 
+        if (fullMessage.startsWith('/create-agent')) {
+  useZeeUiStore.getState().openFromCTA();   // open FlowGate
+  setInputMessage('');
+  if (inputRef.current) inputRef.current.style.height = '2.5rem';
+  return;
+}
+
+
         // if (fullMessage.startsWith('/generate-voice-clone')) {
         //     // Find an audio file among the uploaded files.
         //     const audioFile = files.find((file) => file.file.type.startsWith('audio/'));
@@ -3830,31 +3900,32 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
 
         // Inside handleSubmit function, add this before the other command handling:
 
-        if (fullMessage.startsWith('/character-gen')) {
-            const { selectedTicker } = useTickerStore.getState();
+        // if (fullMessage.startsWith('/character-gen')) {
+        //     const { selectedTicker } = useTickerStore.getState();
 
-            if (!selectedTicker) {
-                const errorMessage: Message = {
-                    role: 'assistant',
-                    content: 'No agent selected. Please use /select command first to choose an agent.',
-                    type: 'text'
-                };
-                setDisplayMessages(prev => [...prev, errorMessage]);
-                return;
-            }
+        //     if (!selectedTicker) {
+        //         const errorMessage: Message = {
+        //             role: 'assistant',
+        //             content: 'No agent selected. Please use /select command first to choose an agent.',
+        //             type: 'text'
+        //         };
+        //         setDisplayMessages(prev => [...prev, errorMessage]);
+        //         return;
+        //     }
 
-            const characterMessage: Message = {
-                role: 'assistant',
-                content: <CharacterGenForm /> as ReactNode,
-                type: 'command'
-            };
-            setDisplayMessages(prev => [...prev, characterMessage]);
-            setInputMessage('');
-            if (inputRef.current) {
-                inputRef.current.style.height = '2.5rem';
-            }
-            return;
-        }
+        //     const characterMessage: Message = {
+        //         role: 'assistant',
+        //         content: <CharacterGenForm /> as ReactNode,
+        //         type: 'command'
+        //     };
+        //     setDisplayMessages(prev => [...prev, characterMessage]);
+        //     setInputMessage('');
+        //     if (inputRef.current) {
+        //         inputRef.current.style.height = '2.5rem';
+        //     }
+        //     return;
+        // }
+        
 
         if (fullMessage.startsWith('/train')) {
             // Check if an agent (ticker) is selected
@@ -4124,6 +4195,18 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
         const isImageGen = fullMessage.startsWith('/image-gen');
         const isMemeGen = fullMessage.startsWith('/create-agent');
         const isContent = fullMessage.startsWith('/content');
+
+        const isCreateAgent = fullMessage.startsWith('/create-agent');
+        // ZEE: open cub picker instead of streaming
+if (isCreateAgent) {
+  useAgentCart.getState().setPickerOpen(true);
+  // (Optional) also show the user's command in chat window, if you like:
+  const displayMessage: Message = { role: 'user', content: fullMessage };
+  setDisplayMessages(prev => [...prev, displayMessage]);
+  setInputMessage('');
+  if (inputRef.current) inputRef.current.style.height = '2.5rem';
+  return; // IMPORTANT: stop here — don't go into your old image-gen/meme-gen flow
+}
 
         if (isImageGen || isMemeGen || isContent) {
 
@@ -5429,39 +5512,25 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
     }
 
     // Updated download function
-    const downloadImage = (imageData: string) => {
-        try {
-            // Convert the data URL to a Blob
-            const blob = dataURLtoBlob(imageData);
-            // Create a blob URL
-            const blobUrl = URL.createObjectURL(blob);
-            // Create a temporary anchor element and trigger the download
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = 'zkdownloaded-image.png'; // Change the filename/extension if needed
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            // Clean up the blob URL after a short delay
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
-        } catch (error) {
-            console.error("Error downloading image:", error);
-        }
-    };
-
-
-    const [hasHydrated, setHasHydrated] = useState(false);
-
-    useEffect(() => {
-        setHasHydrated(true);
-    }, []);
-
-    // If we're not hydrated yet, return nothing or a skeleton
-    // so there is no mismatch between SSR and client.
-    if (!hasHydrated) {
-        return null;
-    }
-
+    // const downloadImage = (imageData: string) => {
+    //     try {
+    //         // Convert the data URL to a Blob
+    //         const blob = dataURLtoBlob(imageData);
+    //         // Create a blob URL
+    //         const blobUrl = URL.createObjectURL(blob);
+    //         // Create a temporary anchor element and trigger the download
+    //         const link = document.createElement('a');
+    //         link.href = blobUrl;
+    //         link.download = 'zkdownloaded-image.png'; // Change the filename/extension if needed
+    //         document.body.appendChild(link);
+    //         link.click();
+    //         document.body.removeChild(link);
+    //         // Clean up the blob URL after a short delay
+    //         setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+    //     } catch (error) {
+    //         console.error("Error downloading image:", error);
+    //     }
+    // };
 
     return (
         <div className="flex min-h-screen bg-[#000000] overflow-hidden text-white">
@@ -5473,6 +5542,7 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
             }}
             />
             }
+          
 
             {/* <PresaleBanner walletConnected={connected} walletAddress={walletAddress} /> */}
 
@@ -5997,7 +6067,7 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
                     </div>
 
                     {/* Chat messages */}
-                    <div className=' flex flex-col justify-between md:w-3/4 w-full'>
+                    <div className='  flex flex-col justify-between md:w-3/4 w-full'>
 
                         {reportData && (
                             <ReportSidebar
@@ -6029,7 +6099,16 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
                                             </div>
                                         ))} */}
                                                 {dictionary?.commands.map((cmd, index) => (
-                                                    <div className="flex flex-col justify-center items-center bg-gray-800 text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-gray-700 transition duration-300" key={index} onClick={() => handleCommandBoxClick(cmd.command)}>
+                                                    <div className="flex flex-col justify-center items-center bg-gray-800 text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-gray-700 transition duration-300" key={index} 
+                                                    // onClick={() => handleCommandBoxClick(cmd.command)}
+                                                    onClick={() => {
+      if (cmd.label?.trim().toLowerCase() === 'create agent') {
+        startCreateAgentFlow();   
+      } else {
+        handleCommandBoxClick(cmd.command);
+      }
+    }}
+                                                    >
                                                         <h3 className="text-xl font-bold mb-2">{cmd.label}</h3>
                                                         <p className="text-sm text-gray-300 text-center">{cmd.description}</p>
                                                     </div>
@@ -6745,11 +6824,40 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
                 </div >
             </div >
 
-            <CreateAgentModal
+      {/* ZEE entry modal */}
+{flowGateOpen && (
+  <FlowGate
+    onSelect={(choice /* 'enterprise' | 'coin' */) => {
+      setFlowGateOpen(false);
+      setPickerOpen(true);        // go to picker after choosing
+    }}
+    onClose={() => setFlowGateOpen(false)}
+  />
+)}
+
+{pickerOpen && (
+  <AgentPicker
+    onContinue={() => {
+      setPickerOpen(false);
+      setFormOpen(true);          // proceed to onboarding form
+    }}
+    onClose={() => setPickerOpen(false)}
+  />
+)}
+
+{formOpen && (
+  <CreateAgentModal
+    onClose={() => setFormOpen(false)}
+  />
+)}
+
+
+
+            {/* <CreateAgentModal
                 visible={showCreateAgentModal}
                 onClose={() => setShowCreateAgentModal(false)}
                 onAgentTypeSelect={handleAgentTypeSelect}
-            />
+            /> */}
 
             {/* <div className="h-screen right-0 top-0">
                 <TweetPanel

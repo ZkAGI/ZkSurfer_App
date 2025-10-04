@@ -406,7 +406,8 @@ const nextConfig = {
     NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID:process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID,
     NEXT_PUBLIC_CIVIC_CLIENT_ID: process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID,
     NEXT_PUBLIC_PRIVY_APP_ID: process.env.NEXT_PUBLIC_PRIVY_APP_ID,
-    PRIVY_APP_SECRET: process.env.PRIVY_APP_SECRET
+    PRIVY_APP_SECRET: process.env.PRIVY_APP_SECRET,
+    REVIEWS_API_URL: process.env.REVIEWS_API_URL
   },
   experimental: {
     esmExternals: "loose",
