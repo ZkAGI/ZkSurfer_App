@@ -166,6 +166,8 @@ export default function MultiStepAgentForm({
   const resolver = useMemo(() => zodResolver(perStepSchema[step]), [step]);
   const methods = useForm({ resolver, mode: "onBlur", defaultValues: data });
 
+  const [successResult, setSuccessResult] = useState<any>(null);
+
   // RHF → Zustand (live mirror)
   useEffect(() => {
     const sub = methods.watch((value) => {
@@ -264,9 +266,11 @@ export default function MultiStepAgentForm({
       }
 
       const result = await res.json().catch(() => ({}));
-      reset();
       setShowSuccessModal(true); // Show success modal instead of immediately closing
-      onSuccess?.(result);
+      setTimeout(() => {
+  reset();
+  onSuccess?.(result);
+}, 100);
     } catch (e: any) {
       console.error(e);
       setSubmitError(e?.message || "Failed to launch. Please try again.");
@@ -274,6 +278,16 @@ export default function MultiStepAgentForm({
       setSubmitting(false);
     }
   });
+
+  const handleModalClose = () => {
+     setShowSuccessModal(false);
+     reset();  // Reset form after user sees success
+     if (successResult) {
+       onSuccess?.(successResult);  // Navigate/cleanup here
+     }
+     onClose?.();
+     setSuccessResult(null);
+   };
 
   return (
     <div className="w-full max-w-3xl mx-auto">
@@ -370,10 +384,7 @@ export default function MultiStepAgentForm({
       {/* Success Modal */}
       <SuccessModal 
         isOpen={showSuccessModal} 
-        onClose={() => {
-          setShowSuccessModal(false);
-          onClose?.();
-        }}
+        onClose={handleModalClose} 
       />
     </div>
   );
