@@ -6111,7 +6111,7 @@ if (isCreateAgent) {
                                                     >
                                                        <h3 className="text-xl font-bold mb-2">
   {cmd.label?.trim().toLowerCase() === 'create agent'
-    ? 'Create AI First Agents'
+    ? 'Create Agent SWARM'
     : cmd.label}
 </h3>
 

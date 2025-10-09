@@ -131,6 +131,10 @@ export const jurisdictionSchema = z.object({
    Define a *base* object; use a refined version for the step,
    and use the base when merging into the full schema. */
 const contactBase = z.object({
+  name: z
+    .string()
+    .min(2, "Please enter your ZEE name (min 2 characters)")
+    .max(64, "Name is too long"),
   email: z.string().email("Enter a valid email").optional().or(z.literal("")),
   telegram: z.string().optional(),
   website: z.string().url("Enter a valid URL").optional().or(z.literal("")),

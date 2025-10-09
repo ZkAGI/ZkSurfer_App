@@ -407,7 +407,10 @@ const nextConfig = {
     NEXT_PUBLIC_CIVIC_CLIENT_ID: process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID,
     NEXT_PUBLIC_PRIVY_APP_ID: process.env.NEXT_PUBLIC_PRIVY_APP_ID,
     PRIVY_APP_SECRET: process.env.PRIVY_APP_SECRET,
-    REVIEWS_API_URL: process.env.REVIEWS_API_URL
+    REVIEWS_API_URL: process.env.REVIEWS_API_URL,
+    NEXT_PUBLIC_AARC_USDC_TOKEN:process.env.NEXT_PUBLIC_AARC_USDC_TOKEN,
+    NEXT_PUBLIC_AARC_CHAIN_ID: process.env.NEXT_PUBLIC_AARC_CHAIN_ID,
+    KB_API_BASE: process.env.KB_API_BASE,
   },
   experimental: {
     esmExternals: "loose",
