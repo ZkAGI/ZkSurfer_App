@@ -1,6 +1,6 @@
 import React from 'react';
 
-type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'save' | 'saves' | 'character-gen'  | 'video-lipsync' | 'UGC' | 'img-to-video' | 'api' | 'generate-voice-clone' | 'video-gen';
+type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'save' | 'saves' | 'character-gen'  | 'video-lipsync' | 'UGC' | 'img-to-video' | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai';
 // | 'bridge' ;
 // |'train' |'post' |'select'|'launch'
 
@@ -17,10 +17,10 @@ interface CommandPopupProps {
 
 const CommandPopup: React.FC<CommandPopupProps> = ({ onSelect }) => {
     const commands: CommandOption[] = [
-        {
-            command: 'create-agent',
-            description: 'Generate sentient AI agent coin ',
-        },
+        // {
+        //     command: 'create-agent',
+        //     description: 'Generate sentient AI agent coin ',
+        // },
         {
             command: 'image-gen',
             description: 'Image generation with or without ticker. Generated image can be used for minting NFT',
@@ -90,26 +90,30 @@ const CommandPopup: React.FC<CommandPopupProps> = ({ onSelect }) => {
         //     command: 'train',
         //     description: 'To continuously train and improve your agent',
         // },
-        {
-            command: 'video-lipsync',
-            description: 'To merge video and audio and provide a downloadable merged video',
-        },
-        {
-            command: 'UGC',
-            description: 'generate UGC',
-        },
-        {
-            command: 'img-to-video',
-            description: 'To convert image to video',
-        },
-        {
-            command: 'generate-voice-clone',
-            description: 'Add a reference audio and text, to geenrate a cloned voice base don reference for given text'
-        },
+        // {
+        //     command: 'video-lipsync',
+        //     description: 'To merge video and audio and provide a downloadable merged video',
+        // },
+        // {
+        //     command: 'UGC',
+        //     description: 'generate UGC',
+        // },
+        // {
+        //     command: 'img-to-video',
+        //     description: 'To convert image to video',
+        // },
+        // {
+        //     command: 'generate-voice-clone',
+        //     description: 'Add a reference audio and text, to geenrate a cloned voice base don reference for given text'
+        // },
         {
             command: 'video-gen',
             description: 'Enter a prompt to generate a video'
         },
+        {
+  command: 'privacy-ai',
+  description: 'Query a zk-proof JSON: upload a proof + ask a question',
+},
         // {
         //     command: 'bridge',
         //     description: 'Kima Integration'

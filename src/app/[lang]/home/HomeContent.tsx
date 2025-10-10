@@ -74,6 +74,7 @@ import AgentPicker from '@/component/zee/AgentPicker';
 import FlowGate from '@/component/zee/FlowGate';
 import CreateAgentModal from '@/component/agent/CreateAgentModal';
 import { useZeeUiStore } from '@/stores/zee-ui-store';
+import JsonPreviewModal from '@/component/ui/JsonPreviewModal';
 
 
 interface GeneratedTweet {
@@ -88,8 +89,8 @@ export interface HomeContentProps {
 }
 
 //type Command = 'image-gen' | 'create-agent' | 'content';
-type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen' | 'video-lipsync' | 'UGC' | 'img-to-video' | 'api' | 'generate-voice-clone' | 'video-gen';
-//| 'bridge';
+type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen';
+//| 'bridge' | | 'video-lipsync' | 'UGC' | 'img-to-video';
 // |'train' |'post' |'select'|'launch'
 
 interface TickerPopupProps {
@@ -500,6 +501,14 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
     // const { showFlowGate, showAgentPicker, showCreateAgentForm, openFromCTA, openAgentPicker, openCreateAgentForm, closeAll } = useZeeUiStore();
 
 
+    const [privacyProofFile, setPrivacyProofFile] = useState<File | null>(null);
+const [privacyProofJson, setPrivacyProofJson] = useState<any | null>(null);
+const [showJsonPreview, setShowJsonPreview] = useState(false);
+const [privacyKbId, setPrivacyKbId] = useState<string>('default');
+const [privacyProofName, setPrivacyProofName] = useState<string>(''); 
+
+const privacyActive = inputMessage.trim().startsWith('/privacy-ai');
+const privacyQuery = inputMessage.replace(/^\/privacy-ai\s*/,'').trim();
 
     const generateUUID = (): string => {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -1242,6 +1251,25 @@ const openCreateAgentForm = () => {
 
     const [payments, setPayments] = useState<any[]>([]);
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+
+    const handlePrivacyProofChange = async (f: File | null) => {
+  if (!f) { setPrivacyProofFile(null); setPrivacyProofJson(null); return; }
+  if (f.type !== 'application/json' && !f.name.toLowerCase().endsWith('.json')) {
+    toast.error('Only JSON files are allowed for /privacy-ai.');
+    return;
+  }
+  try {
+    const text = await f.text();
+    const parsed = JSON.parse(text);
+    setPrivacyProofFile(f);
+    setPrivacyProofJson(parsed);
+  } catch {
+    toast.error('Invalid JSON file.');
+    setPrivacyProofFile(null);
+    setPrivacyProofJson(null);
+  }
+};
+
 
     const handleSubscriptionSuccess = (planId: string, orderData: any, usdAmount: number) => {
         console.log('Subscription successful:', { planId, orderData, usdAmount });
@@ -2205,100 +2233,133 @@ if (command === 'pre-sale') {
         return texts.join('\n');
     };
 
+const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const fileList = e.target.files;
+  if (!fileList || fileList.length === 0) return;
+
+  // ── PRIVACY-AI MODE: only JSON, parse & store, don't push into files[] ──
+  if (privacyActive) {
+    const file = fileList[0];
+
+    const isJson =
+      file.type === 'application/json' ||
+      file.name.toLowerCase().endsWith('.json');
+
+    if (!isJson) {
+      toast.error('Please upload a .json proof file.');
+      e.target.value = ''; // reset the input
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      setPrivacyProofJson(parsed);
+      setPrivacyProofName(file.name);
+      toast.success('Proof JSON loaded.');
+    } catch (err) {
+      console.error('Invalid JSON:', err);
+      toast.error('Invalid JSON file.');
+      setPrivacyProofJson(null);
+      setPrivacyProofName('');
+    }
+
+    // Important: do not add to your media files list
+    e.target.value = ''; // allow re-uploading same file later
+    return;
+  }
+
+  // ── NORMAL MODE: your existing media handling ──
+  const selectedFiles = Array.from(fileList);
+
+  const newFilesOrNull: (FileObject | null)[] = await Promise.all(
+    selectedFiles.map(async (file) => {
+      if (file.type === 'application/pdf') {
+        return {
+          file,
+          preview: URL.createObjectURL(file),
+          isPdf: true,
+          isVideoOrAudio: false,
+        };
+      } else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+        return {
+          file,
+          preview: URL.createObjectURL(file),
+          isPdf: false,
+          isVideoOrAudio: true,
+        };
+      } else if (file.type.startsWith('image/')) {
+        return {
+          file,
+          preview: await fileToBase64(file),
+          isPdf: false,
+          isVideoOrAudio: false,
+        };
+      } else {
+        // Unsupported type (silently ignore or toast)
+        return null;
+      }
+    })
+  );
+
+  const validFiles = newFilesOrNull.filter(
+    (f): f is FileObject => f !== null
+  );
+
+  setFiles((prev) => [...prev, ...validFiles]);
+  e.target.value = ''; // allow selecting the same file again next time
+};
+
 
     // const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     //     if (e.target.files) {
     //         const selectedFiles = Array.from(e.target.files);
 
-    //         if (files.length + selectedFiles.length <= 4) {
-    //             const newFiles = await Promise.all(
-    //                 selectedFiles.map(async (file) => {
-    //                     if (file.type === 'application/pdf') {
-    //                         const pdfText = await extractTextFromPdf(file);
-    //                         console.log('pdfText length:', pdfText.toString().length);
+    //         // if (files.length > 0 || selectedFiles.length > 1) {
+    //         //     toast.error('Only one image can be uploaded at a time.');
+    //         //     return;
+    //         // }
 
-    //                         // Check if the PDF text exceeds the character limit
-    //                         if (pdfText.toString().length > 125000) {
-    //                             toast.error('File too big to process'); // Sonner toast notification
-    //                             return null; // Skip this file
-    //                         }
+    //         const newFilesOrNull: (FileObject | null)[] = await Promise.all(
+    //             selectedFiles.map(async (file) => {
+    //                 if (file.type === 'application/pdf') {
+    //                     // Handle PDFs
+    //                     return {
+    //                         file,
+    //                         preview: URL.createObjectURL(file),
+    //                         isPdf: true,
+    //                         isVideoOrAudio: false, // Explicitly false
+    //                     };
+    //                 } else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+    //                     // Handle video and audio files
+    //                     return {
+    //                         file,
+    //                         preview: URL.createObjectURL(file),
+    //                         isPdf: false, // Explicitly false
+    //                         isVideoOrAudio: true,
+    //                     };
+    //                 } else if (file.type.startsWith('image/')) {
+    //                     // Handle images
+    //                     return {
+    //                         file,
+    //                         preview: await fileToBase64(file),
+    //                         isPdf: false, // Explicitly false
+    //                         isVideoOrAudio: false, // Explicitly false
+    //                     };
+    //                 } else {
+    //                     // Unsupported file types
+    //                     return null;
+    //                 }
+    //             })
+    //         );
 
-    //                         setPdfContent(pdfText);
-    //                         setCurrentPdfName(file.name);
-    //                         return {
-    //                             file,
-    //                             preview: URL.createObjectURL(file),
-    //                             isPdf: true,
-    //                         };
-    //                     } else {
-    //                         return {
-    //                             file,
-    //                             preview: await fileToBase64(file),
-    //                             isPdf: false,
-    //                         };
-    //                     }
-    //                 })
-    //             );
+    //         // Filter out null values
+    //         const validFiles = newFilesOrNull.filter((file): file is FileObject => file !== null);
 
-    //             // Filter out null values from skipped files
-    //             const validFiles = newFiles.filter(file => file !== null);
-    //             setFiles([...files, ...validFiles]);
-    //         } else {
-    //             toast.error('You can only upload up to 4 files'); // Sonner toast notification
-    //         }
+    //         // Update state with valid files
+    //         setFiles((prevFiles) => [...prevFiles, ...validFiles]);
     //     }
     // };
-
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const selectedFiles = Array.from(e.target.files);
-
-            // if (files.length > 0 || selectedFiles.length > 1) {
-            //     toast.error('Only one image can be uploaded at a time.');
-            //     return;
-            // }
-
-            const newFilesOrNull: (FileObject | null)[] = await Promise.all(
-                selectedFiles.map(async (file) => {
-                    if (file.type === 'application/pdf') {
-                        // Handle PDFs
-                        return {
-                            file,
-                            preview: URL.createObjectURL(file),
-                            isPdf: true,
-                            isVideoOrAudio: false, // Explicitly false
-                        };
-                    } else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
-                        // Handle video and audio files
-                        return {
-                            file,
-                            preview: URL.createObjectURL(file),
-                            isPdf: false, // Explicitly false
-                            isVideoOrAudio: true,
-                        };
-                    } else if (file.type.startsWith('image/')) {
-                        // Handle images
-                        return {
-                            file,
-                            preview: await fileToBase64(file),
-                            isPdf: false, // Explicitly false
-                            isVideoOrAudio: false, // Explicitly false
-                        };
-                    } else {
-                        // Unsupported file types
-                        return null;
-                    }
-                })
-            );
-
-            // Filter out null values
-            const validFiles = newFilesOrNull.filter((file): file is FileObject => file !== null);
-
-            // Update state with valid files
-            setFiles((prevFiles) => [...prevFiles, ...validFiles]);
-        }
-    };
 
 
     // const uploadFilesToMergeMedia = async (video: File, audio: File): Promise<string | null> => {
@@ -3144,6 +3205,49 @@ if (command === 'pre-sale') {
   return;
 }
 
+{inputMessage.trim().startsWith('/privacy-ai') && (
+  <div className="px-3 pt-3">
+    <div className="w-full rounded-lg border border-dashed border-[#2B2F55] bg-[#0A0F2C] p-3 flex items-center justify-between gap-3">
+      <div className="text-sm text-gray-300">
+        {privacyProofFile
+          ? <span className="text-gray-200">Attached proof: <b>{privacyProofFile.name}</b></span>
+          : <>Upload the zkproof JSON file you wish to query</>}
+      </div>
+      <div className="flex items-center gap-2">
+        {privacyProofFile && (
+          <button
+            type="button"
+            className="px-2 py-1 text-xs bg-[#171D3D] border border-gray-700 rounded hover:bg-[#24284E]"
+            onClick={() => setShowJsonPreview(true)}
+            title="Preview JSON"
+          >
+            View
+          </button>
+        )}
+        <label className="px-2 py-1 text-xs bg-white/10 border border-gray-700 rounded cursor-pointer hover:bg-white/15">
+          {privacyProofFile ? 'Replace' : 'Upload JSON'}
+          <input
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(e) => handlePrivacyProofChange(e.target.files?.[0] ?? null)}
+          />
+        </label>
+      </div>
+    </div>
+    {/* Optional kb_id override (hidden by default; show if you want a control)
+    <div className="mt-2">
+      <input
+        value={privacyKbId}
+        onChange={(e) => setPrivacyKbId(e.target.value)}
+        placeholder="kb_id (optional)"
+        className="bg-[#171D3D] text-white rounded px-2 py-1 text-xs border border-gray-700"
+      />
+    </div>
+    */}
+  </div>
+)}
+
 
         // if (fullMessage.startsWith('/generate-voice-clone')) {
         //     // Find an audio file among the uploaded files.
@@ -3228,6 +3332,83 @@ if (command === 'pre-sale') {
 
         //     return;
         // }
+
+if (fullMessage.startsWith('/privacy-ai')) {
+  const query = fullMessage.replace('/privacy-ai', '').trim();
+
+  if (!privacyProofJson) {
+    toast.error('Please upload a zkProof JSON first.');
+    return;
+  }
+  if (!query) {
+    toast.error('Please type your question after /privacy-ai.');
+    return;
+  }
+
+  // Show the user message (question + a small “JSON” chip)
+  const userMessage: Message = {
+    role: 'user',
+    content: (
+      <div>
+        <div className="mb-2">{query}</div>
+        <div className="inline-flex items-center gap-2 bg-[#171D3D] border border-[#2B2F5B] px-2 py-1 rounded-md">
+          <span className="text-xs text-blue-300">{privacyProofName || 'proof.json'}</span>
+          <button
+            type="button"
+            className="text-xs text-gray-300 hover:text-white underline"
+            onClick={() => setShowJsonPreview(true)}
+          >
+            Preview
+          </button>
+        </div>
+      </div>
+    ) as any,
+    type: 'text',
+  };
+  setDisplayMessages(prev => [...prev, userMessage]);
+
+  // loader on
+  setIsLoading(true);
+
+  try {
+    const payload = {
+      kb_id: selectedTicker || '',     // or whatever KB you want
+      query,
+      proof_json: privacyProofJson,
+      proof_path: '',                  // if you later support uploading to storage
+      top_k: 5,
+      model: '',
+    };
+
+    const res = await fetch('/api/privacy-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) throw new Error('Privacy AI request failed');
+
+    const data: { answers: string[]; sources: any[] } = await res.json();
+
+    const assistantMessage: Message = {
+      role: 'assistant',
+      type: 'text',
+      content: `
+
+${data?.answers?.[0] ?? '—'}`
+    };
+    setDisplayMessages(prev => [...prev, assistantMessage]);
+  } catch (err) {
+    console.error(err);
+    toast.error('Error processing privacy query.');
+  } finally {
+    setIsLoading(false);
+    // keep JSON loaded for follow-up questions; remove if you want to reset:
+    // setPrivacyProofJson(null); setPrivacyProofName('');
+  }
+  return;
+}
+
 
         if (fullMessage.startsWith('/generate-voice-clone')) {
             // Check credits first
@@ -6410,6 +6591,15 @@ if (isCreateAgent) {
                                             )}
 
                                             <div className="p-3 pb-0">
+                                                 <div className="relative">
+                                                {privacyActive && !privacyQuery && (
+      <div
+        className="absolute inset-0 pointer-events-none text-gray-400/80 pl-28 pr-10 pt-[4px] leading-6"
+        style={{ whiteSpace: 'pre-wrap' }}
+      >
+        Upload your zkProof JSON, then type your question here…
+      </div>
+    )}
                                                 <textarea
                                                     ref={inputRef}
                                                     value={inputMessage}
@@ -6429,11 +6619,13 @@ if (isCreateAgent) {
                                                             handleSubmit(e)
                                                         }
                                                     }}
-                                                    placeholder={
-                                                        chainGptMode
-                                                            ? 'Ask Web3 AI about crypto, DeFi, NFTs...'
-                                                            : dictionary?.inputPlaceholder || 'How can I help you today?'
-                                                    }
+                                                   placeholder={
+  inputMessage.trim().startsWith('/privacy-ai')
+    ? 'Type your question about the uploaded proof…'
+    : chainGptMode
+      ? 'Ask Web3 AI about crypto, DeFi, NFTs...'
+      : dictionary?.inputPlaceholder || 'How can I help you today?'
+}
                                                     className={`w-full resize-none overflow-y-auto bg-transparent text-white rounded-lg border-none focus:outline-none ${chainGptMode ? 'placeholder-green-400' : 'placeholder-gray-400'
                                                         }`}
                                                     style={{
@@ -6450,6 +6642,26 @@ if (isCreateAgent) {
                                                     }}
                                                     disabled={!wallet.connected}
                                                 />
+                                                </div>
+                                                 {privacyActive && privacyProofJson && (
+    <div className="mt-2 mb-2 inline-flex items-center gap-2 bg-[#171D3D] border border-[#2B2F5B] px-2 py-1 rounded-md">
+      <span className="text-xs text-blue-300">{privacyProofName || 'proof.json'}</span>
+      <button
+        type="button"
+        className="text-xs text-gray-300 hover:text-white underline"
+        onClick={() => setShowJsonPreview(true)}
+      >
+        Preview
+      </button>
+      <button
+        type="button"
+        className="text-xs text-gray-300 hover:text-white underline"
+        onClick={() => { setPrivacyProofJson(null); setPrivacyProofName(''); }}
+      >
+        Remove
+      </button>
+    </div>
+  )}
                                                 {showCommandPopup && (
     <div
       ref={commandPopupRef}
@@ -6466,7 +6678,7 @@ if (isCreateAgent) {
                                                         id="fileInput"
                                                         type="file"
                                                         onChange={handleFileChange}
-                                                        accept="image/*,.pdf,video/*,audio/*"
+                                                         accept={privacyActive ? 'application/json,.json' : 'image/*,.pdf,video/*,audio/*'}
                                                         className="hidden"
                                                         multiple
                                                         disabled={!wallet.connected}
@@ -6478,6 +6690,7 @@ if (isCreateAgent) {
                                                             : 'cursor-pointer bg-gray-700 hover:bg-gray-600'
                                                             }`}
                                                         style={{ width: '40px', height: '40px' }}
+                                                        title={privacyActive ? 'Upload proof JSON' : 'Attach file'}
                                                     >
                                                         <Image
                                                             src="/images/Attach.svg"
@@ -6837,6 +7050,11 @@ if (isCreateAgent) {
 
 
 
+<JsonPreviewModal
+  open={showJsonPreview}
+  onClose={() => setShowJsonPreview(false)}
+  json={privacyProofJson}
+/>
             {/* <CreateAgentModal
                 visible={showCreateAgentModal}
                 onClose={() => setShowCreateAgentModal(false)}

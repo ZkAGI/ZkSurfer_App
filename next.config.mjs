@@ -411,6 +411,8 @@ const nextConfig = {
     NEXT_PUBLIC_AARC_USDC_TOKEN:process.env.NEXT_PUBLIC_AARC_USDC_TOKEN,
     NEXT_PUBLIC_AARC_CHAIN_ID: process.env.NEXT_PUBLIC_AARC_CHAIN_ID,
     KB_API_BASE: process.env.KB_API_BASE,
+    PRIVACY_AI_URL: process.env.PRIVACY_AI_URL,
+    NEXT_PUBLIC_VIDEO_GEN_ENDPOINT : process.env.NEXT_PUBLIC_VIDEO_GEN_ENDPOINT 
   },
   experimental: {
     esmExternals: "loose",

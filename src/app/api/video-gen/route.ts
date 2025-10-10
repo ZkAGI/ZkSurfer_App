@@ -120,7 +120,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   // 1) Read the external endpoint from env (or hardcode if you prefer).
-  const externalEndpoint ="http://45.251.34.28:8000/generate-video"
+  const externalEndpoint =process.env.NEXT_PUBLIC_VIDEO_GEN_ENDPOINT
+  //"http://45.251.34.28:8000/generate-video"
   //process.env.NEXT_PUBLIC_VIDEO_GEN_ENDPOINT | "http://34.67.134.209:8005/generate-video";
   if (!externalEndpoint) {
     return NextResponse.json(
