@@ -1,7 +1,7 @@
 import React from 'react';
 
-type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'save' | 'saves' | 'character-gen'  | 'video-lipsync' | 'UGC' | 'img-to-video' | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai';
-// | 'bridge' ;
+type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai';
+// | 'bridge' |'video-lipsync' | 'UGC' | 'img-to-video'  ;
 // |'train' |'post' |'select'|'launch'
 
 interface CommandOption {

@@ -89,7 +89,7 @@ export interface HomeContentProps {
 }
 
 //type Command = 'image-gen' | 'create-agent' | 'content';
-type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen';
+type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai';
 //| 'bridge' | | 'video-lipsync' | 'UGC' | 'img-to-video';
 // |'train' |'post' |'select'|'launch'
 
@@ -471,8 +471,8 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
     const [tweets, setTweets] = useState([]);
     const [filteredCoins, setFilteredCoins] = useState([]);
 
-    const [videoLipsyncOption, setVideoLipsyncOption] = useState<string | null>(null);
-    const [showVideoLipsyncOption, setShowVideoLipsyncOption] = useState(false);
+    // const [videoLipsyncOption, setVideoLipsyncOption] = useState<string | null>(null);
+    // const [showVideoLipsyncOption, setShowVideoLipsyncOption] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -1854,18 +1854,18 @@ if (command === 'pre-sale') {
    startCreateAgentFlow
   }
 
-        if (value.startsWith('/video-lipsync ') && !videoLipsyncOption) {
-            setShowVideoLipsyncOption(true);
-        } else {
-            // Optionally, hide the popup if the command is removed.
-            setShowVideoLipsyncOption(false);
-        }
+        // if (value.startsWith('/video-lipsync ') && !videoLipsyncOption) {
+        //     setShowVideoLipsyncOption(true);
+        // } else {
+        //     // Optionally, hide the popup if the command is removed.
+        //     setShowVideoLipsyncOption(false);
+        // }
 
-        if (value.startsWith('/img-to-video ') && !wan2Choice) {
-            setShowImgToVideoPopup(true);
-        } else {
-            setShowImgToVideoPopup(false);
-        }
+        // if (value.startsWith('/img-to-video ') && !wan2Choice) {
+        //     setShowImgToVideoPopup(true);
+        // } else {
+        //     setShowImgToVideoPopup(false);
+        // }
 
         // Show AgentTypePopup if "/create-agent" is detected
         // if (value === '/create-agent') {
@@ -2015,53 +2015,66 @@ if (command === 'pre-sale') {
     //     }
     // };
 
-    const handleUGCSelection = (option: { name: string; apiUrl: string }) => {
-        // Update the input with the selected option
-        setInputMessage((prev) => {
-            const trimmedPrev = prev.trim();
-            return trimmedPrev.endsWith('/ugc') ? `${trimmedPrev} ${option.name} ` : `${trimmedPrev} ${option.name}`;
-        });
+    // const handleUGCSelection = (option: { name: string; apiUrl: string }) => {
+    //     // Update the input with the selected option
+    //     setInputMessage((prev) => {
+    //         const trimmedPrev = prev.trim();
+    //         return trimmedPrev.endsWith('/ugc') ? `${trimmedPrev} ${option.name} ` : `${trimmedPrev} ${option.name}`;
+    //     });
 
-        inputRef.current?.focus(); // Refocus on the input field
-    };
-
-
+    //     inputRef.current?.focus(); // Refocus on the input field
+    // };
 
 
-    const handleCommandSelect = (command: Command) => {
+const handleCommandSelect = (command: Command) => {
+  if (command === 'video-gen') {
+    setInputMessage('/video-gen ');
+    setShowCommandPopup(false);
+  } else if (command === 'privacy-ai') {
+    setInputMessage('/privacy-ai ');
+    setShowCommandPopup(false);
+  } else {
+    setInputMessage(`/${command} `);
+    setShowCommandPopup(false);
+  }
+  inputRef.current?.focus();
+};
 
-        if (command === 'video-lipsync') {
-            // Set the input field and trigger the popup regardless of how the command was set.
-            setInputMessage('/video-lipsync ');
-            setShowCommandPopup(false);
-            setShowVideoLipsyncOption(true);
-        } else if (command === 'img-to-video') {
-            // Set the input field and trigger the popup regardless of how the command was set.
-            setInputMessage('/img-to-video ');
-            setShowCommandPopup(false);
-            setShowImgToVideoPopup(true);
-        }
-        else if (command === 'UGC') {
-            setInputMessage(`/ugc `); // Add `/ugc` to the input field
-            const displayMessage: Message = {
-                role: 'assistant',
-                content: (
-                    <div className="flex flex-col">
-                        {availableUGCOptions.map((option) => (
-                            <button
-                                key={option.name}
-                                className="p-2 bg-blue-500 text-white rounded-lg mb-2"
-                                onClick={() => handleUGCSelection(option)}
-                            >
-                                {option.name}
-                            </button>
-                        ))}
-                    </div>
-                ),
-            };
-            setDisplayMessages((prev) => [...prev, displayMessage]);
-            setShowCommandPopup(false);
-        }
+
+   // const handleCommandSelect = (command: Command) => {
+
+        // if (command === 'video-lipsync') {
+        //     // Set the input field and trigger the popup regardless of how the command was set.
+        //     setInputMessage('/video-lipsync ');
+        //     setShowCommandPopup(false);
+        //     setShowVideoLipsyncOption(true);
+        // } else if (command === 'img-to-video') {
+        //     // Set the input field and trigger the popup regardless of how the command was set.
+        //     setInputMessage('/img-to-video ');
+        //     setShowCommandPopup(false);
+        //     setShowImgToVideoPopup(true);
+        // }
+        // else if (command === 'UGC') {
+        //     setInputMessage(`/ugc `); // Add `/ugc` to the input field
+        //     const displayMessage: Message = {
+        //         role: 'assistant',
+        //         content: (
+        //             <div className="flex flex-col">
+        //                 {availableUGCOptions.map((option) => (
+        //                     <button
+        //                         key={option.name}
+        //                         className="p-2 bg-blue-500 text-white rounded-lg mb-2"
+        //                         onClick={() => handleUGCSelection(option)}
+        //                     >
+        //                         {option.name}
+        //                     </button>
+        //                 ))}
+        //             </div>
+        //         ),
+        //     };
+        //     setDisplayMessages((prev) => [...prev, displayMessage]);
+        //     setShowCommandPopup(false);
+        // }
         // else if (command === 'bridge') {
         //     // When the "bridge" command is selected, show the popup
         //     setShowBridgePopup(true);
@@ -2077,21 +2090,21 @@ if (command === 'pre-sale') {
         //     setDisplayMessages((prev) => [...prev, displayMessage]);
         //     setShowCommandPopup(false);
         // }
-        else if (command === 'video-gen') {
-            setInputMessage('/video-gen ');
-            setShowCommandPopup(false);
-        }
-        else {
-            setInputMessage(`/${command} `);
-            setShowCommandPopup(false);
-        }
+        // if (command === 'video-gen') {
+        //     setInputMessage('/video-gen ');
+        //     setShowCommandPopup(false);
+        // }
+        // else {
+        //     setInputMessage(`/${command} `);
+        //     setShowCommandPopup(false);
+        // }
         // if (command === 'create-agent') {
         //     setShowAgentTypePopup(true);
         // } else {
         //     setShowAgentTypePopup(false);
         // }
-        inputRef.current?.focus(); // Focus back on the input field
-    };
+      //  inputRef.current?.focus(); // Focus back on the input field
+  //  };
 
 
     //prev
@@ -2949,106 +2962,106 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     // };
 
 
-    const processVideoLipsync = async () => {
-        // Look for an image file (jpg/jpeg/png) and an audio file in your uploaded files.
-        const imageFile = files.find((file) => file.file.type.startsWith('image/'));
-        const audioFile = files.find((file) => file.file.type.startsWith('audio/'));
+    // const processVideoLipsync = async () => {
+    //     // Look for an image file (jpg/jpeg/png) and an audio file in your uploaded files.
+    //     const imageFile = files.find((file) => file.file.type.startsWith('image/'));
+    //     const audioFile = files.find((file) => file.file.type.startsWith('audio/'));
 
-        if (!imageFile || !audioFile) {
-            toast.error("Please upload one image file and one audio file.");
-            return;
-        }
+    //     if (!imageFile || !audioFile) {
+    //         toast.error("Please upload one image file and one audio file.");
+    //         return;
+    //     }
 
-        // Validate the audio file's duration.
-        const isAudioValid = await validateMediaDuration(audioFile.file);
-        if (!isAudioValid) {
-            toast.error("Audio file must be 15 seconds or shorter.");
-            return;
-        }
+    //     // Validate the audio file's duration.
+    //     const isAudioValid = await validateMediaDuration(audioFile.file);
+    //     if (!isAudioValid) {
+    //         toast.error("Audio file must be 15 seconds or shorter.");
+    //         return;
+    //     }
 
-        try {
-            // Compress the image file before uploading
-            const compressedImageBlob = await compressImageFile(imageFile.file);
+    //     try {
+    //         // Compress the image file before uploading
+    //         const compressedImageBlob = await compressImageFile(imageFile.file);
 
-            const compressedAudioBlob = await compressAudioFile(audioFile.file);
-            console.log('compressedAudioBlob', compressedAudioBlob)
+    //         const compressedAudioBlob = await compressAudioFile(audioFile.file);
+    //         console.log('compressedAudioBlob', compressedAudioBlob)
 
-            // Optionally, if you need to compress audio, integrate a similar approach or use ffmpeg.js
+    //         // Optionally, if you need to compress audio, integrate a similar approach or use ffmpeg.js
 
-            const formData = new FormData();
-            // Use the compressed image blob rather than the original file
-            formData.append('reference_image', compressedImageBlob, imageFile.file.name);
-            // formData.append('input_audio', audioFile.file);
-            formData.append('input_audio', compressedAudioBlob, audioFile.file.name);
-            formData.append('animation_mode', videoLipsyncOption!.toLowerCase());
+    //         const formData = new FormData();
+    //         // Use the compressed image blob rather than the original file
+    //         formData.append('reference_image', compressedImageBlob, imageFile.file.name);
+    //         // formData.append('input_audio', audioFile.file);
+    //         formData.append('input_audio', compressedAudioBlob, audioFile.file.name);
+    //         formData.append('animation_mode', videoLipsyncOption!.toLowerCase());
 
-            // Append extra parameters as required.
-            formData.append('driving_multiplier', '1.0'); // or your dynamic value
-            formData.append('scale', '2.3'); // or your dynamic value
-            formData.append('flag_relative_motion', 'false');
+    //         // Append extra parameters as required.
+    //         formData.append('driving_multiplier', '1.0'); // or your dynamic value
+    //         formData.append('scale', '2.3'); // or your dynamic value
+    //         formData.append('flag_relative_motion', 'false');
 
-            // Use the Next.js API route rather than directly calling the external URL.
-            const apiUrlSync = '/api/video-lipsync';
+    //         // Use the Next.js API route rather than directly calling the external URL.
+    //         const apiUrlSync = '/api/video-lipsync';
 
-            const response = await fetch(apiUrlSync, {
-                method: 'POST',
-                headers: {
-                    'x-api-key': apiKey,           // Send from Zustand
-                    'x-current-credits': credits.toString(), // Send from Zustand
-                    'Content-Type': 'application/json',
-                },
-                body: formData,
-            });
+    //         const response = await fetch(apiUrlSync, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'x-api-key': apiKey,           // Send from Zustand
+    //                 'x-current-credits': credits.toString(), // Send from Zustand
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             body: formData,
+    //         });
 
-            console.log('response', response);
+    //         console.log('response', response);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText);
-            }
+    //         if (!response.ok) {
+    //             const errorText = await response.text();
+    //             throw new Error(errorText);
+    //         }
 
-            // Create a URL from the returned video blob.
-            const blob = await response.blob();
-            const videoUrl = URL.createObjectURL(blob);
+    //         // Create a URL from the returned video blob.
+    //         const blob = await response.blob();
+    //         const videoUrl = URL.createObjectURL(blob);
 
-            const successMessage: Message = {
-                role: 'assistant',
-                content: (
-                    <div>
-                        <video src={videoUrl} controls className="w-full h-auto rounded-md" />
-                        {/* <button
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition"
-                            onClick={() => openVideoEditor(videoUrl)}
-                        >
-                            <div className="text-white bg-black bg-opacity-50 p-1 rounded" >Edit video</div>
-                        </button> */}
-                        <a href={videoUrl} download="merged-video.mp4" className="text-blue-500 underline">
-                            Download Merged Video
-                        </a>
-                    </div>
-                ),
-                type: 'text',
-            };
-            setDisplayMessages((prev) => [...prev, successMessage]);
-        } catch (error: any) {
-            const errorMessage: Message = {
-                role: 'assistant',
-                content: `Error processing your video and audio. Please try again. Error: ${error.message}`,
-                type: 'text',
-            };
-            setDisplayMessages((prev) => [...prev, errorMessage]);
-        }
+    //         const successMessage: Message = {
+    //             role: 'assistant',
+    //             content: (
+    //                 <div>
+    //                     <video src={videoUrl} controls className="w-full h-auto rounded-md" />
+    //                     {/* <button
+    //                         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition"
+    //                         onClick={() => openVideoEditor(videoUrl)}
+    //                     >
+    //                         <div className="text-white bg-black bg-opacity-50 p-1 rounded" >Edit video</div>
+    //                     </button> */}
+    //                     <a href={videoUrl} download="merged-video.mp4" className="text-blue-500 underline">
+    //                         Download Merged Video
+    //                     </a>
+    //                 </div>
+    //             ),
+    //             type: 'text',
+    //         };
+    //         setDisplayMessages((prev) => [...prev, successMessage]);
+    //     } catch (error: any) {
+    //         const errorMessage: Message = {
+    //             role: 'assistant',
+    //             content: `Error processing your video and audio. Please try again. Error: ${error.message}`,
+    //             type: 'text',
+    //         };
+    //         setDisplayMessages((prev) => [...prev, errorMessage]);
+    //     }
 
-        // Clear the uploaded files and reset the input.
-        setFiles([]);
-        setInputMessage('');
-        if (inputRef.current) {
-            inputRef.current.style.height = '2.5rem';
-        }
-        // Reset the option for future submissions.
-        setVideoLipsyncOption(null);
-        setShowVideoLipsyncOption(false);
-    };
+    //     // Clear the uploaded files and reset the input.
+    //     setFiles([]);
+    //     setInputMessage('');
+    //     if (inputRef.current) {
+    //         inputRef.current.style.height = '2.5rem';
+    //     }
+    //     // Reset the option for future submissions.
+    //     setVideoLipsyncOption(null);
+    //     setShowVideoLipsyncOption(false);
+    // };
 
 
 
@@ -3403,6 +3416,9 @@ ${data?.answers?.[0] ?? '—'}`
     toast.error('Error processing privacy query.');
   } finally {
     setIsLoading(false);
+    setInputMessage('');             // clear text area
+    setPrivacyProofJson(null);       // clear JSON state
+    setPrivacyProofName(''); 
     // keep JSON loaded for follow-up questions; remove if you want to reset:
     // setPrivacyProofJson(null); setPrivacyProofName('');
   }
@@ -3540,90 +3556,90 @@ ${data?.answers?.[0] ?? '—'}`
             return;
         }
 
-        if (fullMessage.startsWith('/img-to-video')) {
-            if (wan2Choice === 'without') {
-                // Existing logic for "without Wan2.0"
-                const userInput = fullMessage.replace('/img-to-video', '').trim();
-                if (files.length !== 1) {
-                    toast.error('Please upload exactly one image before using /img-to-video.');
-                    return;
-                }
-                if (!userInput) {
-                    toast.error('Please provide a prompt after the /img-to-video command.');
-                    return;
-                }
-                const file = files[0].file;
-                const formData = new FormData();
-                formData.append('image', file);
-                formData.append('prompt', userInput);
-                formData.append('seed', '-1');
-                formData.append('fps', '24');
-                formData.append('w', '720');
-                formData.append('h', '720');
-                formData.append('video_length', '120');
-                formData.append('img_edge_ratio', '1');
+        // if (fullMessage.startsWith('/img-to-video')) {
+        //     if (wan2Choice === 'without') {
+        //         // Existing logic for "without Wan2.0"
+        //         const userInput = fullMessage.replace('/img-to-video', '').trim();
+        //         if (files.length !== 1) {
+        //             toast.error('Please upload exactly one image before using /img-to-video.');
+        //             return;
+        //         }
+        //         if (!userInput) {
+        //             toast.error('Please provide a prompt after the /img-to-video command.');
+        //             return;
+        //         }
+        //         const file = files[0].file;
+        //         const formData = new FormData();
+        //         formData.append('image', file);
+        //         formData.append('prompt', userInput);
+        //         formData.append('seed', '-1');
+        //         formData.append('fps', '24');
+        //         formData.append('w', '720');
+        //         formData.append('h', '720');
+        //         formData.append('video_length', '120');
+        //         formData.append('img_edge_ratio', '1');
 
-                try {
-                    const response = await fetch('/api/imgToVideo', {
-                        method: 'POST',
-                        body: formData,
-                    });
+        //         try {
+        //             const response = await fetch('/api/imgToVideo', {
+        //                 method: 'POST',
+        //                 body: formData,
+        //             });
 
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        const videoUrl = window.URL.createObjectURL(blob);
+        //             if (response.ok) {
+        //                 const blob = await response.blob();
+        //                 const videoUrl = window.URL.createObjectURL(blob);
 
-                        const successMessage: Message = {
-                            role: 'assistant',
-                            content: (
-                                <div>
-                                    <video src={videoUrl} controls className="w-full rounded-lg" />
-                                    {/* <button
-                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition"
-                                        onClick={() => openVideoEditor(videoUrl)}
-                                    >
-                                        <div className="text-white bg-black bg-opacity-50 p-1 rounded" >Edit video</div>
-                                    </button> */}
-                                    <a
-                                        href={videoUrl}
-                                        download="output_video.mp4"
-                                        className="text-blue-500 underline"
-                                    >
-                                        Download Video
-                                    </a>
-                                </div>
-                            ),
-                            type: 'text',
-                        };
+        //                 const successMessage: Message = {
+        //                     role: 'assistant',
+        //                     content: (
+        //                         <div>
+        //                             <video src={videoUrl} controls className="w-full rounded-lg" />
+        //                             {/* <button
+        //                                 className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition"
+        //                                 onClick={() => openVideoEditor(videoUrl)}
+        //                             >
+        //                                 <div className="text-white bg-black bg-opacity-50 p-1 rounded" >Edit video</div>
+        //                             </button> */}
+        //                             <a
+        //                                 href={videoUrl}
+        //                                 download="output_video.mp4"
+        //                                 className="text-blue-500 underline"
+        //                             >
+        //                                 Download Video
+        //                             </a>
+        //                         </div>
+        //                     ),
+        //                     type: 'text',
+        //                 };
 
-                        setDisplayMessages((prev) => [...prev, successMessage]);
-                    } else {
-                        const errorResponse = await response.json();
-                        toast.error(
-                            errorResponse.error || 'Failed to generate video. Please check your input.'
-                        );
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    toast.error('An error occurred while generating the video.');
-                }
+        //                 setDisplayMessages((prev) => [...prev, successMessage]);
+        //             } else {
+        //                 const errorResponse = await response.json();
+        //                 toast.error(
+        //                     errorResponse.error || 'Failed to generate video. Please check your input.'
+        //                 );
+        //             }
+        //         } catch (error) {
+        //             console.error('Error:', error);
+        //             toast.error('An error occurred while generating the video.');
+        //         }
 
-                setInputMessage('');
-                if (inputRef.current) {
-                    inputRef.current.style.height = '2.5rem';
-                }
-                setFiles([]);
-                return;
-            } else if (wan2Choice === 'with') {
-                // Instead of executing the API call now, show the modal for additional input.
-                setShowVideoLengthModal(true);
-                return;
-            } else {
-                // Optionally handle the case when wan2Choice is not set.
-                toast.error('Please select a Wan2.0 mode before proceeding.');
-                return;
-            }
-        }
+        //         setInputMessage('');
+        //         if (inputRef.current) {
+        //             inputRef.current.style.height = '2.5rem';
+        //         }
+        //         setFiles([]);
+        //         return;
+        //     } else if (wan2Choice === 'with') {
+        //         // Instead of executing the API call now, show the modal for additional input.
+        //         setShowVideoLengthModal(true);
+        //         return;
+        //     } else {
+        //         // Optionally handle the case when wan2Choice is not set.
+        //         toast.error('Please select a Wan2.0 mode before proceeding.');
+        //         return;
+        //     }
+        // }
 
 
 
@@ -3696,129 +3712,129 @@ ${data?.answers?.[0] ?? '—'}`
         //     return;
         // }
 
-        if (fullMessage.startsWith('/ugc')) {
-            const parts = fullMessage.replace('/ugc', '').trim().split(' ');
-            const selectedOption = parts[0]; // First word after `/ugc`
-            const userPrompt = parts.slice(1).join(' ').trim(); // Rest of the message
+        // if (fullMessage.startsWith('/ugc')) {
+        //     const parts = fullMessage.replace('/ugc', '').trim().split(' ');
+        //     const selectedOption = parts[0]; // First word after `/ugc`
+        //     const userPrompt = parts.slice(1).join(' ').trim(); // Rest of the message
 
-            if (!selectedOption || !userPrompt) {
-                const errorMessage: Message = {
-                    role: 'assistant',
-                    content: 'Please select an option and provide a prompt. Format: /ugc [Option] [Prompt]',
-                    type: 'text',
-                };
-                setDisplayMessages((prev) => [...prev, errorMessage]);
-                return;
-            }
+        //     if (!selectedOption || !userPrompt) {
+        //         const errorMessage: Message = {
+        //             role: 'assistant',
+        //             content: 'Please select an option and provide a prompt. Format: /ugc [Option] [Prompt]',
+        //             type: 'text',
+        //         };
+        //         setDisplayMessages((prev) => [...prev, errorMessage]);
+        //         return;
+        //     }
 
-            const formattedPrompt = `${selectedOption.toUpperCase()} ${userPrompt}`;
+        //     const formattedPrompt = `${selectedOption.toUpperCase()} ${userPrompt}`;
 
-            // Add user's message to chat
-            const userMessage: Message = {
-                role: 'user',
-                content: fullMessage,
-                type: 'text',
-            };
-            setDisplayMessages((prev) => [...prev, userMessage]);
-            setInputMessage(''); // Clear input field
-            setIsLoading(true); // Show loader
+        //     // Add user's message to chat
+        //     const userMessage: Message = {
+        //         role: 'user',
+        //         content: fullMessage,
+        //         type: 'text',
+        //     };
+        //     setDisplayMessages((prev) => [...prev, userMessage]);
+        //     setInputMessage(''); // Clear input field
+        //     setIsLoading(true); // Show loader
 
-            // Find the selected UGC option (optional: if you still want to validate client-side)
-            const option = availableUGCOptions.find((opt) => opt.name === selectedOption);
-            if (!option) {
-                const errorMessage: Message = {
-                    role: 'assistant',
-                    content: `Unknown option: ${selectedOption}. Available options: ${availableUGCOptions.map((opt) => opt.name).join(', ')}`,
-                    type: 'text',
-                };
-                setDisplayMessages((prev) => [...prev, errorMessage]);
-                setIsLoading(false); // Disable loader
-                return;
-            }
+        //     // Find the selected UGC option (optional: if you still want to validate client-side)
+        //     const option = availableUGCOptions.find((opt) => opt.name === selectedOption);
+        //     if (!option) {
+        //         const errorMessage: Message = {
+        //             role: 'assistant',
+        //             content: `Unknown option: ${selectedOption}. Available options: ${availableUGCOptions.map((opt) => opt.name).join(', ')}`,
+        //             type: 'text',
+        //         };
+        //         setDisplayMessages((prev) => [...prev, errorMessage]);
+        //         setIsLoading(false); // Disable loader
+        //         return;
+        //     }
 
-            // Prepare the payload for the /generate endpoint
-            const payload = {
-                selectedOption,
-                "width": 512,
-                "height": 512,
-                "num_steps": 20,
-                "guidance": 4,
-                userPrompt: formattedPrompt
-            };
+        //     // Prepare the payload for the /generate endpoint
+        //     const payload = {
+        //         selectedOption,
+        //         "width": 512,
+        //         "height": 512,
+        //         "num_steps": 20,
+        //         "guidance": 4,
+        //         userPrompt: formattedPrompt
+        //     };
 
-            try {
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer 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'
-                    },
-                    body: JSON.stringify(payload),
-                });
+        //     try {
+        //         const response = await fetch('/api/generate', {
+        //             method: 'POST',
+        //             headers: {
+        //                 'Content-Type': 'application/json',
+        //                 'Authorization': 'Bearer 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'
+        //             },
+        //             body: JSON.stringify(payload),
+        //         });
 
-                console.log('response', response);
+        //         console.log('response', response);
 
-                if (!response.ok) {
-                    throw new Error(`Failed to generate content for ${selectedOption}`);
-                }
+        //         if (!response.ok) {
+        //             throw new Error(`Failed to generate content for ${selectedOption}`);
+        //         }
 
-                // Handle response content type
-                const contentType = response.headers.get('Content-Type');
+        //         // Handle response content type
+        //         const contentType = response.headers.get('Content-Type');
 
-                if (contentType?.includes('image/')) {
-                    // If the response is an image (e.g., JPEG or PNG)
-                    const blob = await response.blob();
-                    const imageUrl = URL.createObjectURL(blob);
-                    console.log('blib image url', imageUrl)
+        //         if (contentType?.includes('image/')) {
+        //             // If the response is an image (e.g., JPEG or PNG)
+        //             const blob = await response.blob();
+        //             const imageUrl = URL.createObjectURL(blob);
+        //             console.log('blib image url', imageUrl)
 
-                    const successMessage: Message = {
-                        role: 'assistant',
-                        content: (
-                            <div>
-                                <p>Generated {selectedOption} Content:</p>
-                                <img
-                                    src={imageUrl}
-                                    alt={`${selectedOption} generated content`}
-                                    className="w-full rounded-lg"
-                                />
-                            </div>
-                        ),
-                    };
-                    setDisplayMessages((prev) => [...prev, successMessage]);
-                } else if (contentType?.includes('application/json')) {
-                    // If the response is JSON
-                    const result = await response.json();
-                    const successMessage: Message = {
-                        role: 'assistant',
-                        content: (
-                            <div>
-                                <p>Generated {selectedOption} Content:</p>
-                                <img
-                                    // src={`data:image/png;base64,${result.image}`}
-                                    src={`${result.image}`}
-                                    alt={`${selectedOption} generated content`}
-                                    className="w-full rounded-lg"
-                                />
-                            </div>
-                        ),
-                    };
-                    setDisplayMessages((prev) => [...prev, successMessage]);
-                } else {
-                    throw new Error('Unsupported response type');
-                }
-            } catch (error) {
-                const errorMessage: Message = {
-                    role: 'assistant',
-                    content: `Error generating ${selectedOption} content: ${error}`,
-                    type: 'text',
-                };
-                setDisplayMessages((prev) => [...prev, errorMessage]);
-            } finally {
-                setIsLoading(false); // Disable loader
-            }
+        //             const successMessage: Message = {
+        //                 role: 'assistant',
+        //                 content: (
+        //                     <div>
+        //                         <p>Generated {selectedOption} Content:</p>
+        //                         <img
+        //                             src={imageUrl}
+        //                             alt={`${selectedOption} generated content`}
+        //                             className="w-full rounded-lg"
+        //                         />
+        //                     </div>
+        //                 ),
+        //             };
+        //             setDisplayMessages((prev) => [...prev, successMessage]);
+        //         } else if (contentType?.includes('application/json')) {
+        //             // If the response is JSON
+        //             const result = await response.json();
+        //             const successMessage: Message = {
+        //                 role: 'assistant',
+        //                 content: (
+        //                     <div>
+        //                         <p>Generated {selectedOption} Content:</p>
+        //                         <img
+        //                             // src={`data:image/png;base64,${result.image}`}
+        //                             src={`${result.image}`}
+        //                             alt={`${selectedOption} generated content`}
+        //                             className="w-full rounded-lg"
+        //                         />
+        //                     </div>
+        //                 ),
+        //             };
+        //             setDisplayMessages((prev) => [...prev, successMessage]);
+        //         } else {
+        //             throw new Error('Unsupported response type');
+        //         }
+        //     } catch (error) {
+        //         const errorMessage: Message = {
+        //             role: 'assistant',
+        //             content: `Error generating ${selectedOption} content: ${error}`,
+        //             type: 'text',
+        //         };
+        //         setDisplayMessages((prev) => [...prev, errorMessage]);
+        //     } finally {
+        //         setIsLoading(false); // Disable loader
+        //     }
 
-            return;
-        }
+        //     return;
+        // }
 
         if (fullMessage.startsWith('/select')) {
             const numberStr = fullMessage.replace('/select', '').trim();
@@ -3970,54 +3986,54 @@ ${data?.answers?.[0] ?? '—'}`
             return;
         }
 
-        if (fullMessage.startsWith('/video-lipsync')) {
-            // If no option is chosen, do nothing (the popup should be visible).
-            if (!videoLipsyncOption) {
-                return;
-            }
+        // if (fullMessage.startsWith('/video-lipsync')) {
+        //     // If no option is chosen, do nothing (the popup should be visible).
+        //     if (!videoLipsyncOption) {
+        //         return;
+        //     }
 
-            const imageFile = files.find((file) => file.file.type.startsWith('image/'));
-            const audioFile = files.find((file) => file.file.type.startsWith('audio/'));
+        //     const imageFile = files.find((file) => file.file.type.startsWith('image/'));
+        //     const audioFile = files.find((file) => file.file.type.startsWith('audio/'));
 
-            // Build an array for the user prompt content.
-            const userContent: (string | React.ReactNode)[] = [fullMessage];
+        //     // Build an array for the user prompt content.
+        //     const userContent: (string | React.ReactNode)[] = [fullMessage];
 
-            if (imageFile) {
-                // Render a small preview of the uploaded image.
-                userContent.push(
-                    <img
-                        key="img"
-                        src={imageFile.preview}
-                        alt="Uploaded Image"
-                        className="w-16 h-16 object-cover rounded-md ml-2"
-                    />
-                );
-            }
+        //     if (imageFile) {
+        //         // Render a small preview of the uploaded image.
+        //         userContent.push(
+        //             <img
+        //                 key="img"
+        //                 src={imageFile.preview}
+        //                 alt="Uploaded Image"
+        //                 className="w-16 h-16 object-cover rounded-md ml-2"
+        //             />
+        //         );
+        //     }
 
-            if (audioFile) {
-                // Render the FcAudioFile icon for the uploaded audio file.
-                userContent.push(
-                    <FcAudioFile key="audio" size={32} className="ml-2" />
-                );
-            }
-            // Add a user message showing what was sent.
-            const userMessage: Message = {
-                role: 'user',
-                content: fullMessage,
-                type: 'text',
-            };
-            setDisplayMessages((prev) => [...prev, userMessage]);
-            setInputMessage('');
-            setFiles([]);
-            setIsLoading(true);
+        //     if (audioFile) {
+        //         // Render the FcAudioFile icon for the uploaded audio file.
+        //         userContent.push(
+        //             <FcAudioFile key="audio" size={32} className="ml-2" />
+        //         );
+        //     }
+        //     // Add a user message showing what was sent.
+        //     const userMessage: Message = {
+        //         role: 'user',
+        //         content: fullMessage,
+        //         type: 'text',
+        //     };
+        //     setDisplayMessages((prev) => [...prev, userMessage]);
+        //     setInputMessage('');
+        //     setFiles([]);
+        //     setIsLoading(true);
 
 
-            // Process the command.
-            await processVideoLipsync();
+        //     // Process the command.
+        //     await processVideoLipsync();
 
-            setIsLoading(false);
-            return;
-        }
+        //     setIsLoading(false);
+        //     return;
+        // }
 
 
 
@@ -5295,127 +5311,127 @@ if (isCreateAgent) {
     };
 
 
-    const handleSubmitImgToVideoWan2 = async () => {
-        try {
-            if (files.length !== 1) {
-                toast.error('Please upload exactly one image for /img-to-video with Wan2.0.');
-                return;
-            }
-            // The user's text after /img-to-video
-            const userInput = inputMessage.replace('/img-to-video', '').trim();
-            if (!userInput) {
-                toast.error('Please provide a prompt after /img-to-video.');
-                return;
-            }
+    // const handleSubmitImgToVideoWan2 = async () => {
+    //     try {
+    //         if (files.length !== 1) {
+    //             toast.error('Please upload exactly one image for /img-to-video with Wan2.0.');
+    //             return;
+    //         }
+    //         // The user's text after /img-to-video
+    //         const userInput = inputMessage.replace('/img-to-video', '').trim();
+    //         if (!userInput) {
+    //             toast.error('Please provide a prompt after /img-to-video.');
+    //             return;
+    //         }
 
-            const positivePrompt = userInput.replace(/with wan2\.0/i, '').trim();
+    //         const positivePrompt = userInput.replace(/with wan2\.0/i, '').trim();
 
-            const imageFile = files[0].file;
-            const formData = new FormData();
-            formData.append('image_file', imageFile);
-            formData.append('positive_prompt', positivePrompt);
-            formData.append('seed', '0');
-            formData.append('steps', '20');
-            formData.append('cfg', '6');
-            formData.append('sampler_name', 'uni_pc');
-            formData.append('scheduler', 'simple');
-            formData.append('number', '1');
-            formData.append('video_length', videoLength);
-            formData.append('width', '512');
-            formData.append('height', '512');
-            formData.append('output_fps', '16');
-            formData.append('output_quality', '90');
-            formData.append('output_format', 'mp4');
+    //         const imageFile = files[0].file;
+    //         const formData = new FormData();
+    //         formData.append('image_file', imageFile);
+    //         formData.append('positive_prompt', positivePrompt);
+    //         formData.append('seed', '0');
+    //         formData.append('steps', '20');
+    //         formData.append('cfg', '6');
+    //         formData.append('sampler_name', 'uni_pc');
+    //         formData.append('scheduler', 'simple');
+    //         formData.append('number', '1');
+    //         formData.append('video_length', videoLength);
+    //         formData.append('width', '512');
+    //         formData.append('height', '512');
+    //         formData.append('output_fps', '16');
+    //         formData.append('output_quality', '90');
+    //         formData.append('output_format', 'mp4');
 
-            setIsLoading(true);
-            const response = await fetch('/api/wan-img-to-video', {
-                method: 'POST',
-                body: formData,
-            });
+    //         setIsLoading(true);
+    //         const response = await fetch('/api/wan-img-to-video', {
+    //             method: 'POST',
+    //             body: formData,
+    //         });
 
-            if (!response.ok) {
-                throw new Error(`Wan2.0 generation failed: ${response.statusText}`);
-            }
-            const blob = await response.blob();
-            const mp4Url = URL.createObjectURL(blob);
+    //         if (!response.ok) {
+    //             throw new Error(`Wan2.0 generation failed: ${response.statusText}`);
+    //         }
+    //         const blob = await response.blob();
+    //         const mp4Url = URL.createObjectURL(blob);
 
-            // Generate a filename for download
-            const filename = `video_${new Date().getTime()}.mp4`;
-
-
-            // Also push a chat message so user sees the result
-            const assistantMessage: Message = {
-                role: "assistant",
-                content: (
-                    <div>
-                        <div className="relative group">
-                            <video
-                                src={mp4Url}
-                                controls
-                                autoPlay
-                                loop
-                                className="w-full h-auto rounded-lg"
-                            />
-                            <button
-                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition"
-                                onClick={() => openVideoEditor(mp4Url)}
-                            >
-                                Edit Video
-                            </button>
-                        </div>
-
-                        <a
-                            href={mp4Url}
-                            download={filename}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2 mt-2"
-                        >
-                            {/* … your SVG download icon … */}
-                            Download MP4
-                        </a>
-                    </div>
-                ),
-                type: "text",
-            }
-            // const assistantMessage: Message = {
-            //     role: "assistant",
-            //     content: (
-            //         <div>
-            //             <video
-            //                 src={mp4Url}
-            //                 controls
-            //                 autoPlay
-            //                 loop
-            //                 className="w-full h-auto rounded-lg"
-            //             />
-
-            //             <a
-            //                 href={mp4Url}
-            //                 download={filename}
-            //                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2 mt-2"
-            //             >
-            //                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            //                     <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-            //                 </svg>
-            //                 Download MP4
-            //             </a>
-            //         </div>
-            //     ),
-            //     type: "text",
-            // };
-
-            setDisplayMessages((prev) => [...prev, assistantMessage]);
+    //         // Generate a filename for download
+    //         const filename = `video_${new Date().getTime()}.mp4`;
 
 
-        } catch (error) {
-            console.error('Error in handleSubmitImgToVideoWan2:', error);
-        } finally {
-            setIsLoading(false);
-            // reset states if you want
-            setFiles([]);
-            setInputMessage('');
-            setWan2Choice(null);
-        }
-    };
+    //         // Also push a chat message so user sees the result
+    //         const assistantMessage: Message = {
+    //             role: "assistant",
+    //             content: (
+    //                 <div>
+    //                     <div className="relative group">
+    //                         <video
+    //                             src={mp4Url}
+    //                             controls
+    //                             autoPlay
+    //                             loop
+    //                             className="w-full h-auto rounded-lg"
+    //                         />
+    //                         <button
+    //                             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition"
+    //                             onClick={() => openVideoEditor(mp4Url)}
+    //                         >
+    //                             Edit Video
+    //                         </button>
+    //                     </div>
+
+    //                     <a
+    //                         href={mp4Url}
+    //                         download={filename}
+    //                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2 mt-2"
+    //                     >
+    //                         {/* … your SVG download icon … */}
+    //                         Download MP4
+    //                     </a>
+    //                 </div>
+    //             ),
+    //             type: "text",
+    //         }
+    //         // const assistantMessage: Message = {
+    //         //     role: "assistant",
+    //         //     content: (
+    //         //         <div>
+    //         //             <video
+    //         //                 src={mp4Url}
+    //         //                 controls
+    //         //                 autoPlay
+    //         //                 loop
+    //         //                 className="w-full h-auto rounded-lg"
+    //         //             />
+
+    //         //             <a
+    //         //                 href={mp4Url}
+    //         //                 download={filename}
+    //         //                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2 mt-2"
+    //         //             >
+    //         //                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+    //         //                     <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+    //         //                 </svg>
+    //         //                 Download MP4
+    //         //             </a>
+    //         //         </div>
+    //         //     ),
+    //         //     type: "text",
+    //         // };
+
+    //         setDisplayMessages((prev) => [...prev, assistantMessage]);
+
+
+    //     } catch (error) {
+    //         console.error('Error in handleSubmitImgToVideoWan2:', error);
+    //     } finally {
+    //         setIsLoading(false);
+    //         // reset states if you want
+    //         setFiles([]);
+    //         setInputMessage('');
+    //         setWan2Choice(null);
+    //     }
+    // };
 
 
     const renderMessageContent = (message: Message) => {
@@ -6752,7 +6768,7 @@ if (isCreateAgent) {
                                                 </button>
                                             </div>
 
-                                            {showVideoLengthModal && wan2Choice === 'with' && (
+                                            {/* {showVideoLengthModal && wan2Choice === 'with' && (
                                                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                                                     <div className="bg-[#171D3D] p-6 rounded-lg shadow-lg relative w-80">
                                                         <button
@@ -6780,7 +6796,7 @@ if (isCreateAgent) {
                                                         </button>
                                                     </div>
                                                 </div>
-                                            )}
+                                            )} */}
 
                                             {showImageSelectModal && selectedImage && (
                                                 <ImageSelectionModal
