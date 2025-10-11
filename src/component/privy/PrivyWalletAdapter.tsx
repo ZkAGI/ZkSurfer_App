@@ -143,40 +143,41 @@ export class PrivyWalletAdapter extends BaseWalletAdapter {
   }
 
   async disconnect(): Promise<void> {
-    console.log('PrivyWalletAdapter: Disconnecting...');
-    
-    // Set the manual disconnect flag
-    localStorage.setItem('privy:manually_disconnected', 'true');
-    localStorage.setItem('privy:manually_disconnected:timestamp', Date.now().toString());
-    
-    // Clean all Privy localStorage entries
+  console.log('PrivyWalletAdapter: Disconnecting...');
+  
+  // CRITICAL: Logout from Privy SDK
+  try {
+    // Access Privy instance if available
+    const privyApp = (window as any).__PRIVY_APP__;
+    if (privyApp && typeof privyApp.logout === 'function') {
+      console.log('[PrivyAdapter] Logging out from Privy SDK...');
+      await privyApp.logout();
+    }
+  } catch (err) {
+    console.warn('[PrivyAdapter] Privy logout warning:', err);
+  }
+  
+  this._publicKey = null;
+  this._connecting = false;
+  this._embeddedWallet = null;
+
+  // Clear all Privy-related localStorage
+  if (typeof window !== 'undefined') {
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && (
-        key.startsWith('privy:') ||
-        key === 'walletName' ||
-        key === 'zk:lastWallet' ||
-        key === 'zk:connectedWalletAddress'
-      )) {
+      if (key && (key.startsWith('privy:') || key === 'walletName' || key.startsWith('zk:'))) {
         keysToRemove.push(key);
       }
     }
-    
     keysToRemove.forEach(key => {
-      console.log(`Removing: ${key}`);
+      console.log('Removing:', key);
       localStorage.removeItem(key);
     });
-    
-    // Clear internal state
-    this._publicKey = null;
-    this._embeddedWallet = null;
-    this._privyWallet = null;
-    this._connecting = false;
-    
-    // Emit disconnect event
-    this.emit('disconnect');
   }
+
+  this.emit('disconnect');
+}
 
   async signTransaction(transaction: Transaction): Promise<Transaction> {
     if (!this._embeddedWallet && !this._privyWallet) {

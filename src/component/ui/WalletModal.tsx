@@ -486,22 +486,30 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect, isConnecting =
   const startEmailConnect = () => setMode("picker");
 
   const handlePrivyEmail = async () => {
-    try {
-      if (!privyReady) {
-        toast.message("Privy is still initializing... please wait.");
-        return;
-      }
-      
-      setLoading(true);
-      console.log("Opening Privy login modal...");
-      await login();
-    } catch (err) {
-      console.error("Privy email login error:", err);
-      toast.error("Failed to open Privy login. Please try again.");
-      setLoading(false);
-      setPrivyConnecting(false);
+  try {
+    if (!privyReady) {
+      toast.message("Privy is still initializing... please wait.");
+      return;
     }
-  };
+    
+    setLoading(true);
+    
+    // CRITICAL FIX: Check if already authenticated
+    if (authenticated && privyUser) {
+      console.log('[Privy] User already authenticated, checking for wallet...');
+      setPrivyConnecting(true); // This will trigger the wallet handler
+      return;
+    }
+    
+    console.log("Opening Privy login modal...");
+    await login();
+  } catch (err) {
+    console.error("Privy email login error:", err);
+    toast.error("Failed to open Privy login. Please try again.");
+    setLoading(false);
+    setPrivyConnecting(false);
+  }
+};
 
   const chooseMagicEmail = () => setMode("magic-email");
 
@@ -658,41 +666,73 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect, isConnecting =
           </div>
         )}
 
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-2">Have a Wallet</h3>
-          <p className="mb-4 text-sm text-gray-400">Connect your existing wallet.</p>
-          
-          <div className="space-y-2">
-            {solanaAdapters
-              .filter(w => 
-                w.readyState === WalletReadyState.Installed || 
-                w.readyState === WalletReadyState.Loadable
-              )
-              .map(wallet => {
-                const walletName = (wallet as any)?.adapter?.name || (wallet as any)?.name || 'Unknown';
-                const icon = (wallet as any)?.adapter?.icon || (wallet as any)?.icon;
-                
-                return (
-                  <button
-                    key={walletName}
-                    onClick={() => handleStandardWalletClick(walletName)}
-                    disabled={isBusy}
-                    className="w-full flex items-center gap-3 bg-gray-700/50 hover:bg-gray-700 text-white py-3 px-4 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {icon && <img src={icon} alt={walletName} className="w-6 h-6" />}
-                    <span>{walletName}</span>
-                  </button>
-                );
-              })}
-            
-            {solanaAdapters.filter(w => 
-              w.readyState === WalletReadyState.Installed || 
-              w.readyState === WalletReadyState.Loadable
-            ).length === 0 && (
-              <p className="text-gray-400 text-sm">No wallets detected. Please install a Solana wallet.</p>
-            )}
-          </div>
-        </div>
+       <div className="mb-8">
+  <h3 className="text-lg font-semibold mb-2">Have a Wallet</h3>
+  <p className="mb-4 text-sm text-gray-400">Connect your existing wallet.</p>
+  
+  <div className="space-y-2">
+    {solanaAdapters
+      .filter(w => {
+        // CRITICAL: Check wallet name FIRST before readyState
+        const walletName = (w as any)?.adapter?.name || (w as any)?.name || '';
+        
+        // Block ALL email-based wallets (even if they report as "Loadable")
+        const isEmailWallet = 
+          walletName === MagicWalletName || 
+          walletName === PRIVY_WALLET_NAME ||
+          walletName === "Magic" ||
+          walletName === "Privy (Email)" ||
+          walletName.toLowerCase().includes('magic') ||
+          walletName.toLowerCase().includes('privy');
+        
+        if (isEmailWallet) {
+          console.log('[WalletModal] Filtering out email wallet:', walletName);
+          return false; // Block it
+        }
+        
+        // NOW check if it's ready
+        const isReady = w.readyState === WalletReadyState.Installed || 
+                        w.readyState === WalletReadyState.Loadable;
+        
+        return isReady;
+      })
+      .map(wallet => {
+        const walletName = (wallet as any)?.adapter?.name || (wallet as any)?.name || 'Unknown';
+        const icon = (wallet as any)?.adapter?.icon || (wallet as any)?.icon;
+        
+        return (
+          <button
+            key={walletName}
+            onClick={() => handleStandardWalletClick(walletName)}
+            disabled={isBusy}
+            className="w-full flex items-center gap-3 bg-gray-700/50 hover:bg-gray-700 text-white py-3 px-4 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {icon && <img src={icon} alt={walletName} className="w-6 h-6" />}
+            <span>{walletName}</span>
+          </button>
+        );
+      })}
+    
+    {solanaAdapters.filter(w => {
+      const walletName = (w as any)?.adapter?.name || (w as any)?.name || '';
+      const isEmailWallet = 
+        walletName === MagicWalletName || 
+        walletName === PRIVY_WALLET_NAME ||
+        walletName === "Magic" ||
+        walletName === "Privy (Email)" ||
+        walletName.toLowerCase().includes('magic') ||
+        walletName.toLowerCase().includes('privy');
+      
+      if (isEmailWallet) return false;
+      
+      const isReady = w.readyState === WalletReadyState.Installed || 
+                      w.readyState === WalletReadyState.Loadable;
+      return isReady;
+    }).length === 0 && (
+      <p className="text-gray-400 text-sm">No wallets detected. Please install a Solana wallet.</p>
+    )}
+  </div>
+</div>
 
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">Don&apos;t Have a Wallet</h3>

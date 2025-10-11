@@ -9,7 +9,7 @@ import { PublicKey } from '@solana/web3.js';
 const PRIVY_WALLET_NAME = "Privy (Email)";
 
 export default function PrivyBridge() {
-  const { ready, user, authenticated } = usePrivy();
+  const { ready, user, authenticated, logout } = usePrivy();
   const { wallets: privySolanaWallets, ready: walletsReady } = useWallets();
   const { wallets: solanaAdapters, select, connected, publicKey, disconnect } = useWallet();
   const hasProcessed = useRef(false);
@@ -137,6 +137,15 @@ export default function PrivyBridge() {
     
     handleSolanaWallet();
   }, [ready, authenticated, user, privySolanaWallets, walletsReady, solanaAdapters, select, connected, publicKey, disconnect]);
+
+  useEffect(() => {
+  if (ready && user) {
+    // Expose Privy instance globally for logout
+    if (typeof window !== 'undefined') {
+      (window as any).__PRIVY_APP__ = { logout };
+    }
+  }
+}, [ready, user, logout]);
 
   // Clean up on logout
   useEffect(() => {
