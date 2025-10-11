@@ -352,9 +352,42 @@ async function fetcher(url: any, apiKey: any, walletAddress: any) {
     return res.json();
 }
 
+async function agentsFetcher(url: string) {
+    const res = await fetch(url);
+    if (res.status === 404) {
+        return { items: [], count: 0 };
+    }
+    if (!res.ok) {
+        throw new Error('Failed to fetch agents');
+    }
+    return res.json();
+}
+
 const apiKey = process.env.NEXT_PUBLIC_API_KEY;
 const AGENTS_API_URL = 'https://zynapse.zkagi.ai/characters/status';
 const TOGGLE_API_URL = 'https://zynapse.zkagi.ai/characters/toggle-status';
+
+// async function fetcher(url: any, apiKey: any, walletAddress: any) {
+//     const res = await fetch(`${url}?wallet_address=${walletAddress}`, {
+//         headers: {
+//             'Content-Type': 'application/json',
+//             'api-key': apiKey
+//         }
+//     });
+
+//     if (res.status === 404) {
+//         return [];
+//     }
+
+//     if (!res.ok) {
+//         throw new Error('Failed to fetch data');
+//     }
+//     return res.json();
+// }
+
+// const apiKey = process.env.NEXT_PUBLIC_API_KEY;
+// const AGENTS_API_URL = 'https://zynapse.zkagi.ai/characters/status';
+// const TOGGLE_API_URL = 'https://zynapse.zkagi.ai/characters/toggle-status';
 
 
 
@@ -1395,13 +1428,20 @@ const openCreateAgentForm = () => {
     };
 
 
-    const { data: tickersData } = useSWR(
-        walletAddress ? [AGENTS_API_URL, apiKey, walletAddress] : null,
-        ([url, key, addr]) => fetcher(url, key, addr),
-        {
-            refreshInterval: 15000,
-        }
-    );
+    // const { data: tickersData } = useSWR(
+    //     walletAddress ? [AGENTS_API_URL, apiKey, walletAddress] : null,
+    //     ([url, key, addr]) => fetcher(url, key, addr),
+    //     {
+    //         refreshInterval: 15000,
+    //     }
+    // );
+    const { data: agentsData } = useSWR(
+    walletAddress ? `/api/agents?walletAddress=${walletAddress}` : null,
+    agentsFetcher,
+    {
+        refreshInterval: 15000,
+    }
+);
 
     let content;
 
@@ -1414,39 +1454,39 @@ const openCreateAgentForm = () => {
         }
     }, [wallet.connected]);
 
-    if (!tickersData) {
-        content = <div>Loading...</div>;
-    } else {
-        content = (
-            <div>
-                {tickersData.map((item: any, index: number) => (
-                    <div
-                        key={index}
-                        className="cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center space-x-2"
-                        onClick={() => toggleTickerStatus(item.ticker, item.status)}
-                    >
-                        <span
-                            className={`inline-block w-3 h-3 rounded-full ${item.status ? 'bg-green-500' : 'bg-red-500'
-                                }`}
-                        ></span>
-                        <span>{item.ticker}</span>
-                    </div>
-                ))}
-            </div>
-        );
-    }
+    // if (!agentsData) {
+    //     content = <div>Loading...</div>;
+    // } else {
+    //     content = (
+    //         <div>
+    //             {agentsData.map((item: any, index: number) => (
+    //                 <div
+    //                     key={index}
+    //                     className="cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center space-x-2"
+    //                     onClick={() => toggleTickerStatus(item.ticker, item.status)}
+    //                 >
+    //                     <span
+    //                         className={`inline-block w-3 h-3 rounded-full ${item.status ? 'bg-green-500' : 'bg-red-500'
+    //                             }`}
+    //                     ></span>
+    //                     <span>{item.ticker}</span>
+    //                 </div>
+    //             ))}
+    //         </div>
+    //     );
+    // }
 
     let mergedTickers: any[] = [];
 
-    if (walletAddress) {
-        mergedTickers = tickers.map((ticker) => {
-            const tickerData = (tickersData || []).find((item: any) => item.ticker === ticker);
-            return {
-                ticker,
-                status: tickerData?.status,
-            };
-        });
-    }
+    // if (walletAddress) {
+    //     mergedTickers = tickers.map((ticker) => {
+    //         const tickerData = (agentsData || []).find((item: any) => item.ticker === ticker);
+    //         return {
+    //             ticker,
+    //             status: tickerData?.status,
+    //         };
+    //     });
+    // }
 
     useEffect(() => {
         if (wallet.connected && walletAddress) {
@@ -6243,138 +6283,83 @@ if (isCreateAgent) {
 
                                     </div>
                                     <div className="mb-2">
-                                        <h3
-                                            className="text-lg font-semibold mb-2 cursor-pointer flex items-center justify-between"
-                                            onClick={toggleDropdown}
-                                        >
-                                            {dictionary?.sidebar.agents.title}
-                                            {isDropdownOpen ? <FaChevronDown /> : <FaChevronUp />}
-                                        </h3>
-                                        {isDropdownOpen && (
-                                            <div
-                                                className="flex-grow overflow-y-auto mb-[4px] max-h-[calc(70vh-200px)] scrollbar-track-gray-700 scrollbar-thumb-gray-500"
-                                            >
-                                                {/* {mergedTickers.length > 0 ? (
-                                                    mergedTickers.map(({ ticker, status }) => (
-                                                        <div
-                                                            key={ticker}
-                                                            className={`cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center space-x-2 ${status === null ? 'cursor-not-allowed' : ''
-                                                                }`}
-                                                            onClick={() => toggleTickerStatus(ticker, status)}
-                                                        >
-                                                            <span
-                                                                className={`inline-block w-3 h-3 rounded-full ${status === null ? 'bg-gray-500' : status === true ? 'bg-green-500' : 'bg-red-500'
-                                                                    }`}
-                                                            ></span>
-                                                            <span>{ticker}</span>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="text-gray-500 text-sm text-center p-4 italic">No agents created yet</div>
-                                                )} */}
+    <h3
+        className="text-lg font-semibold mb-2 cursor-pointer flex items-center justify-between"
+        onClick={toggleDropdown}
+    >
+        {dictionary?.sidebar.agents.title}
+        {isDropdownOpen ? <FaChevronDown /> : <FaChevronUp />}
+    </h3>
+    {isDropdownOpen && (
+        <div className="flex-grow overflow-y-auto mb-[4px] max-h-[calc(70vh-200px)] scrollbar-track-gray-700 scrollbar-thumb-gray-500">
+            {agentsData && agentsData.items && agentsData.items.length > 0 ? (
+                agentsData.items.map((agent: any) => (
+                    <div
+                        key={agent.id}
+                        className="relative cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center justify-between"
+                    >
+                        <div className="flex items-center space-x-2">
+                            <span
+                                className={`inline-block w-3 h-3 rounded-full ${
+                                    agent.paymentStatus ? 'bg-green-500' : 'bg-red-500'
+                                }`}
+                                title={agent.paymentStatus ? 'Payment completed' : 'Payment pending'}
+                            />
+                            <span>{agent.name}</span>
+                        </div>
 
-                                                {/* {mergedTickers.length > 0 ? (
-                                                    mergedTickers.map(({ ticker, status }) => {
-                                                        return (
-                                                            <div
-                                                                key={ticker}
-                                                                className={`cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center space-x-2 ${status === null ? 'cursor-not-allowed' : ''
-                                                                    }`}
-                                                                onClick={() => toggleTickerStatus(ticker, status)}
-                                                            >
-                                                                <span
-                                                                    className={`inline-block w-3 h-3 rounded-full ${status === null
-                                                                        ? 'bg-gray-500'
-                                                                        : status === true
-                                                                            ? 'bg-green-500'
-                                                                            : 'bg-red-500'
-                                                                        }`}
-                                                                ></span>
-                                                                <span>{ticker}</span>
-                                                            </div>
-                                                        );
-                                                    })
-                                                ) : (
-                                                    <div className="text-gray-500 text-sm text-center p-4 italic">No agents created yet</div>
-                                                )} */}
+                        <button
+                            type="button"
+                            className="rounded-full hover:bg-gray-800"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowAgentOptions(agent.id);
+                            }}
+                        >
+                            <HiDotsVertical />
+                        </button>
 
-                                                {tickersData && tickersData.length > 0 ? (
-                                                    tickersData.map(({ ticker, status }: { ticker: string; status: boolean | null }) => (
-                                                        <div
-                                                            key={ticker}
-                                                            className={`relative cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center justify-between ${status === null ? 'cursor-not-allowed' : ''
-                                                                }`}
-                                                            onClick={() => toggleTickerStatus(ticker, status)}
-                                                        >
-
-                                                            <div className="flex items-center space-x-2">
-                                                                <span
-                                                                    className={`inline-block w-3 h-3 rounded-full ${status === null
-                                                                        ? 'bg-gray-500'
-                                                                        : status === true
-                                                                            ? 'bg-green-500'
-                                                                            : 'bg-red-500'
-                                                                        }`}
-                                                                />
-                                                                <span>{ticker}</span>
-                                                            </div>
-
-
-                                                            <button
-                                                                type="button"
-                                                                className="rounded-full hover:bg-gray-800"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setShowAgentOptions(ticker);
-                                                                }}
-                                                            >
-                                                                <HiDotsVertical />
-                                                            </button>
-
-
-                                                            {showAgentOptions === ticker && (
-                                                                <div
-                                                                    ref={popUpRef}
-                                                                    className="absolute right-0 top-full mt-2 w-40 h-24 pl-1 bg-[#171D3D] rounded shadow-lg z-50 flex flex-col justify-center"
-                                                                >
-                                                                    <div>
-                                                                        <button
-                                                                            className="block w-full text-left px-4 py-2 hover:bg-[#24284E] text-white"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setShowAgentOptions(null);
-                                                                                handleDeleteAgent(ticker);
-                                                                            }}
-                                                                        >
-                                                                            Delete Agent
-                                                                        </button>
-                                                                    </div>
-                                                                    <div>
-                                                                        <button
-                                                                            className="block w-full text-left px-4 py-2 hover:bg-[#24284E] text-white"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setShowAgentOptions(null);
-                                                                                handleEditAgent(ticker);
-                                                                            }}
-                                                                        >
-                                                                            Edit Agent
-                                                                        </button>
-                                                                    </div>
-
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="text-gray-500 text-sm text-center p-4 italic">
-                                                        No agents created yet
-                                                    </div>
-                                                )}
-
-                                            </div>
-                                        )}
-                                    </div>
+                        {/* {showAgentOptions === agent.id && (
+                            <div
+                                ref={popUpRef}
+                                className="absolute right-0 top-full mt-2 w-40 h-24 pl-1 bg-[#171D3D] rounded shadow-lg z-50 flex flex-col justify-center"
+                            >
+                                <div>
+                                    <button
+                                        className="block w-full text-left px-4 py-2 hover:bg-[#24284E] text-white"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowAgentOptions(null);
+                                            handleDeleteAgent(agent.id);
+                                        }}
+                                    >
+                                        Delete Agent
+                                    </button>
+                                </div>
+                                <div>
+                                    <button
+                                        className="block w-full text-left px-4 py-2 hover:bg-[#24284E] text-white"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowAgentOptions(null);
+                                            handleEditAgent(agent.id);
+                                        }}
+                                    >
+                                        Edit Agent
+                                    </button>
+                                </div>
+                            </div>
+                        )} */}
+                    </div>
+                ))
+            ) : (
+                <div className="text-gray-500 text-sm text-center p-4 italic">
+                    No agents created yet
+                </div>
+            )}
+        </div>
+    )}
+</div>
                                     {/* <div className="mb-4">
                                         <h3
                                             className="text-lg font-semibold mb-2 cursor-pointer flex items-center justify-between"

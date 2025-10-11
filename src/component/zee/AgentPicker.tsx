@@ -450,7 +450,7 @@ function Starfield() {
 const CUBS: CubItem[] = [
   { id: 'BD',         label: 'BD Agent',         tagline: 'Helps You Sell your Products and onboards Investors', icon: '/images/cubs/bd.png' },
   { id: 'Content',    label: 'Content Agent',    tagline: 'Generates Media for Social Awareness and Brand Growth', icon: '/images/cubs/content.png' },
-  { id: 'Support',    label: 'Support Agent',    tagline: 'Handles Support to increase Retention', icon: '/images/cubs/support.png' },
+  { id: 'Support',    label: 'Private AI Agent',    tagline: 'Handles Support to increase Retention', icon: '/images/cubs/support.png' },
   { id: 'Trading',    label: 'Trading Agent',    tagline: 'Helps You Trade Perpetuals', icon: '/images/cubs/trading.png' },
   { id: 'Prediction', label: 'Prediction Agent', tagline: 'Forecasts Trends on Prediction Markets', icon: '/images/cubs/prediction.png' },
   { id: 'Treasury',   label: 'Treasury Agent',   tagline: 'Grows your Treasury Safely', icon: '/images/cubs/treasury.png' },
