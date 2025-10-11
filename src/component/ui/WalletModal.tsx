@@ -352,9 +352,9 @@
 "use client";
 
 import { useState, useEffect, useContext, FormEvent } from "react";
-import { BaseWalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { toast } from "sonner";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { MagicWalletName } from "../MagicWalletAdapter";
 import { MagicAdapterContext } from "../AppWalletProvider";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
@@ -365,22 +365,13 @@ interface WalletModalProps {
   isVisible: boolean;
   onClose: () => void;
   onWalletSelect?: (walletName: WalletName) => void;
+  isConnecting?: boolean;
 }
-
-const LABELS = {
-  "change-wallet": "Change wallet",
-  connecting: "Connecting ...",
-  "copy-address": "Copy address",
-  copied: "Copied",
-  disconnect: "Disconnect",
-  "has-wallet": "Connect",
-  "no-wallet": "Select Wallet",
-};
 
 type EmailFlowMode = "picker" | "magic-email" | null;
 const PRIVY_WALLET_NAME = "Privy (Email)";
 
-export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalProps) => {
+export const WalletModal = ({ isVisible, onClose, onWalletSelect, isConnecting = false }: WalletModalProps) => {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<EmailFlowMode>(null);
   const [email, setEmail] = useState("");
@@ -411,14 +402,6 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
   
   const { wallets: privySolanaWallets, ready: walletsReady } = useWallets();
 
-  // Close modal when wallet connects (but only if parent didn't provide custom handler)
-  useEffect(() => {
-    if (publicKey && !connecting && !onWalletSelect) {
-      onClose();
-    }
-  }, [publicKey, connecting, onClose, onWalletSelect]);
-
-  // Reset state when modal closes
   useEffect(() => {
     if (!isVisible) {
       setMode(null);
@@ -428,7 +411,6 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
     }
   }, [isVisible]);
 
-  // Handle Privy Solana wallet connection
   useEffect(() => {
     const handlePrivyWallet = async () => {
       if (!privyConnecting || !authenticated || !privyUser || !walletsReady) return;
@@ -460,7 +442,6 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
             adapter._privyWallet = privyWallet;
           }
           
-          // Use event-driven selection
           setTimeout(() => {
             if (onWalletSelect) {
               onWalletSelect(PRIVY_WALLET_NAME as WalletName);
@@ -473,8 +454,7 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
             setLoading(false);
             
             localStorage.setItem('walletName', PRIVY_WALLET_NAME);
-            localStorage.setItem('zk:lastWallet', JSON.stringify({ name: PRIVY_WALLET_NAME }));
-            localStorage.setItem('zk:connectedWalletAddress', privyWallet.address);
+            localStorage.setItem('connectedWalletAddress', privyWallet.address);
             
             if (typeof window !== 'undefined') {
               (window as any).__privySolanaAddress = privyWallet.address;
@@ -535,7 +515,6 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
     setLoading(true);
     
     try {
-      // Try context adapter first
       if (magicAdapter && typeof (magicAdapter as any).connectWithEmail === "function") {
         await (magicAdapter as any).connectWithEmail(email);
         
@@ -550,7 +529,6 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
         return;
       }
 
-      // Try from wallet list
       const magicFromList = solanaAdapters.find((w) => (w as any)?.name === MagicWalletName);
       if (magicFromList && typeof (magicFromList as any).connectWithEmail === "function") {
         await (magicFromList as any).connectWithEmail(email);
@@ -566,7 +544,6 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
         return;
       }
 
-      // Fallback to global Magic
       const globalMagic = typeof window !== "undefined" ? (window as any).magic : null;
       const globalAdapter = typeof window !== "undefined" ? (window as any).magicAdapter : null;
       
@@ -585,9 +562,8 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
       } else {
         const info = await globalMagic.user.getInfo();
         if (info?.publicAddress) {
-          localStorage.setItem("zk:connectedWalletAddress", info.publicAddress);
+          localStorage.setItem("connectedWalletAddress", info.publicAddress);
           localStorage.setItem("walletName", MagicWalletName);
-          localStorage.setItem("zk:lastWallet", JSON.stringify({ name: MagicWalletName }));
         }
       }
       
@@ -609,39 +585,89 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
     }
   };
 
-  // Handle standard wallet selection
-  const handleStandardWalletClick = (walletName: string) => {
+  const handleStandardWalletClick = async (walletName: string) => {
     console.log(`[WalletModal] Standard wallet selected: ${walletName}`);
     
     if (onWalletSelect) {
-      // Use event-driven system
-      onWalletSelect(walletName as WalletName);
+      try {
+        onWalletSelect(walletName as WalletName);
+      } catch (error) {
+        console.error('[WalletModal] Error in onWalletSelect:', error);
+      }
     } else {
-      // Fallback to direct selection
       select(walletName as WalletName);
-      onClose();
     }
   };
 
+  const handleBackdropClick = () => {
+    if (isConnecting || loading || privyConnecting) {
+      console.log('[Modal] Cannot close during connection');
+      toast.info('Please wait for connection to complete');
+      return;
+    }
+    onClose();
+  };
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isConnecting || loading || privyConnecting) {
+          console.log('[Modal] Cannot close during connection (Escape pressed)');
+          toast.info('Please wait for connection to complete');
+          return;
+        }
+        onClose();
+      }
+    };
+
+    if (isVisible) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isVisible, isConnecting, loading, privyConnecting, onClose]);
+
   if (!isVisible) return null;
+
+  const isBusy = isConnecting || loading || privyConnecting;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div 
+        className="absolute inset-0 bg-black/50" 
+        onClick={handleBackdropClick}
+      />
+      
       <div className="relative bg-[#171D3D] rounded-lg p-6 z-10 w-11/12 max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Connect or Create Wallet</h2>
-          <button onClick={onClose} className="text-gray-300 hover:text-white text-2xl leading-none">×</button>
+          <button 
+            onClick={handleBackdropClick} 
+            className={`text-gray-300 hover:text-white text-2xl leading-none ${isBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={isBusy}
+          >
+            ×
+          </button>
         </div>
+
+        {isBusy && (
+          <div className="mb-4 p-3 bg-blue-500/20 border border-blue-500/50 rounded text-sm text-blue-200">
+            <div className="flex items-center gap-2">
+              <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
+              <span>Connecting wallet, please wait...</span>
+            </div>
+          </div>
+        )}
 
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-2">Have a Wallet</h3>
           <p className="mb-4 text-sm text-gray-400">Connect your existing wallet.</p>
           
-          {/* List available wallets manually to use our event system */}
           <div className="space-y-2">
             {solanaAdapters
-              .filter(w => (w as any)?.readyState === 'Installed' || (w as any)?.readyState === 'Loadable')
+              .filter(w => 
+                w.readyState === WalletReadyState.Installed || 
+                w.readyState === WalletReadyState.Loadable
+              )
               .map(wallet => {
                 const walletName = (wallet as any)?.adapter?.name || (wallet as any)?.name || 'Unknown';
                 const icon = (wallet as any)?.adapter?.icon || (wallet as any)?.icon;
@@ -650,8 +676,8 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
                   <button
                     key={walletName}
                     onClick={() => handleStandardWalletClick(walletName)}
-                    disabled={loading}
-                    className="w-full flex items-center gap-3 bg-gray-700/50 hover:bg-gray-700 text-white py-3 px-4 rounded transition disabled:opacity-60"
+                    disabled={isBusy}
+                    className="w-full flex items-center gap-3 bg-gray-700/50 hover:bg-gray-700 text-white py-3 px-4 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {icon && <img src={icon} alt={walletName} className="w-6 h-6" />}
                     <span>{walletName}</span>
@@ -659,7 +685,10 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
                 );
               })}
             
-            {solanaAdapters.filter(w => (w as any)?.readyState === 'Installed' || (w as any)?.readyState === 'Loadable').length === 0 && (
+            {solanaAdapters.filter(w => 
+              w.readyState === WalletReadyState.Installed || 
+              w.readyState === WalletReadyState.Loadable
+            ).length === 0 && (
               <p className="text-gray-400 text-sm">No wallets detected. Please install a Solana wallet.</p>
             )}
           </div>
@@ -672,9 +701,9 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
             <>
               <p className="text-xs mb-2 text-gray-400">Use your email to create a wallet. Choose a provider to continue.</p>
               <button
-                className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition disabled:opacity-60"
+                className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={startEmailConnect}
-                disabled={loading}
+                disabled={isBusy}
               >
                 Connect with Email
               </button>
@@ -684,7 +713,7 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
           {mode === "picker" && (
             <div className="mt-2 space-y-2">
               <button
-                className="w-full bg-emerald-500 text-white py-2 rounded hover:bg-emerald-600 transition disabled:opacity-60"
+                className="w-full bg-emerald-500 text-white py-2 rounded hover:bg-emerald-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handlePrivyEmail}
                 disabled={loading || !privyReady}
               >
@@ -694,15 +723,16 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
                  "Continue with Privy (Solana)"}
               </button>
               <button
-                className="w-full bg-indigo-500 text-white py-2 rounded hover:bg-indigo-600 transition disabled:opacity-60"
+                className="w-full bg-indigo-500 text-white py-2 rounded hover:bg-indigo-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={chooseMagicEmail}
                 disabled={loading}
               >
                 Continue with Magic (Solana)
               </button>
               <button
-                className="w-full bg-transparent border border-white/20 text-white py-2 rounded hover:bg-white/5 transition"
+                className="w-full bg-transparent border border-white/20 text-white py-2 rounded hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => setMode(null)}
+                disabled={loading}
               >
                 Back
               </button>
@@ -720,20 +750,22 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect }: WalletModalP
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="border bg-[#171D3D] border-gray-300 rounded px-3 py-2 text-white"
+                disabled={loading}
+                className="border bg-[#171D3D] border-gray-300 rounded px-3 py-2 text-white disabled:opacity-50"
               />
               <div className="flex gap-2">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-indigo-500 text-white py-2 rounded hover:bg-indigo-600 transition disabled:opacity-60"
+                  className="flex-1 bg-indigo-500 text-white py-2 rounded hover:bg-indigo-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? "Sending OTP…" : "Send Magic Link"}
                 </button>
                 <button
                   type="button"
-                  className="px-3 rounded border border-white/20 hover:bg-white/5 transition text-white"
+                  className="px-3 rounded border border-white/20 hover:bg-white/5 transition text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setMode("picker")}
+                  disabled={loading}
                 >
                   Back
                 </button>

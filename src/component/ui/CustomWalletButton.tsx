@@ -942,14 +942,10 @@
 //       />
 //     </div>
 //   );
-// };
-
-"use client";
+// };"use client";
 
 import { useEffect, useState, useCallback, useContext, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { BaseWalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { toast } from "sonner";
@@ -969,17 +965,6 @@ declare global {
   }
 }
 
-const LABELS = {
-  "change-wallet": "Change wallet",
-  connecting: "Connecting ...",
-  "copy-address": "Copy address",
-  copied: "Copied",
-  disconnect: "Disconnect",
-  "has-wallet": "Connect",
-  "no-wallet": "Select Wallet",
-};
-
-// Enhanced safe localStorage with validation
 const safeLocalStorage = {
   getItem: (key: string): string | null => {
     if (typeof window === 'undefined') return null;
@@ -1011,15 +996,12 @@ const safeLocalStorage = {
     try {
       localStorage.removeItem("walletName");
       localStorage.removeItem("connectedWalletAddress");
-      localStorage.removeItem("zk:lastWallet");
-      localStorage.removeItem("zk:connectedWalletAddress");
     } catch (e) {
       console.error('localStorage.clearWalletData error:', e);
     }
   }
 };
 
-// State machine for connection lifecycle
 type ConnectionState = 'idle' | 'selecting' | 'connecting' | 'connected' | 'error' | 'disconnecting';
 
 class ConnectionStateMachine {
@@ -1052,7 +1034,6 @@ class ConnectionStateMachine {
     
     this.listeners.forEach(listener => listener(newState));
     
-    // Clear timeout if we reach terminal state
     if (newState === 'connected' || newState === 'idle' || newState === 'error') {
       this.clearTimeout();
     }
@@ -1063,7 +1044,7 @@ class ConnectionStateMachine {
     return () => this.listeners.delete(listener);
   }
 
-  startTimeout(duration: number = 15000) {
+  startTimeout(duration: number = 30000) {
     this.clearTimeout();
     this.connectionTimeout = setTimeout(() => {
       if (this.state === 'selecting' || this.state === 'connecting') {
@@ -1089,9 +1070,8 @@ class ConnectionStateMachine {
 
 export const CustomWalletButton = () => {
   const router = useRouter();
-  const { publicKey, wallet, connecting, disconnecting, wallets, select, disconnect } = useWallet();
+  const { publicKey, wallet, connecting, disconnecting, wallets, select, disconnect, connect } = useWallet();
   
-  // ONLY use custom modal, ignore useWalletModal
   const [isModalVisible, setModalVisible] = useState(false);
   const [storedWalletAddress, setStoredWalletAddress] = useState<string | null>(null);
   const [hasCalledAddUser, setHasCalledAddUser] = useState(false);
@@ -1105,7 +1085,6 @@ export const CustomWalletButton = () => {
   const reconnectAttempted = useRef(false);
   const walletEventCleanup = useRef<(() => void) | null>(null);
 
-  // Subscribe to state machine
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   
   useEffect(() => {
@@ -1113,7 +1092,6 @@ export const CustomWalletButton = () => {
     return unsubscribe;
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       mountedRef.current = false;
@@ -1124,28 +1102,42 @@ export const CustomWalletButton = () => {
     };
   }, []);
 
-  // Validate stored wallet state
   const validateStoredWallet = useCallback((): boolean => {
     const storedAddress = safeLocalStorage.getItem("connectedWalletAddress");
     const storedWalletName = safeLocalStorage.getItem("walletName");
     
     if (!storedAddress || !storedWalletName) return false;
     
-    if (storedWalletName === MagicWalletName) {
-      try {
-        new PublicKey(storedAddress);
-        return true;
-      } catch {
-        console.error('Invalid stored Magic wallet address');
-        safeLocalStorage.clearWalletData();
-        return false;
-      }
+    try {
+      new PublicKey(storedAddress);
+      return true;
+    } catch {
+      console.error('Invalid stored wallet address');
+      safeLocalStorage.clearWalletData();
+      return false;
     }
-    
-    return true;
   }, []);
 
-  // Event-driven wallet connection with proper awaiting
+  // Helper: Wait for wallet to be ready before connecting
+  const waitForWalletReady = useCallback(async (name: WalletName, timeoutMs = 8000): Promise<void> => {
+    const t0 = Date.now();
+    const pollMs = 100;
+    
+    while (Date.now() - t0 < timeoutMs) {
+      const wallet = wallets.find(w => (w as any)?.adapter?.name === name);
+      if (wallet && (
+        wallet.readyState === WalletReadyState.Installed || 
+        wallet.readyState === WalletReadyState.Loadable
+      )) {
+        console.log(`[waitForWalletReady] ${name} is ready`);
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, pollMs));
+    }
+    
+    throw new Error(`Auth/adapter not initialized for ${name}`);
+  }, [wallets]);
+
   const connectWallet = useCallback(async (walletName: WalletName) => {
     if (stateMachine.current.getState() !== 'idle') {
       console.log('[connectWallet] Already in progress, ignoring');
@@ -1153,106 +1145,159 @@ export const CustomWalletButton = () => {
     }
 
     stateMachine.current.setState('selecting');
-    stateMachine.current.startTimeout();
+    stateMachine.current.startTimeout(30000);
 
     try {
       console.log(`[connectWallet] Starting connection to ${walletName}`);
       
-      // Find the wallet adapter
-      const targetWallet = wallets.find(w => (w as any)?.name === walletName);
-      if (!targetWallet) {
+      // CRITICAL FIX 1: Wait for wallet to be ready before selecting
+      await waitForWalletReady(walletName);
+      
+      select(walletName);
+      await new Promise(resolve => setTimeout(resolve, 150));
+      
+      const selectedWallet = wallets.find(w => (w as any)?.adapter?.name === walletName);
+      if (!selectedWallet) {
         throw new Error(`Wallet ${walletName} not found`);
       }
 
-      const adapter = (targetWallet as any).adapter;
+      const adapter = (selectedWallet as any).adapter;
+      if (!adapter) {
+        throw new Error(`No adapter found for ${walletName}`);
+      }
       
-      // Set up event listeners BEFORE selecting
-      const cleanupPromise = new Promise<void>((resolve, reject) => {
+      console.log('[connectWallet] Adapter found:', adapter.name, 'Ready state:', adapter.readyState);
+      
+      // Set up event listeners
+      const connectionPromise = new Promise<void>((resolve, reject) => {
         const onConnect = () => {
-          console.log('[connectWallet] Wallet connected event');
-          stateMachine.current.setState('connected');
+          console.log('[connectWallet] ✅ Wallet connected event');
           cleanup();
           resolve();
         };
 
         const onError = (error: any) => {
-          console.error('[connectWallet] Wallet error event:', error);
-          stateMachine.current.setState('error', error.message || 'Connection failed');
+          console.error('[connectWallet] ❌ Wallet error event:', error);
           cleanup();
           reject(error);
         };
 
         const onDisconnect = () => {
-          console.log('[connectWallet] Wallet disconnected event during connection');
-          stateMachine.current.setState('error', 'Disconnected during connection');
+          console.log('[connectWallet] Wallet disconnected during connection');
           cleanup();
-          reject(new Error('Disconnected'));
         };
 
         const cleanup = () => {
           adapter.removeListener('connect', onConnect);
           adapter.removeListener('error', onError);
           adapter.removeListener('disconnect', onDisconnect);
+          walletEventCleanup.current = null;
         };
 
         adapter.on('connect', onConnect);
         adapter.on('error', onError);
         adapter.on('disconnect', onDisconnect);
 
-        // Store cleanup for later
         walletEventCleanup.current = cleanup;
       });
 
-      // Now select the wallet
       stateMachine.current.setState('connecting');
-      select(walletName);
+      
+      // CRITICAL FIX 2: Skip race when already connected (explicit fast-path)
+      if (!adapter.connected) {
+        console.log('[connectWallet] Calling adapter.connect()');
+        await adapter.connect();
+        
+        // Wait for connection confirmation
+        await Promise.race([
+          connectionPromise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Connection timeout')), 30000)
+          )
+        ]);
+      } else {
+        // Fast-path: no race, no waiting, clean up listeners immediately
+        console.log('[connectWallet] Already connected (fast-path)');
+        if (walletEventCleanup.current) {
+          walletEventCleanup.current();
+        }
+      }
 
-      // Wait for connection with timeout
-      await Promise.race([
-        cleanupPromise,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Connection timeout')), 15000)
-        )
-      ]);
-
-      console.log('[connectWallet] Successfully connected');
+      safeLocalStorage.setItem('walletName', String(walletName));
+      console.log('[connectWallet] ✅ Successfully connected and persisted:', walletName);
+      
+      stateMachine.current.setState('connected');
       
     } catch (error: any) {
       console.error('[connectWallet] Failed:', error);
-      stateMachine.current.setState('error', error.message || 'Connection failed');
       
-      // Don't show toast for user cancellations
-      const isCancelled = error.message?.toLowerCase().includes('user') || 
-                         error.code === 4001;
-      if (!isCancelled) {
-        toast.error(`Failed to connect: ${error.message || 'Unknown error'}`);
+      // CRITICAL FIX 3: Defensive cleanup - always remove listeners on error
+      if (walletEventCleanup.current) {
+        walletEventCleanup.current();
       }
+      
+      const isCancelled = 
+        error.message?.toLowerCase().includes('user') || 
+        error.message?.toLowerCase().includes('rejected') ||
+        error.message?.toLowerCase().includes('cancel') ||
+        error.code === 4001 ||
+        error.code === 'ACTION_REJECTED';
+      
+      if (isCancelled) {
+        console.log('[connectWallet] User cancelled connection');
+        stateMachine.current.setState('idle');
+      } else {
+        stateMachine.current.setState('error', error.message || 'Connection failed');
+        
+        if (error.message === 'Connection timeout') {
+          toast.error('Connection timed out. The wallet may be slow to respond. Please try again.');
+        } else if (error.message?.includes('not initialized')) {
+          toast.error('Wallet adapter not ready. Please try again in a moment.');
+        } else if (error.message?.includes('not installed')) {
+          toast.error(`${error.message}. Please install the wallet extension.`);
+        } else {
+          toast.error(`Failed to connect: ${error.message || 'Unknown error'}`);
+        }
+      }
+      
+      throw error;
     }
-  }, [wallets, select]);
+  }, [wallets, select, connect, waitForWalletReady]);
 
-  // Auto-reconnect on mount (only once)
+  // Auto-reconnect with proper readiness wait
   useEffect(() => {
     if (reconnectAttempted.current || publicKey || connectionState !== 'idle') return;
 
     const storedWalletName = safeLocalStorage.getItem("walletName");
     const storedAddress = safeLocalStorage.getItem("connectedWalletAddress");
 
-    if (storedWalletName === MagicWalletName && storedAddress && validateStoredWallet()) {
-      reconnectAttempted.current = true;
-      setStoredWalletAddress(storedAddress);
+    if (!storedWalletName || !storedAddress || !validateStoredWallet()) return;
 
-      console.log('[Auto-reconnect] Attempting to reconnect Magic wallet');
-      
-      // Use a small delay to ensure wallets are ready
-      setTimeout(() => {
+    reconnectAttempted.current = true;
+    setStoredWalletAddress(storedAddress);
+
+    console.log('[Auto-reconnect] Attempting to reconnect:', storedWalletName);
+    
+    // Use async IIFE to properly wait for wallet readiness
+    (async () => {
+      try {
+        // Wait for the wallet adapter to be ready
+        await waitForWalletReady(storedWalletName as WalletName, 8000);
+        
+        // Small settle delay so adapters can register listeners
+        await new Promise(r => setTimeout(r, 150));
+        
         if (mountedRef.current && !publicKey) {
-          connectWallet(MagicWalletName as WalletName);
+          await connectWallet(storedWalletName as WalletName);
         }
-      }, 500);
-    }
-  }, [publicKey, connectionState, connectWallet, validateStoredWallet]);
+      } catch (err) {
+        console.warn('[Auto-reconnect] Skipped (wallet not ready):', err);
+        // Optional: allow retry by resetting flag
+        reconnectAttempted.current = false;
+      }
+    })();
+  }, [publicKey, connectionState, connectWallet, validateStoredWallet, waitForWalletReady]);
 
-  // Get email for Magic wallet
   const getEmailSimple = useCallback(async () => {
     try {
       if (magicAdapter && (magicAdapter as any)._magic?.user) {
@@ -1269,7 +1314,6 @@ export const CustomWalletButton = () => {
     }
   }, [magicAdapter, setUserEmail]);
 
-  // Update stored address when public key changes
   useEffect(() => {
     if (publicKey && mountedRef.current) {
       const publicKeyString = publicKey.toString();
@@ -1283,14 +1327,12 @@ export const CustomWalletButton = () => {
         getEmailSimple();
       }
       
-      // Update state machine
       if (connectionState !== 'connected') {
         stateMachine.current.setState('connected');
       }
     }
   }, [publicKey, wallet, getEmailSimple, connectionState]);
 
-  // Handle disconnection
   useEffect(() => {
     if (disconnecting && mountedRef.current) {
       console.log("[Disconnect] Clearing storage");
@@ -1302,7 +1344,6 @@ export const CustomWalletButton = () => {
     }
   }, [disconnecting]);
 
-  // Reset state machine when disconnected
   useEffect(() => {
     if (!publicKey && !disconnecting && !connecting && connectionState === 'connected') {
       console.log('[State] Wallet disconnected, resetting state machine');
@@ -1310,9 +1351,8 @@ export const CustomWalletButton = () => {
     }
   }, [publicKey, disconnecting, connecting, connectionState]);
 
-  // Call add-user API
   useEffect(() => {
-    const walletAddress = publicKey?.toString() || storedWalletAddress;
+    const walletAddress = publicKey?.toString();
     const isConnected = !!publicKey;
 
     if (isConnected && walletAddress && !hasCalledAddUser && mountedRef.current) {
@@ -1340,10 +1380,9 @@ export const CustomWalletButton = () => {
         })
         .catch((err) => console.error("Error calling add-user:", err));
     }
-  }, [publicKey, storedWalletAddress, hasCalledAddUser, setCredits, setApiKey]);
+  }, [publicKey, hasCalledAddUser, setCredits, setApiKey]);
 
-  // Custom connected button component
-  const CustomConnectedButton = ({ address }: { address: string }) => {
+  const CustomConnectedButton = ({ address, walletName }: { address: string; walletName?: string }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const menuRef = useRef<HTMLUListElement>(null);
@@ -1413,12 +1452,10 @@ export const CustomWalletButton = () => {
       setUserEmail(null);
 
       try {
-        // Graceful disconnect without page reload
         if (disconnect) {
           await disconnect();
         }
         
-        // Clear storage
         safeLocalStorage.clearWalletData();
         setStoredWalletAddress(null);
         setHasCalledAddUser(false);
@@ -1429,22 +1466,12 @@ export const CustomWalletButton = () => {
       } catch (error: any) {
         console.error("Error during disconnect:", error);
         
-        // Force cleanup but DON'T reload unless absolutely necessary
         safeLocalStorage.clearWalletData();
         setStoredWalletAddress(null);
         setHasCalledAddUser(false);
         stateMachine.current.reset();
         
-        // Only reload if adapter is truly stuck
-        const isStuck = error.message?.includes('adapter') || 
-                       error.message?.includes('stuck');
-        
-        if (isStuck) {
-          toast.error('Wallet adapter stuck, reloading...');
-          setTimeout(() => window.location.reload(), 1000);
-        } else {
-          toast.info('Disconnected with cleanup');
-        }
+        toast.info('Disconnected with cleanup');
       }
     };
 
@@ -1452,6 +1479,9 @@ export const CustomWalletButton = () => {
       setModalVisible(true);
       setMenuOpen(false);
     };
+
+    const isMagic = walletName === MagicWalletName || 
+                    safeLocalStorage.getItem("walletName") === MagicWalletName;
 
     return (
       <div className="wallet-adapter-dropdown relative">
@@ -1481,9 +1511,11 @@ export const CustomWalletButton = () => {
           <li className="px-4 py-2 text-white hover:bg-gray-700 cursor-pointer border-b border-gray-600" onClick={handleChangeWallet} role="menuitem">
             🔄 Change wallet
           </li>
-          <li className="px-4 py-2 text-white hover:bg-gray-700 cursor-pointer border-b border-gray-600" onClick={handleRevealKey} role="menuitem">
-            {revealing ? '🔄 Revealing...' : '🔑 Reveal Private Key'}
-          </li>
+          {isMagic && (
+            <li className="px-4 py-2 text-white hover:bg-gray-700 cursor-pointer border-b border-gray-600" onClick={handleRevealKey} role="menuitem">
+              {revealing ? '🔄 Revealing...' : '🔑 Reveal Private Key'}
+            </li>
+          )}
           <li 
             className="px-4 py-2 text-white hover:bg-gray-700 cursor-pointer" 
             onClick={handleDisconnect} 
@@ -1497,7 +1529,6 @@ export const CustomWalletButton = () => {
   };
 
   const handleClick = () => {
-    // Only allow opening modal if not in middle of connection
     if (connectionState === 'connecting' || connectionState === 'selecting') {
       console.log('[handleClick] Connection in progress, ignoring click');
       return;
@@ -1506,7 +1537,6 @@ export const CustomWalletButton = () => {
     setModalVisible(true);
   };
 
-  // Close modal when successfully connected
   useEffect(() => {
     if (connectionState === 'connected' && isModalVisible) {
       console.log('[Modal] Auto-closing on successful connection');
@@ -1516,27 +1546,12 @@ export const CustomWalletButton = () => {
 
   const walletAddress = publicKey?.toString() || storedWalletAddress;
   const adapterName = (wallet as any)?.adapter?.name;
-  const isMagicWallet = adapterName === MagicWalletName ||
-    safeLocalStorage.getItem("walletName") === MagicWalletName;
-
-  // Show connecting state
   const isConnectingState = connectionState === 'selecting' || connectionState === 'connecting' || connecting;
 
   return (
     <div className="flex items-center justify-center relative wallet-button">
-      {isMagicWallet && walletAddress ? (
-        <CustomConnectedButton address={walletAddress} />
-      ) : publicKey ? (
-        <BaseWalletMultiButton
-          labels={LABELS}
-          className="transition-all ease-out duration-500 relative cursor-pointer group block w-full overflow-hidden border-transparent bg-gradient-to-br from-zkLightPurple via-zkLightPurple to-zkIndigo p-[1px] hover:p-0"
-          style={{
-            clipPath: "polygon(0% 0%, calc(100% - 20px) 0%, 100% 20px, 100% 100%, 20px 100%, 0% calc(100% - 20px), 0% 100%, 0% 0%)",
-            backgroundImage: "linear-gradient(to right, #A4C8FF, #643ADE)",
-            backgroundSize: "200% 200%",
-            animation: "spinGradient 3s linear infinite",
-          }}
-        />
+      {publicKey && walletAddress ? (
+        <CustomConnectedButton address={walletAddress} walletName={adapterName} />
       ) : (
         <div
           className="wallet-button transition-all ease-out duration-500 relative cursor-pointer group block w-full overflow-hidden border-transparent bg-gradient-to-br from-zkLightPurple via-zkLightPurple to-zkIndigo p-[1px] hover:p-0"
@@ -1562,11 +1577,19 @@ export const CustomWalletButton = () => {
       )}
       <WalletModal 
         isVisible={isModalVisible} 
-        onClose={() => setModalVisible(false)}
-        onWalletSelect={(walletName) => {
+        onClose={() => {
+          if (connectionState === 'connecting' || connectionState === 'selecting') {
+            console.log('[Modal] Cannot close during connection');
+            return;
+          }
           setModalVisible(false);
-          connectWallet(walletName);
         }}
+        onWalletSelect={(walletName) => {
+          connectWallet(walletName).catch(err => {
+            console.error('[Modal] Connection failed:', err);
+          });
+        }}
+        isConnecting={isConnectingState}
       />
     </div>
   );
