@@ -1,6 +1,6 @@
 import React from 'react';
 
-type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai';
+type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai'| 'generate-private';
 // | 'bridge' |'video-lipsync' | 'UGC' | 'img-to-video'  ;
 // |'train' |'post' |'select'|'launch'
 
@@ -110,6 +110,10 @@ const CommandPopup: React.FC<CommandPopupProps> = ({ onSelect }) => {
             command: 'video-gen',
             description: 'Enter a prompt to generate a video'
         },
+        {
+  command: 'generate-private',
+  description: 'Upload PDF/DOC/TXT privately → generate zk-proof JSON (auto download)',
+},
         {
   command: 'privacy-ai',
   description: 'Query a zk-proof JSON: upload a proof + ask a question',

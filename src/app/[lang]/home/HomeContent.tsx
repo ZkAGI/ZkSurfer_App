@@ -89,7 +89,7 @@ export interface HomeContentProps {
 }
 
 //type Command = 'image-gen' | 'create-agent' | 'content';
-type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai';
+type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai' |'generate-private';
 //| 'bridge' | | 'video-lipsync' | 'UGC' | 'img-to-video';
 // |'train' |'post' |'select'|'launch'
 
@@ -509,6 +509,13 @@ const [privacyProofName, setPrivacyProofName] = useState<string>('');
 
 const privacyActive = inputMessage.trim().startsWith('/privacy-ai');
 const privacyQuery = inputMessage.replace(/^\/privacy-ai\s*/,'').trim();
+type GenPrivateFile = { file: File; name: string; preview?: string; isPdf: boolean };
+//const [genPrivateFiles, setGenPrivateFiles] = useState<GenPrivateFile[]>([]);
+const [privateDocs, setPrivateDocs] = useState<File[]>([]);
+const [privateProofBlobUrl, setPrivateProofBlobUrl] = useState<string | null>(null);
+
+const isPrivacy = inputMessage.trim().startsWith('/privacy-ai');
+const isGenPrivate = inputMessage.trim().startsWith('/generate-private');
 
     const generateUUID = (): string => {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -2246,82 +2253,144 @@ const handleCommandSelect = (command: Command) => {
         return texts.join('\n');
     };
 
-const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const fileList = e.target.files;
-  if (!fileList || fileList.length === 0) return;
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (!e.target.files) return;
 
-  // ── PRIVACY-AI MODE: only JSON, parse & store, don't push into files[] ──
-  if (privacyActive) {
-    const file = fileList[0];
+  const selectedFiles = Array.from(e.target.files);
+  const isPrivacyAi = inputMessage.trim().startsWith('/privacy-ai');
+  const isGeneratePrivate = inputMessage.trim().startsWith('/generate-private');
 
-    const isJson =
-      file.type === 'application/json' ||
-      file.name.toLowerCase().endsWith('.json');
-
-    if (!isJson) {
-      toast.error('Please upload a .json proof file.');
-      e.target.value = ''; // reset the input
+  // /privacy-ai : only a single JSON file, parsed into memory, no chips in media tray
+  if (isPrivacyAi) {
+    const jsonFile = selectedFiles[0];
+    if (!jsonFile || jsonFile.type !== 'application/json') {
+      toast.error('Please upload a valid .json zkProof file.');
       return;
     }
-
     try {
-      const text = await file.text();
+      const text = await jsonFile.text();
       const parsed = JSON.parse(text);
       setPrivacyProofJson(parsed);
-      setPrivacyProofName(file.name);
-      toast.success('Proof JSON loaded.');
-    } catch (err) {
-      console.error('Invalid JSON:', err);
+      setPrivacyProofName(jsonFile.name);
+    } catch {
       toast.error('Invalid JSON file.');
       setPrivacyProofJson(null);
       setPrivacyProofName('');
     }
-
-    // Important: do not add to your media files list
-    e.target.value = ''; // allow re-uploading same file later
-    return;
+    return; // do not add to media tray
   }
 
-  // ── NORMAL MODE: your existing media handling ──
-  const selectedFiles = Array.from(fileList);
+  // /generate-private : accept Doc/PDF/TXT; store in privateDocs only
+  if (isGeneratePrivate) {
+    const allowed = selectedFiles.filter(f =>
+      ['application/pdf', 'text/plain', 'application/msword',
+       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ].includes(f.type)
+      || /\.(pdf|txt|doc|docx)$/i.test(f.name)
+    );
 
+    if (allowed.length === 0) {
+      toast.error('Please upload PDF, DOC, DOCX, or TXT files.');
+      return;
+    }
+    setPrivateDocs(prev => [...prev, ...allowed]);
+    return; // do not add to media tray
+  }
+
+  // Default (your original logic)
   const newFilesOrNull: (FileObject | null)[] = await Promise.all(
     selectedFiles.map(async (file) => {
       if (file.type === 'application/pdf') {
-        return {
-          file,
-          preview: URL.createObjectURL(file),
-          isPdf: true,
-          isVideoOrAudio: false,
-        };
+        return { file, preview: URL.createObjectURL(file), isPdf: true, isVideoOrAudio: false };
       } else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
-        return {
-          file,
-          preview: URL.createObjectURL(file),
-          isPdf: false,
-          isVideoOrAudio: true,
-        };
+        return { file, preview: URL.createObjectURL(file), isPdf: false, isVideoOrAudio: true };
       } else if (file.type.startsWith('image/')) {
-        return {
-          file,
-          preview: await fileToBase64(file),
-          isPdf: false,
-          isVideoOrAudio: false,
-        };
-      } else {
-        // Unsupported type (silently ignore or toast)
-        return null;
+        return { file, preview: await fileToBase64(file), isPdf: false, isVideoOrAudio: false };
       }
+      return null;
     })
   );
 
-  const validFiles = newFilesOrNull.filter(
-    (f): f is FileObject => f !== null
-  );
-
-  setFiles((prev) => [...prev, ...validFiles]);
-  e.target.value = ''; // allow selecting the same file again next time
+  const validFiles = newFilesOrNull.filter((f): f is FileObject => f !== null);
+  setFiles(prev => [...prev, ...validFiles]);
 };
+
+// const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+//   const fileList = e.target.files;
+//   if (!fileList || fileList.length === 0) return;
+
+//   // ── PRIVACY-AI MODE: only JSON, parse & store, don't push into files[] ──
+//   if (privacyActive) {
+//     const file = fileList[0];
+
+//     const isJson =
+//       file.type === 'application/json' ||
+//       file.name.toLowerCase().endsWith('.json');
+
+//     if (!isJson) {
+//       toast.error('Please upload a .json proof file.');
+//       e.target.value = ''; // reset the input
+//       return;
+//     }
+
+//     try {
+//       const text = await file.text();
+//       const parsed = JSON.parse(text);
+//       setPrivacyProofJson(parsed);
+//       setPrivacyProofName(file.name);
+//       toast.success('Proof JSON loaded.');
+//     } catch (err) {
+//       console.error('Invalid JSON:', err);
+//       toast.error('Invalid JSON file.');
+//       setPrivacyProofJson(null);
+//       setPrivacyProofName('');
+//     }
+
+//     // Important: do not add to your media files list
+//     e.target.value = ''; // allow re-uploading same file later
+//     return;
+//   }
+
+//   // ── NORMAL MODE: your existing media handling ──
+//   const selectedFiles = Array.from(fileList);
+
+//   const newFilesOrNull: (FileObject | null)[] = await Promise.all(
+//     selectedFiles.map(async (file) => {
+//       if (file.type === 'application/pdf') {
+//         return {
+//           file,
+//           preview: URL.createObjectURL(file),
+//           isPdf: true,
+//           isVideoOrAudio: false,
+//         };
+//       } else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+//         return {
+//           file,
+//           preview: URL.createObjectURL(file),
+//           isPdf: false,
+//           isVideoOrAudio: true,
+//         };
+//       } else if (file.type.startsWith('image/')) {
+//         return {
+//           file,
+//           preview: await fileToBase64(file),
+//           isPdf: false,
+//           isVideoOrAudio: false,
+//         };
+//       } else {
+//         // Unsupported type (silently ignore or toast)
+//         return null;
+//       }
+//     })
+//   );
+
+//   const validFiles = newFilesOrNull.filter(
+//     (f): f is FileObject => f !== null
+//   );
+
+//   setFiles((prev) => [...prev, ...validFiles]);
+//   e.target.value = ''; // allow selecting the same file again next time
+// };
 
 
     // const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3218,48 +3287,205 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
   return;
 }
 
-{inputMessage.trim().startsWith('/privacy-ai') && (
-  <div className="px-3 pt-3">
-    <div className="w-full rounded-lg border border-dashed border-[#2B2F55] bg-[#0A0F2C] p-3 flex items-center justify-between gap-3">
-      <div className="text-sm text-gray-300">
-        {privacyProofFile
-          ? <span className="text-gray-200">Attached proof: <b>{privacyProofFile.name}</b></span>
-          : <>Upload the zkproof JSON file you wish to query</>}
+// Complete /generate-private command handler
+
+if (inputMessage.trim().startsWith('/generate-private')) {
+  e.preventDefault();
+
+  // 1️⃣ Validations
+  if (privateDocs.length === 0) {
+    toast.error('Please upload at least one PDF/DOC/TXT.');
+    return;
+  }
+
+  if (!publicKey) {
+    toast.error('Please connect your wallet first.');
+    return;
+  }
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const oversized = privateDocs.filter(f => f.size > MAX_FILE_SIZE);
+  if (oversized.length > 0) {
+    toast.error(`Some files exceed 10MB limit: ${oversized.map(f => f.name).join(', ')}`);
+    return;
+  }
+
+  // 2️⃣ Add user message
+  const userMessage: Message = {
+    role: 'user',
+    content: (
+      <div className="space-y-2">
+        <div className="text-white">Generate private proof from documents</div>
+        <div className="text-sm text-gray-400">
+          Files: {privateDocs.map(f => f.name).join(', ')}
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        {privacyProofFile && (
-          <button
-            type="button"
-            className="px-2 py-1 text-xs bg-[#171D3D] border border-gray-700 rounded hover:bg-[#24284E]"
-            onClick={() => setShowJsonPreview(true)}
-            title="Preview JSON"
-          >
-            View
-          </button>
-        )}
-        <label className="px-2 py-1 text-xs bg-white/10 border border-gray-700 rounded cursor-pointer hover:bg-white/15">
-          {privacyProofFile ? 'Replace' : 'Upload JSON'}
-          <input
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(e) => handlePrivacyProofChange(e.target.files?.[0] ?? null)}
-          />
-        </label>
-      </div>
-    </div>
-    {/* Optional kb_id override (hidden by default; show if you want a control)
-    <div className="mt-2">
-      <input
-        value={privacyKbId}
-        onChange={(e) => setPrivacyKbId(e.target.value)}
-        placeholder="kb_id (optional)"
-        className="bg-[#171D3D] text-white rounded px-2 py-1 text-xs border border-gray-700"
-      />
-    </div>
-    */}
-  </div>
-)}
+    ) as any,
+    type: 'text',
+  };
+  setDisplayMessages(prev => [...prev, userMessage]);
+
+  // 3️⃣ Clear input & show loading
+  setInputMessage('');
+  if (inputRef.current) inputRef.current.style.height = '2.5rem';
+  setIsLoading(true);
+
+  try {
+    // 4️⃣ Create KB with correct payload
+    const kbSuffix = Math.floor(10000000 + Math.random() * 90000000).toString();
+    const walletAddr = publicKey.toString();
+    
+    console.log('📝 Creating KB...');
+    const createRes = await fetch('/api/kb/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        user_id: walletAddr,
+        kb_name: kbSuffix,
+        is_public: true
+      }),
+    });
+    
+    if (!createRes.ok) {
+      const errorText = await createRes.text();
+      throw new Error(`Failed to create KB: ${errorText}`);
+    }
+    const { kb_id } = await createRes.json();
+    console.log('✅ KB created:', kb_id);
+
+    // 5️⃣ Upload files with user_id
+    const form = new FormData();
+    form.append('user_id', walletAddr);
+    form.append('kb_id', kb_id);
+    
+    privateDocs.forEach(f => {
+      form.append('files', f, f.name);
+      console.log('📎 Adding file:', f.name, `(${(f.size / 1024).toFixed(1)} KB)`);
+    });
+
+    console.log('📤 Uploading files...');
+    const upRes = await fetch('/api/kb/upload/private', { 
+      method: 'POST', 
+      body: form 
+    });
+    
+    if (!upRes.ok) {
+      const errorText = await upRes.text();
+      console.error('❌ Upload failed:', errorText);
+      throw new Error(`Failed to upload: ${errorText}`);
+    }
+    const uploadResult = await upRes.json();
+    console.log('✅ Upload successful:', uploadResult);
+
+    // Extract asset_id from upload response
+    if (!uploadResult.created_assets || uploadResult.created_assets.length === 0) {
+      throw new Error('No assets were created during upload');
+    }
+    const asset_id = uploadResult.created_assets[0];
+    console.log('📦 Asset ID:', asset_id);
+
+    // 6️⃣ Generate proofs with BOTH kb_id AND asset_id
+    console.log('🔐 Generating proofs...');
+    const genRes = await fetch('/api/kb/proofs/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        kb_id: kb_id,
+        asset_id: asset_id
+      }),
+    });
+    
+    if (!genRes.ok) {
+      const errorText = await genRes.text();
+      throw new Error(`Proof generation failed: ${errorText}`);
+    }
+
+    // Get JSON response with download_url
+    const proofResponse = await genRes.json();
+    console.log('✅ Proof generated:', proofResponse);
+
+    if (!proofResponse.download_url) {
+      throw new Error('No download URL in response');
+    }
+
+    const downloadUrl = proofResponse.download_url;
+    console.log('📥 Download URL:', downloadUrl);
+
+    // 7️⃣ Download the actual proof file from download_url
+    const downloadRes = await fetch(downloadUrl);
+    if (!downloadRes.ok) {
+      throw new Error('Failed to download proof file');
+    }
+
+    const proofBlob = await downloadRes.blob();
+    const blobUrl = URL.createObjectURL(proofBlob);
+    setPrivateProofBlobUrl(blobUrl);
+    console.log('✅ Proof file downloaded successfully');
+
+    // 8️⃣ Auto download
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `proof_${asset_id}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    // 9️⃣ Show success message
+    setDisplayMessages(prev => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: (
+          <div className="space-y-3">
+            <div className="text-green-400">
+              ✅ Proof generated successfully!
+            </div>
+            <div className="text-sm text-gray-400">
+              Processed {privateDocs.length} document{privateDocs.length !== 1 ? 's' : ''}. The proof file has been downloaded automatically.
+            </div>
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors"
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = `proof_${asset_id}.json`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+              }}
+            >
+              📥 Download Proof Again
+            </button>
+          </div>
+        ),
+      } as Message,
+    ]);
+
+    toast.success(`Proof generated for ${privateDocs.length} document(s)!`);
+
+  } catch (err: any) {
+    console.error('❌ Error:', err);
+    toast.error(err.message || 'Something went wrong');
+    
+    // Show simple error message
+    setDisplayMessages(prev => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: (
+          <div className="text-red-400">
+            ❌ Failed to generate proof: {err.message || 'Unknown error'}
+          </div>
+        ),
+        type: 'text',
+      } as Message,
+    ]);
+  } finally {
+    setIsLoading(false);
+    setPrivateDocs([]);
+  }
+  return;
+}
 
 
         // if (fullMessage.startsWith('/generate-voice-clone')) {
@@ -3345,6 +3571,7 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
         //     return;
         // }
+        
 
 if (fullMessage.startsWith('/privacy-ai')) {
   const query = fullMessage.replace('/privacy-ai', '').trim();
@@ -6637,11 +6864,14 @@ if (isCreateAgent) {
                                                     }}
                                                    placeholder={
   inputMessage.trim().startsWith('/privacy-ai')
-    ? 'Type your question about the uploaded proof…'
-    : chainGptMode
-      ? 'Ask Web3 AI about crypto, DeFi, NFTs...'
-      : dictionary?.inputPlaceholder || 'How can I help you today?'
+    ? 'Upload your zkProof JSON, then type your question here…'
+    : inputMessage.trim().startsWith('/generate-private')
+      ? 'Upload PDF/DOC/TXT to generate a private proof…'
+      : chainGptMode
+        ? 'Ask Web3 AI about crypto, DeFi, NFTs...'
+        : dictionary?.inputPlaceholder || 'How can I help you today?'
 }
+
                                                     className={`w-full resize-none overflow-y-auto bg-transparent text-white rounded-lg border-none focus:outline-none ${chainGptMode ? 'placeholder-green-400' : 'placeholder-gray-400'
                                                         }`}
                                                     style={{
@@ -6686,19 +6916,39 @@ if (isCreateAgent) {
       <CommandPopup onSelect={handleCommandSelect}/>
     </div>
   )}
+  {isGenPrivate && privateDocs.length > 0 && (
+  <div className="mt-2 mb-2 flex flex-wrap gap-2">
+    {privateDocs.map((file, i) => (
+      <div key={i} className="inline-flex items-center gap-2 bg-[#171D3D] border border-[#2B2F5B] px-2 py-1 rounded-md">
+        <span className="text-xs text-blue-300">{file.name}</span>
+        <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
+        <button onClick={() => setPrivateDocs(prev => prev.filter((_, idx) => idx !== i))}>
+          Remove
+        </button>
+      </div>
+    ))}
+  </div>
+)}
                                             </div>
 
                                             <div className="flex items-center justify-between gap-2 px-3 pb-3">
                                                 <div className="flex items-center gap-2">
-                                                    <input
-                                                        id="fileInput"
-                                                        type="file"
-                                                        onChange={handleFileChange}
-                                                         accept={privacyActive ? 'application/json,.json' : 'image/*,.pdf,video/*,audio/*'}
-                                                        className="hidden"
-                                                        multiple
-                                                        disabled={!wallet.connected}
-                                                    />
+                                                   <input
+  id="fileInput"
+  type="file"
+  onChange={handleFileChange}
+  accept={
+    isPrivacy
+      ? 'application/json'
+      : isGenPrivate
+      ? 'application/pdf,.txt,.md,.doc,.docx,.rtf'
+      : 'image/*,.pdf,video/*,audio/*'
+  }
+  className="hidden"
+  multiple={isGenPrivate}   // allow multiple docs for generate-private
+  disabled={!wallet.connected}
+/>
+
                                                     <label
                                                         htmlFor="fileInput"
                                                         className={`flex items-center justify-center rounded-lg p-2 transition-colors ${!wallet.connected
@@ -6768,35 +7018,7 @@ if (isCreateAgent) {
                                                 </button>
                                             </div>
 
-                                            {/* {showVideoLengthModal && wan2Choice === 'with' && (
-                                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                                                    <div className="bg-[#171D3D] p-6 rounded-lg shadow-lg relative w-80">
-                                                        <button
-                                                            className="absolute top-2 right-2 text-white hover:text-gray-300"
-                                                            onClick={() => setShowVideoLengthModal(false)}
-                                                        >
-                                                            ✖
-                                                        </button>
-                                                        <h2 className="text-xl text-white mb-4">Enter Video Length</h2>
-                                                        <input
-                                                            type="number"
-                                                            className="w-full bg-gray-800 text-white p-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                            value={videoLength}
-                                                            onChange={(e) => setVideoLength(e.target.value)}
-                                                            placeholder="Duration in seconds"
-                                                        />
-                                                        <button
-                                                            className="px-4 py-2 bg-blue-500 text-white rounded w-full hover:bg-blue-600 transition-colors"
-                                                            onClick={() => {
-                                                                setShowVideoLengthModal(false)
-                                                                handleSubmitImgToVideoWan2()
-                                                            }}
-                                                        >
-                                                            Generate Video
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )} */}
+                                 
 
                                             {showImageSelectModal && selectedImage && (
                                                 <ImageSelectionModal
