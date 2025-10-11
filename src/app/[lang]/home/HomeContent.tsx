@@ -3452,7 +3452,9 @@ if (inputMessage.trim().startsWith('/generate-private')) {
     console.log('📥 Download URL:', downloadUrl);
 
     // 7️⃣ Download the actual proof file from download_url
-    const downloadRes = await fetch(downloadUrl);
+    const downloadRes = await fetch(
+  `/api/kb/proofs/download?kb_id=${encodeURIComponent(kb_id)}&asset_id=${encodeURIComponent(asset_id)}`
+);
     if (!downloadRes.ok) {
       throw new Error('Failed to download proof file');
     }

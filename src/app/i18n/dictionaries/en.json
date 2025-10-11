@@ -17,7 +17,7 @@
     "explore": "Explore AI Agents",
     "apiKeys": "API Keys",
     "agents": {
-      "title": "Agents",
+      "title": "Agent Swarms",
       "noAgents": "No agents created yet"
     },
     "toggleSidebar": "Toggle Sidebar",
