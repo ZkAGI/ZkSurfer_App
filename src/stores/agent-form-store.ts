@@ -15,6 +15,9 @@ export type KBAsset = {
 };
 
 export type ZeeForm = {
+  zeeType?: "enterprise" | "coin-launch";
+  paymentStatus?: boolean;
+
   // Jurisdiction
   jurisdictionType?: "business" | "individual";
   country?: string;
@@ -34,11 +37,11 @@ export type ZeeForm = {
   newsFilters?: string[];
 
   // KB API metadata
-  kbId?: string;                 // returned from /kb/create
-  kbName?: string;               // "<swarm>-kb"
-  isKbPublic?: boolean;          // Yes/No choice at modal top
-  kbUserId?: string;             // "<wallet>:<swarm>"
-  kbReady?: boolean;             // modal finished create+uploads
+  kbId?: string;
+  kbName?: string;
+  isKbPublic?: boolean;
+  kbUserId?: string;
+  kbReady?: boolean;
 
   // Assets + quick lookup maps
   kbPublicAssetMap?: Record<string, string>;   // filename/url -> asset_id
@@ -61,7 +64,7 @@ export type ZeeForm = {
   presetAvatar?: string;
 
   // Voice
-  voiceType?: "preset" | "upload";  // you normalize "upload" -> "custom" in API
+  voiceType?: "preset" | "upload";
   presetVoice?: string;
   voiceSample?: File | null;
 
@@ -77,7 +80,7 @@ export type ZeeForm = {
 type AgentFormState = {
   data: Partial<ZeeForm>;
 
-  // generic setter (merge patch)
+  /** Generic setter (merge-patch) – sanitizes paymentStatus to boolean */
   setData: (patch: Partial<ZeeForm>) => void;
 
   // KB helpers
@@ -109,8 +112,21 @@ type AgentFormState = {
 export const useAgentFormStore = create<AgentFormState>((set, get) => ({
   data: {},
 
+  /** Implementation lives here, not in the type */
   setData: (patch) =>
-    set((state) => ({ data: { ...state.data, ...patch } })),
+    set((state) => {
+      const next: any = { ...patch };
+
+      // Force paymentStatus to be boolean if provided
+      if (Object.prototype.hasOwnProperty.call(next, "paymentStatus")) {
+        const v = next.paymentStatus;
+        next.paymentStatus =
+          typeof v === "boolean" ? v :
+          typeof v === "string" ? v === "true" : Boolean(v);
+      }
+
+      return { data: { ...state.data, ...next } };
+    }),
 
   setKbMeta: ({ kbId, kbName, isKbPublic, kbUserId }) =>
     set((state) => ({

@@ -436,7 +436,6 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
   setFlowGateOpen, setPickerOpen, setFormOpen
 } = useAgentCart();
 
-
     const { editMode, setEditMode } = useCharacterEditStore();
     const { messages, addMessage, setMessages } = useConversationStore.getState();
     const { setCharacterJson } = useCharacterStore();
@@ -623,6 +622,8 @@ const openCreateAgentForm = () => {
     // };
 
     
+    
+
     const [hasHydrated, setHasHydrated] = useState(false);
   useEffect(() => setHasHydrated(true), []);
 
@@ -2293,68 +2294,103 @@ const handleCommandSelect = (command: Command) => {
         return texts.join('\n');
     };
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  if (!e.target.files) return;
+const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  console.log('📎 File change triggered');
+  console.log('📎 Mode - isPrivacy:', isPrivacy, 'isGenPrivate:', isGenPrivate);
+  
+  if (!e.target.files || e.target.files.length === 0) {
+    console.warn('⚠️ No files selected');
+    return;
+  }
 
-  const selectedFiles = Array.from(e.target.files);
-  const isPrivacyAi = inputMessage.trim().startsWith('/privacy-ai');
-  const isGeneratePrivate = inputMessage.trim().startsWith('/generate-private');
+  const files = Array.from(e.target.files);
+  console.log('✅ Files captured:', files.map(f => `${f.name} (${f.type})`));
 
-  // /privacy-ai : only a single JSON file, parsed into memory, no chips in media tray
-  if (isPrivacyAi) {
-    const jsonFile = selectedFiles[0];
-    if (!jsonFile || jsonFile.type !== 'application/json') {
-      toast.error('Please upload a valid .json zkProof file.');
+  if (isPrivacy) {
+    // ✅ PRIVACY AI MODE - Single JSON proof file
+    const file = files[0];
+    console.log('🔍 Checking file:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+    
+    // Check file size (5MB limit)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+      toast.error(`❌ File size exceeds limit. Max 5MB allowed. (Your file: ${fileSizeMB}MB)`);
+      e.target.value = '';
       return;
     }
+    
+    if (!file.name.endsWith('.json') && file.type !== 'application/json') {
+      toast.error('Please upload a valid JSON proof file');
+      e.target.value = '';
+      return;
+    }
+    
     try {
-      const text = await jsonFile.text();
-      const parsed = JSON.parse(text);
-      setPrivacyProofJson(parsed);
-      setPrivacyProofName(jsonFile.name);
-    } catch {
-      toast.error('Invalid JSON file.');
-      setPrivacyProofJson(null);
-      setPrivacyProofName('');
-    }
-    return; // do not add to media tray
-  }
-
-  // /generate-private : accept Doc/PDF/TXT; store in privateDocs only
-  if (isGeneratePrivate) {
-    const allowed = selectedFiles.filter(f =>
-      ['application/pdf', 'text/plain', 'application/msword',
-       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      ].includes(f.type)
-      || /\.(pdf|txt|doc|docx)$/i.test(f.name)
-    );
-
-    if (allowed.length === 0) {
-      toast.error('Please upload PDF, DOC, DOCX, or TXT files.');
+      const fileContent = await file.text();
+      const jsonData = JSON.parse(fileContent);
+      
+      setPrivacyProofFile(file);
+      setPrivacyProofJson(jsonData);
+      setPrivacyProofName(file.name);
+      
+      toast.success(`✅ Privacy proof loaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+      console.log('✅ privacyProofJson set:', jsonData);
+      
+    } catch (parseError) {
+      console.error('❌ Failed to parse JSON:', parseError);
+      toast.error('Invalid JSON file. Please check the file format.');
+      e.target.value = '';
       return;
     }
-    setPrivateDocs(prev => [...prev, ...allowed]);
-    return; // do not add to media tray
+    
+  } 
+  else if (isGenPrivate) {
+  // ✅ GENERATE PRIVATE MODE - Multiple documents
+  
+  // ✅ CHECK FILE SIZES (5MB limit per file)
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const oversizedFiles = files.filter(f => f.size > MAX_FILE_SIZE);
+  
+  if (oversizedFiles.length > 0) {
+    const fileList = oversizedFiles.map(f => 
+      `${f.name} (${(f.size / 1024 / 1024).toFixed(2)}MB)`
+    ).join(', ');
+    toast.error(`❌ File size exceeds limit. Max 5MB per file. Oversized: ${fileList}`);
+    e.target.value = '';
+    return;
+  }
+  
+  // ✅ ADD TO EXISTING FILES instead of replacing
+  setPrivateDocs(prev => {
+    // Avoid duplicate file names
+    const existingNames = new Set(prev.map(f => f.name));
+    const newFiles = files.filter(f => !existingNames.has(f.name));
+    
+    if (newFiles.length === 0) {
+      toast.warning('⚠️ File(s) already added');
+      return prev;
+    }
+    
+    const combined = [...prev, ...newFiles];
+    const totalSizeMB = (combined.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2);
+    
+    toast.success(`✅ Added ${newFiles.length} document(s). Total: ${combined.length} files (${totalSizeMB}MB)`);
+    console.log('✅ privateDocs updated:', combined.map(f => f.name));
+    
+    return combined;
+  });
+}
+  else {
+    // ✅ REGULAR MODE - Attachments
+    setAttachments(files);
+    toast.success(`✅ Attached ${files.length} file(s)`);
+    console.log('✅ Regular attachments:', files.map(f => f.name));
   }
 
-  // Default (your original logic)
-  const newFilesOrNull: (FileObject | null)[] = await Promise.all(
-    selectedFiles.map(async (file) => {
-      if (file.type === 'application/pdf') {
-        return { file, preview: URL.createObjectURL(file), isPdf: true, isVideoOrAudio: false };
-      } else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
-        return { file, preview: URL.createObjectURL(file), isPdf: false, isVideoOrAudio: true };
-      } else if (file.type.startsWith('image/')) {
-        return { file, preview: await fileToBase64(file), isPdf: false, isVideoOrAudio: false };
-      }
-      return null;
-    })
-  );
-
-  const validFiles = newFilesOrNull.filter((f): f is FileObject => f !== null);
-  setFiles(prev => [...prev, ...validFiles]);
+  // Clear input value
+  e.target.value = '';
 };
-
 // const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 //   const fileList = e.target.files;
 //   if (!fileList || fileList.length === 0) return;
@@ -3414,18 +3450,36 @@ if (inputMessage.trim().startsWith('/generate-private')) {
       console.error('❌ Upload failed:', errorText);
       throw new Error(`Failed to upload: ${errorText}`);
     }
-    const uploadResult = await upRes.json();
-    console.log('✅ Upload successful:', uploadResult);
+  // After successful upload
+const uploadResult = await upRes.json();
+console.log('✅ Upload successful:', uploadResult);
 
-    // Extract asset_id from upload response
-    if (!uploadResult.created_assets || uploadResult.created_assets.length === 0) {
-      throw new Error('No assets were created during upload');
-    }
-    const asset_id = uploadResult.created_assets[0];
-    console.log('📦 Asset ID:', asset_id);
+// Extract ALL asset_ids from upload response
+if (!uploadResult.created_assets || uploadResult.created_assets.length === 0) {
+  throw new Error('No assets were created during upload');
+}
 
-    // 6️⃣ Generate proofs with BOTH kb_id AND asset_id
-    console.log('🔐 Generating proofs...');
+const assetIds = uploadResult.created_assets;
+console.log('📦 Asset IDs:', assetIds);
+
+// 6️⃣ Generate proofs for ALL files
+console.log(`🔐 Generating proofs for ${assetIds.length} file(s)...`);
+
+const proofDownloads: Array<{ 
+  assetId: string; 
+  blobUrl: string; 
+  fileName: string;
+  success: boolean; 
+}> = [];
+
+for (let i = 0; i < assetIds.length; i++) {
+  const asset_id = assetIds[i];
+  const originalFile = privateDocs[i];
+  
+  console.log(`🔐 [${i + 1}/${assetIds.length}] Generating proof for: ${originalFile?.name || asset_id}`);
+  
+  try {
+    // Generate proof
     const genRes = await fetch('/api/kb/proofs/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -3437,73 +3491,123 @@ if (inputMessage.trim().startsWith('/generate-private')) {
     
     if (!genRes.ok) {
       const errorText = await genRes.text();
-      throw new Error(`Proof generation failed: ${errorText}`);
+      console.warn(`⚠️ Proof generation failed for ${asset_id}:`, errorText);
+      
+      // Add failed entry
+      proofDownloads.push({
+        assetId: asset_id,
+        blobUrl: '',
+        fileName: originalFile?.name || `file_${i + 1}`,
+        success: false
+      });
+      continue;
     }
 
-    // Get JSON response with download_url
     const proofResponse = await genRes.json();
-    console.log('✅ Proof generated:', proofResponse);
+    console.log(`✅ [${i + 1}/${assetIds.length}] Proof generated for ${asset_id}`);
 
-    if (!proofResponse.download_url) {
-      throw new Error('No download URL in response');
-    }
-
-    const downloadUrl = proofResponse.download_url;
-    console.log('📥 Download URL:', downloadUrl);
-
-    // 7️⃣ Download the actual proof file from download_url
+    // 7️⃣ Download via proxy
     const downloadRes = await fetch(
-  `/api/kb/proofs/download?kb_id=${encodeURIComponent(kb_id)}&asset_id=${encodeURIComponent(asset_id)}`
-);
+      `/api/kb/proofs/download?kb_id=${encodeURIComponent(kb_id)}&asset_id=${encodeURIComponent(asset_id)}`
+    );
+    
     if (!downloadRes.ok) {
-      throw new Error('Failed to download proof file');
+      console.warn(`⚠️ Download failed for ${asset_id}`);
+      proofDownloads.push({
+        assetId: asset_id,
+        blobUrl: '',
+        fileName: originalFile?.name || `file_${i + 1}`,
+        success: false
+      });
+      continue;
     }
 
-    const proofBlob = await downloadRes.blob();
+    // Get the JSON directly
+    const proofJson = await downloadRes.json();
+    
+    // Create blob for download
+    const proofBlob = new Blob([JSON.stringify(proofJson, null, 2)], { 
+      type: 'application/json' 
+    });
     const blobUrl = URL.createObjectURL(proofBlob);
-    setPrivateProofBlobUrl(blobUrl);
-    console.log('✅ Proof file downloaded successfully');
+    
+    proofDownloads.push({
+      assetId: asset_id,
+      blobUrl: blobUrl,
+      fileName: originalFile?.name || `file_${i + 1}`,
+      success: true
+    });
+    
+    console.log(`✅ [${i + 1}/${assetIds.length}] Proof downloaded for ${asset_id}`);
+    
+  } catch (err) {
+    console.error(`❌ Error processing ${asset_id}:`, err);
+    proofDownloads.push({
+      assetId: asset_id,
+      blobUrl: '',
+      fileName: originalFile?.name || `file_${i + 1}`,
+      success: false
+    });
+  }
+}
 
-    // 8️⃣ Auto download
+// 8️⃣ Auto download all successful proofs
+const successfulProofs = proofDownloads.filter(p => p.success);
+console.log(`📥 Downloading ${successfulProofs.length} proof file(s)...`);
+
+successfulProofs.forEach((proof, index) => {
+  setTimeout(() => {
     const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = `proof_${asset_id}.json`;
+    a.href = proof.blobUrl;
+    a.download = `proof_${proof.fileName.replace(/\.[^/.]+$/, '')}_${proof.assetId}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();
+  }, index * 500); // Stagger by 500ms
+});
 
-    // 9️⃣ Show success message
-    setDisplayMessages(prev => [
-      ...prev,
-      {
-        role: 'assistant',
-        content: (
-          <div className="space-y-3">
-            <div className="text-green-400">
-              ✅ Proof generated successfully!
-            </div>
-            <div className="text-sm text-gray-400">
-              Processed {privateDocs.length} document{privateDocs.length !== 1 ? 's' : ''}. The proof file has been downloaded automatically.
-            </div>
+// 9️⃣ Show success message with download buttons
+const failedCount = proofDownloads.filter(p => !p.success).length;
+
+setDisplayMessages(prev => [
+  ...prev,
+  {
+    role: 'assistant',
+    content: (
+      <div className="space-y-3">
+        <div className="text-green-400">
+          ✅ Proof generation complete!
+        </div>
+        <div className="text-sm text-gray-400">
+          Successfully generated {successfulProofs.length} proof(s) from {privateDocs.length} document(s).
+          {failedCount > 0 && (
+            <span className="text-yellow-400"> ({failedCount} failed)</span>
+          )}
+        </div>
+        <div className="space-y-2">
+          {successfulProofs.map((proof, idx) => (
             <button
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors"
+              key={proof.assetId}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors text-left text-sm"
               onClick={() => {
                 const link = document.createElement('a');
-                link.href = blobUrl;
-                link.download = `proof_${asset_id}.json`;
+                link.href = proof.blobUrl;
+                link.download = `proof_${proof.fileName.replace(/\.[^/.]+$/, '')}_${proof.assetId}.json`;
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
               }}
             >
-              📥 Download Proof Again
+              📥 Download Proof: {proof.fileName}
             </button>
-          </div>
-        ),
-      } as Message,
-    ]);
+          ))}
+        </div>
+      </div>
+    ),
+  } as Message,
+]);
 
-    toast.success(`Proof generated for ${privateDocs.length} document(s)!`);
+toast.success(`Generated ${successfulProofs.length} proof(s)!`);
 
   } catch (err: any) {
     console.error('❌ Error:', err);
@@ -3528,6 +3632,8 @@ if (inputMessage.trim().startsWith('/generate-private')) {
   }
   return;
 }
+
+
 
 
         // if (fullMessage.startsWith('/generate-voice-clone')) {
@@ -6920,7 +7026,7 @@ if (isCreateAgent) {
 
                                             <div className="flex items-center justify-between gap-2 px-3 pb-3">
                                                 <div className="flex items-center gap-2">
-                                                   <input
+                                                   {/* <input
   id="fileInput"
   type="file"
   onChange={handleFileChange}
@@ -6934,10 +7040,56 @@ if (isCreateAgent) {
   className="hidden"
   multiple={isGenPrivate}   // allow multiple docs for generate-private
   disabled={!wallet.connected}
-/>
+/> */}
+{isPrivacy && (
+    <input
+      key="privacy-input"
+      id="fileInputPrivacy"
+      type="file"
+      onChange={handleFileChange}
+      accept="application/json"
+      className="hidden"
+      multiple={false}
+      disabled={!wallet.connected}
+    />
+  )}
+  
+  {/* File input for Generate Private (Multiple docs) */}
+  {isGenPrivate && (
+    <input
+      key="genpriv-input"
+      id="fileInputGenPrivate"
+      type="file"
+      onChange={handleFileChange}
+      accept="application/pdf,.txt,.md,.doc,.docx,.rtf"
+      className="hidden"
+      multiple={true}
+      disabled={!wallet.connected}
+    />
+  )}
+  
+  {/* File input for regular messages */}
+  {!isPrivacy && !isGenPrivate && (
+    <input
+      key="default-input"
+      id="fileInputDefault"
+      type="file"
+      onChange={handleFileChange}
+      accept="image/*,.pdf,video/*,audio/*"
+      className="hidden"
+      multiple={false}
+      disabled={!wallet.connected}
+    />
+  )}
 
                                                     <label
-                                                        htmlFor="fileInput"
+                                                        htmlFor={
+      isPrivacy 
+        ? "fileInputPrivacy" 
+        : isGenPrivate 
+        ? "fileInputGenPrivate" 
+        : "fileInputDefault"
+    }
                                                         className={`flex items-center justify-center rounded-lg p-2 transition-colors ${!wallet.connected
                                                             ? 'opacity-50 cursor-not-allowed bg-gray-800'
                                                             : 'cursor-pointer bg-gray-700 hover:bg-gray-600'
@@ -6952,6 +7104,7 @@ if (isCreateAgent) {
                                                             height={20}
                                                         />
                                                     </label>
+                                                     
                                                     {/* <button
                                                         type="button"
                                                         onClick={() => setShowPluginsPopup(!showPluginsPopup)}

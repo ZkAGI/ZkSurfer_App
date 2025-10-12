@@ -182,6 +182,8 @@ export const agentSetupSchema = z.object({
   tradingModel: z.enum(["foundational", "custom"]),
   predictionMarkets: z.array(z.string()).optional(),
   selectedAgents: z.array(z.string()).optional(),
+  zeeType: z.enum(["enterprise", "coin-launch"]).optional(),
+   paymentStatus: z.boolean().default(false).optional(),
 });
 
 /* ───────────────────────── Step 8: Full Review ──────────────────────────

@@ -36,6 +36,18 @@
       "command": "/image-gen of ",
       "description": "Click to use the /image-gen of command. Enter your custom instruction and press enter or click submit to execute.",
       "type": "image-gen"
+    },
+    {
+      "label": "Create Privacy",
+      "command": "/generate-private ",
+      "description": "Click to use the /generate-private of command. Upload the file(s) you wish to make private by generating zkproof for it.",
+      "type": "generate-private"
+    },
+    {
+      "label": "Verify Privacy",
+      "command": "/privacy-ai",
+      "description": "Click to use the /privacy-ai of command. Upload your file and enter the query to verify/know about the contents of an zkproof",
+      "type": "privacy-ai"
     }
   ]
 

@@ -865,87 +865,7 @@ const stepOfIssuePath = (path: (string | number)[]): StepKey | null => {
   return firstKey ? FIELD_TO_STEP[firstKey] ?? null : null;
 };
 
-// Build a FormData payload for /api/reviews (handles voice/upload rules)
-// function toFormData(values: Partial<any>) {
-//   const fd = new FormData();
 
-//   const appendIfTruthy = (key: string, val: any) => {
-//     if (val === undefined || val === null) return;
-//     if (typeof val === "string" && val.trim() === "") return;
-//     fd.append(key, val as any);
-//   };
-//   const appendJSON = (key: string, val: unknown) => {
-//     if (val === undefined || val === null) return;
-//     fd.append(key, JSON.stringify(val));
-//   };
-
-//   /* ── Jurisdiction & Contact ── */
-//   appendIfTruthy("jurisdictionType", values.jurisdictionType);
-//   appendIfTruthy("country", values.country);
-
-//   if ("email" in (values ?? {})) fd.append("email", (values.email as string) || "");
-//   appendIfTruthy("telegram", values.telegram);
-//   if ("website" in (values ?? {})) fd.append("website", (values.website as string) || "");
-
-//   /* ── Knowledge ── */
-//   const kf: any = values.knowledgeFiles;
-//   let files: File[] = [];
-//   if (kf instanceof File) files = [kf];
-//   else if (Array.isArray(kf)) files = kf.filter(Boolean);
-//   else if (kf && typeof (kf as FileList).length === "number") {
-//     try { files = Array.from(kf as FileList); } catch {}
-//   }
-//   for (const f of files) if (f instanceof File) fd.append("knowledgeFiles", f);
-//   if (Array.isArray(values.websiteUrls) && values.websiteUrls.length > 0) {
-//     appendJSON("websiteUrls", values.websiteUrls);
-//     // if your backend expects the legacy key:
-//     // appendJSON("knowledgeFileUrls", values.websiteUrls);
-//   }
-
-//   /* ── Character ── */
-//   appendIfTruthy("masterPrompt", values.masterPrompt);
-//   appendIfTruthy("twitterAccounts", values.twitterAccounts);
-
-//   /* ── Visual (spokesperson) ── */
-//   if (values.spokespersonType === "upload") {
-//     const file = values.uploadedPhoto;
-//     const url = typeof values.spokespersonUrl === "string" ? values.spokespersonUrl.trim() : "";
-//     if (file instanceof File) {
-//       fd.append("spokespersonType", "upload");
-//       fd.append("spokespersonUpload", file);
-//     } else if (url) {
-//       fd.append("spokespersonType", "upload");
-//       fd.append("spokespersonUrl", url);
-//     }
-//   } else if (values.spokespersonType === "preset" && values.presetAvatar) {
-//     fd.append("spokespersonType", "preset");
-//     fd.append("spokespersonPreset", String(values.presetAvatar));
-//   }
-
-//   /* ── Voice (map upload → custom) ── */
-//   if (values.voiceType === "preset" && values.presetVoice) {
-//     fd.append("voiceType", "preset");
-//     fd.append("presetVoice", String(values.presetVoice));
-//   } else if (
-//     (values.voiceType === "upload" || values.voiceType === "custom") &&
-//     values.voiceSample instanceof File
-//   ) {
-//     fd.append("voiceType", "custom");
-//     fd.append("voiceCustomUpload", values.voiceSample);
-//   }
-
-//   /* ── Agents / Extras ── */
-//   appendIfTruthy("tradingModel", values.tradingModel);
-//   if (Array.isArray(values.predictionMarkets)) appendJSON("predictionMarkets", values.predictionMarkets);
-//   if (Array.isArray(values.selectedAgents)) appendJSON("selectedAgents", values.selectedAgents);
-
-//   /* ── Terms ── */
-//   if (typeof values.agreeToTerms === "boolean") {
-//     fd.append("agreeToTerms", String(values.agreeToTerms));
-//   }
-
-//   return fd;
-// }
 
 // Build a FormData payload for /api/reviews (handles voice/upload rules)
 function toFormData(values: Partial<any>) {
@@ -1026,6 +946,11 @@ function toFormData(values: Partial<any>) {
   if (Array.isArray(values.predictionMarkets)) appendJSON("predictionMarkets", values.predictionMarkets);
   if (Array.isArray(values.selectedAgents)) appendJSON("selectedAgents", values.selectedAgents);
 
+  if (values.zeeType) fd.append("zeeType", values.zeeType);
+  if (typeof values.paymentStatus === "boolean") {
+  fd.append("paymentStatus", String(values.paymentStatus)); // "true" | "false"
+}
+
   /* ── Terms ── */
   if (typeof values.agreeToTerms === "boolean") {
     fd.append("agreeToTerms", String(values.agreeToTerms));
@@ -1067,7 +992,7 @@ export default function MultiStepAgentForm({
   const methods = useForm<any>({
     resolver,
     mode: "onBlur",
-    defaultValues: { agreeToTerms: false, ...(data as Partial<any>) },
+    defaultValues: { agreeToTerms: false,paymentStatus: false, ...(data as Partial<any>) },
   });
 
   // RHF → Zustand
@@ -1088,7 +1013,7 @@ export default function MultiStepAgentForm({
   const next = async () => {
     setSubmitErr(null);
     const valid = await methods.trigger(undefined, { shouldFocus: true });
-    if (!valid) return;
+    if (!valid) { console.log('RHF errors', methods.formState.errors);};
     setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
   };
   const back = () => {

@@ -504,6 +504,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAgentCart } from '@/stores/agent-cart-store';
+import {useAgentFormStore} from '@/stores/agent-form-store'
 
 function Starfield() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -618,11 +619,17 @@ function VideoTile({
 export default function FlowGate() {
   const router = useRouter();
   const { setFlowGateOpen, setPickerOpen } = useAgentCart();
+   const setData = useAgentFormStore((s) => s.setData);
 
-  const handleEnterprise = () => { setFlowGateOpen(false); setPickerOpen(true); };
+  const handleEnterprise = () => { 
+    setData({ zeeType: 'enterprise', paymentStatus: 'pending' });
+    setFlowGateOpen(false); setPickerOpen(true); };
 
   // No-op: keep user on the same screen and keep modal open
-  const handleCoinLaunch = () => {};
+  const handleCoinLaunch = () => {
+    setData({ zeeType: 'coin-launch', paymentStatus: 'pending' });
+ setFlowGateOpen(false); setPickerOpen(true); 
+  };
 
   return (
     <>
