@@ -622,12 +622,12 @@ export default function FlowGate() {
    const setData = useAgentFormStore((s) => s.setData);
 
   const handleEnterprise = () => { 
-    setData({ zeeType: 'enterprise', paymentStatus: 'pending' });
+    setData({ zeeType: 'enterprise', paymentStatus: false });
     setFlowGateOpen(false); setPickerOpen(true); };
 
   // No-op: keep user on the same screen and keep modal open
   const handleCoinLaunch = () => {
-    setData({ zeeType: 'coin-launch', paymentStatus: 'pending' });
+    setData({ zeeType: 'coin-launch', paymentStatus: false });
  setFlowGateOpen(false); setPickerOpen(true); 
   };
 

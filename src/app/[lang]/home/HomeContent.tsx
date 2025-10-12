@@ -1289,6 +1289,7 @@ const openCreateAgentForm = () => {
     };
 
 
+const [attachments, setAttachments] = useState<File[]>([]);
 
     const [payments, setPayments] = useState<any[]>([]);
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
