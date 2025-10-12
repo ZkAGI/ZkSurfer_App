@@ -90,6 +90,7 @@ type AgentFormState = {
     isKbPublic: boolean;
     kbUserId: string;
   }) => void;
+  
 
   setKbReady: (ready: boolean) => void;
 
@@ -107,6 +108,10 @@ type AgentFormState = {
 
   clearKb: () => void;
   reset: () => void;
+
+  lastReviewId?: string;
+  setLastReviewId: (id?: string) => void;
+  clearLastReviewId: () => void;
 };
 
 export const useAgentFormStore = create<AgentFormState>((set, get) => ({
@@ -235,4 +240,8 @@ export const useAgentFormStore = create<AgentFormState>((set, get) => ({
     })),
 
   reset: () => set({ data: {} }),
+
+  lastReviewId: undefined,
+  setLastReviewId: (id) => set({ lastReviewId: id }),
+  clearLastReviewId: () => set({ lastReviewId: undefined }),
 }));

@@ -10,7 +10,7 @@ import { Trade, TradingIntegration } from './TradingIntegration';
 import { getOrderStatus, placeTestOrder } from '@/lib/hyperLiquidClient';
 import { PlaceOrderBody } from '@/lib/hlTypes';
 import Link from 'next/link';
-
+import { useWallet } from '@solana/wallet-adapter-react';
 
 interface HourlyEntry {
   time: string;                       // e.g. "2025-07-17T00:00:00+00:00"
@@ -77,6 +77,9 @@ const ReportSidebar: FC<ReportSidebarProps> = ({ isOpen, onClose, data }) => {
     const [loadingBtc, setLoadingBtc] = useState(true);
 
     const [selectedAsset, setSelectedAsset] = useState<'BTC' | 'ETH' | 'SOL'>('BTC');
+
+    const { publicKey } = useWallet();
+const uid = publicKey?.toBase58() ?? '';
 
 
 
@@ -671,13 +674,23 @@ const payload: PlaceOrderBody = {
         <option value="SOL">SOL</option>
       </select>
 
-      <Link
+      {/* <Link
         href="/predictions"
         target="_blank"
         className="flex-1 md:flex-none inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
       >
         Place Trade
-      </Link>
+      </Link> */}
+      <Link
+  href={{ pathname: '/predictions', query: { uid } }}
+  target="_blank"
+  className="flex-1 md:flex-none inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+  aria-disabled={!uid}
+  onClick={(e) => { if (!uid) e.preventDefault(); }} // prevent navigating if wallet not ready
+  title={uid ? '' : 'Connect wallet first'}
+>
+  Place Trade
+</Link>
     </div>
 
     {/* Title + date — sits to the LEFT of the close on desktop & right-aligned */}

@@ -89,7 +89,7 @@ export interface HomeContentProps {
 }
 
 //type Command = 'image-gen' | 'create-agent' | 'content';
-type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai' |'generate-private';
+type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai' |'generate-private' | 'create-swarm';
 //| 'bridge' | | 'video-lipsync' | 'UGC' | 'img-to-video';
 // |'train' |'post' |'select'|'launch'
 
@@ -571,6 +571,11 @@ const [showFlowGate, setShowFlowGate] = useState(false);
 const [showAgentPicker, setShowAgentPicker] = useState(false);
 const [showCreateAgentForm, setShowCreateAgentForm] = useState(false);
 
+const [swarmMode, setSwarmMode] = useState(false);
+
+
+
+
 const closeAll = () => {
   setShowFlowGate(false);
   setShowAgentPicker(false);
@@ -595,6 +600,10 @@ const openCreateAgentForm = () => {
 };
 
   
+const openCreateSwarmPopup = () => {
+  // Open the same picker you use elsewhere
+   useAgentCart.getState().setFlowGateOpen(true);
+};
 
     const normalizeSentiment = (score: number): 'bearish' | 'neutral' | 'bullish' => {
         if (score <= 1.6) return 'bearish';
@@ -1573,16 +1582,30 @@ const [attachments, setAttachments] = useState<File[]>([]);
         setIsInitialView(true);
     }, []);
 
-  const startCreateAgentFlow = () => {
-  setFlowGateOpen(true);
-  setPickerOpen(false);
-  setFormOpen(false);
+//   const startCreateAgentFlow = () => {
+//   setFlowGateOpen(true);
+//   setPickerOpen(false);
+//   setFormOpen(false);
+// };
+const startCreateAgentFlow = () => {
+  openCreateSwarmPopup();
+};
+
+const openSwarmBuilder = () => {
+  openCreateSwarmPopup();  // Opens swarm popup
+};
+const startCreateSwarm = () => {
+  openCreateSwarmPopup();
 };
 
     const handleCommandBoxClick = (command: string) => {
 
 if (command === '/create-agent') {
     startCreateAgentFlow();  
+    return;
+  }
+   if (command === '/create-swarm') {
+    openCreateSwarmPopup();  // For SWARM
     return;
   }
   
@@ -1899,8 +1922,10 @@ if (command === 'pre-sale') {
         const value = e.target.value;
         setInputMessage(value);
 
+        setSwarmMode(value.trim().toLowerCase().startsWith('/create-swarm'));
+
           if (value.trim().startsWith('/create-agent')) {
-   startCreateAgentFlow
+   startCreateAgentFlow()
   }
 
         // if (value.startsWith('/video-lipsync ') && !videoLipsyncOption) {
@@ -2075,6 +2100,7 @@ if (command === 'pre-sale') {
     // };
 
 
+
 const handleCommandSelect = (command: Command) => {
   if (command === 'video-gen') {
     setInputMessage('/video-gen ');
@@ -2082,7 +2108,10 @@ const handleCommandSelect = (command: Command) => {
   } else if (command === 'privacy-ai') {
     setInputMessage('/privacy-ai ');
     setShowCommandPopup(false);
-  } else {
+  } else if (command === 'create-swarm') {
+      startCreateSwarm();
+    return;
+  }else {
     setInputMessage(`/${command} `);
     setShowCommandPopup(false);
   }
@@ -3357,6 +3386,14 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
             return;
         }
 
+       if (fullMessage.startsWith('/create-swarm')) {
+  openCreateSwarmPopup();  // ✅ Use the correct function
+  setSwarmMode(false);
+  setInputMessage('');
+  if (inputRef.current) inputRef.current.style.height = '2.5rem';
+  return;
+}
+
         if (fullMessage.startsWith('/create-agent')) {
   useZeeUiStore.getState().openFromCTA();   // open FlowGate
   setInputMessage('');
@@ -3733,6 +3770,7 @@ if (fullMessage.startsWith('/privacy-ai')) {
     toast.error('Please type your question after /privacy-ai.');
     return;
   }
+    setInputMessage('');
 
   // Show the user message (question + a small “JSON” chip)
   const userMessage: Message = {
@@ -6622,7 +6660,9 @@ if (isCreateAgent) {
                                                     onClick={() => {
       if (cmd.label?.trim().toLowerCase() === 'create agent') {
         startCreateAgentFlow();   
-      } else {
+      } else if (cmd.command === '/create-swarm') {
+    openCreateSwarmPopup();  // Opens swarm popup
+  }else {
         handleCommandBoxClick(cmd.command);
       }
     }}
@@ -6937,33 +6977,59 @@ if (isCreateAgent) {
         Upload your zkProof JSON, then type your question here…
       </div>
     )}
+   {swarmMode && (
+  <div
+    className="absolute inset-0 pointer-events-none text-gray-400/80 pl-30 pr-10 pt-[4px] leading-6"
+    style={{ whiteSpace: 'pre-wrap' }}
+  >
+    Press Enter to create your swarm…
+  </div>
+)}
+
+{isGenPrivate && privateDocs.length === 0 && (
+  <div
+    className="absolute inset-0 pointer-events-none text-gray-400/80 pl-36 pr-10 pt-[4px] leading-6"
+    style={{ whiteSpace: 'pre-wrap' }}
+  >
+    Upload PDF/DOC/TXT, then press Enter to generate your private proof…
+  </div>
+)}
                                                 <textarea
                                                     ref={inputRef}
                                                     value={inputMessage}
                                                     onChange={handleInputChange}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === '/') {
-                                                            e.preventDefault();
-                                                            setShowCommandPopup(true);
-                                                            return;
-                                                        }
-                                                        if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
-                                                            if (!inputMessage.trim()) {
-                                                                e.preventDefault()
-                                                                return
-                                                            }
-                                                            e.preventDefault()
-                                                            handleSubmit(e)
-                                                        }
-                                                    }}
-                                                   placeholder={
-  inputMessage.trim().startsWith('/privacy-ai')
-    ? 'Upload your zkProof JSON, then type your question here…'
-    : inputMessage.trim().startsWith('/generate-private')
-      ? 'Upload PDF/DOC/TXT to generate a private proof…'
-      : chainGptMode
-        ? 'Ask Web3 AI about crypto, DeFi, NFTs...'
-        : dictionary?.inputPlaceholder || 'How can I help you today?'
+                                                  onKeyDown={(e) => {
+  if (
+    e.key === 'Enter' &&
+    !e.shiftKey &&
+    inputMessage.trim().toLowerCase().startsWith('/create-swarm')
+  ) {
+    e.preventDefault();
+    e.stopPropagation();  // ✅ Stop event from bubbling
+    setInputMessage('');  // ✅ Clear input IMMEDIATELY
+    if (inputRef.current) inputRef.current.style.height = '2.5rem';
+    setSwarmMode(false);
+    useAgentCart.getState().setFlowGateOpen(true);  // Open modal
+    return;  // ❌ Don't call handleSubmit
+  }
+
+  if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
+    if (!inputMessage.trim()) { e.preventDefault(); return; }
+    e.preventDefault();
+    handleSubmit(e);
+  }
+}}
+
+                                                  placeholder={
+  swarmMode
+    ? 'Press Enter to create your swarm…'
+    : inputMessage.trim().startsWith('/privacy-ai')
+      ? 'Upload your zkProof JSON, then type your question here…'
+      : inputMessage.trim().startsWith('/generate-private')
+        ? 'Upload PDF/DOC/TXT to generate a private proof…'
+        : chainGptMode
+          ? 'Ask Web3 AI about crypto, DeFi, NFTs...'
+          : dictionary?.inputPlaceholder || 'How can I help you today?'
 }
 
                                                     className={`w-full resize-none overflow-y-auto bg-transparent text-white rounded-lg border-none focus:outline-none ${chainGptMode ? 'placeholder-green-400' : 'placeholder-gray-400'

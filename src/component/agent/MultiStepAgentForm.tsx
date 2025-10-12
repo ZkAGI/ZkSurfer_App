@@ -1079,10 +1079,48 @@ export default function MultiStepAgentForm({
 
   /* When all payments are done */
     /* When all payments are done */
-  const handleAllPaid = () => {
+  // const handleAllPaid = () => {
+  //   setPaymentsOpen(false);
+  //   setSuccessOpen(true);
+  // };
+
+
+  // replace your existing handleAllPaid with this
+const handleAllPaid = async () => {
+  try {
+    const { lastReviewId, clearLastReviewId } = useAgentFormStore.getState();
+
+    if (!lastReviewId) {
+      // if nothing stored, we can still show success, but log it
+      console.warn("No lastReviewId in store; skipping payment PATCH");
+    } else {
+      const fd = new FormData();
+      fd.append("paymentStatus", "true");
+
+      const patchRes = await fetch(
+        `http://127.0.0.1:8001/reviews/${encodeURIComponent(lastReviewId)}/payment`,
+        { method: "PATCH", body: fd }
+      );
+
+      if (!patchRes.ok) {
+        const errText = await patchRes.text().catch(() => "");
+        throw new Error(errText || `Payment PATCH failed (${patchRes.status})`);
+      }
+
+      // clear the saved id so the next review uses a fresh one
+      clearLastReviewId();
+
+      // optionally reflect paid in the current RHF form state (not required)
+      methods.setValue("paymentStatus", true as any, { shouldDirty: true });
+    }
+
+    // close payments → open success
     setPaymentsOpen(false);
     setSuccessOpen(true);
-  };
+  } catch (e: any) {
+    setSubmitErr(e?.message || "Failed to mark payment as complete.");
+  }
+};
 
 
   // ⬇️ The return MUST be inside the component function (still within the same `{ ... }`)
@@ -1105,7 +1143,7 @@ export default function MultiStepAgentForm({
         onClose={() => setPaymentsOpen(false)}
         // use the validated list you stored for payments
         selectedAgents={paymentAgents}
-        onAllPaid={handleAllPaid}
+        onAllPaid={() => { void handleAllPaid(); }}
       />
 
       <div className="w-full max-w-3xl mx-auto">
@@ -1188,4 +1226,4 @@ export default function MultiStepAgentForm({
       </div>
     </>
   );
-} // <-- exactly one closing brace for the component
+}

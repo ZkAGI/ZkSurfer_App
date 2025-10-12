@@ -671,7 +671,6 @@ export default function FlowGate() {
                       src="/videos/coinlaunch.mp4"
                       label="COIN LAUNCH"
                       onClick={handleCoinLaunch}
-                      disabled
                     />
                   </div>
                 </div>

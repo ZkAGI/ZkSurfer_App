@@ -1,6 +1,6 @@
 import React from 'react';
 
-type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai'| 'generate-private';
+type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai'| 'generate-private' | 'create-swarm';
 // | 'bridge' |'video-lipsync' | 'UGC' | 'img-to-video'  ;
 // |'train' |'post' |'select'|'launch'
 
@@ -25,6 +25,10 @@ const CommandPopup: React.FC<CommandPopupProps> = ({ onSelect }) => {
             command: 'image-gen',
             description: 'Image generation with or without ticker. Generated image can be used for minting NFT',
         },
+        {
+    command: 'create-swarm',
+    description: 'Open the Swarm builder. Press Enter to create your swarm.',
+  },
         {
             command: 'api',
             description: 'Generate api-key for Zynapse API',
