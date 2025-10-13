@@ -135,12 +135,19 @@ export default function AgentPicker() {
   return (
     <>
       <Starfield />
-      <div className="fixed inset-0 z-[110] flex overflow-y-auto overscroll-containr" style={{ touchAction: 'pan-y' }}  onClick={() => setPickerOpen(false)}>
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-xs" />
+<div
+  className="fixed inset-0 z-[110] flex justify-center items-start md:items-center
+             p-4 md:p-6 overflow-y-auto overscroll-contain"
+  style={{ touchAction: 'pan-y' }}
+  onClick={() => setPickerOpen(false)}
+>        <div className="absolute inset-0 bg-black/40 backdrop-blur-xs" />
         <div
-          className="relative z-[120] w-full max-w-5xl bg-[#0D0F1E]/95 border border-[#283056] rounded-2xl overflow-y-auto p-6"
-          onClick={(e) => e.stopPropagation()}
-        >
+    className="relative z-[120] w-full max-w-5xl mx-auto
+               bg-[#0D0F1E]/95 border border-[#283056] rounded-2xl
+               p-6 shadow-2xl
+               max-h-[85vh] overflow-y-auto"
+    onClick={(e) => e.stopPropagation()}
+  >
           <div className="flex items-start justify-between mb-4">
             <h2 className="text-2xl font-bold">Create your own suite of agents</h2>
             <button className="text-sm opacity-70 hover:opacity-100" onClick={() => setPickerOpen(false)}>Close</button>
