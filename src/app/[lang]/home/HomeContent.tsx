@@ -6655,7 +6655,7 @@ if (isCreateAgent) {
                                             </div>
                                         ))} */}
                                                 {dictionary?.commands.map((cmd, index) => (
-                                                    <div className="flex flex-col justify-center items-center bg-gray-800 text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-gray-700 transition duration-300" key={index} 
+                                                    <div className="flex flex-col justify-center items-center bg-gray-800 text-white p-3 md:p-6 rounded-lg shadow-lg cursor-pointer hover:bg-gray-700 transition duration-300" key={index} 
                                                     // onClick={() => handleCommandBoxClick(cmd.command)}
                                                     onClick={() => {
       if (cmd.label?.trim().toLowerCase() === 'create agent') {
@@ -6667,13 +6667,13 @@ if (isCreateAgent) {
       }
     }}
                                                     >
-                                                       <h3 className="text-xl font-bold mb-2">
+                                                       <h3 className="text-lg md:text-xl font-bold mb-2">
   {cmd.label?.trim().toLowerCase() === 'create agent'
     ? 'Create Agent SWARM'
     : cmd.label}
 </h3>
 
-                                                        <p className="text-sm text-gray-300 text-center">{cmd.description}</p>
+                                                        <p className="text-xs md:text-sm text-gray-300 text-center">{cmd.description}</p>
                                                     </div>
                                                 ))}
 
@@ -7071,7 +7071,7 @@ if (isCreateAgent) {
                                                 {showCommandPopup && (
     <div
       ref={commandPopupRef}
-      className="absolute  left-36 top-0 z-50"
+      className="absolute left-10 top-0 z-50"
     >
       <CommandPopup onSelect={handleCommandSelect}/>
     </div>
