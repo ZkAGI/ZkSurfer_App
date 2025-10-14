@@ -164,16 +164,16 @@ export async function POST(request: NextRequest) {
     }
 
     // 4) Build the payload exactly as the external service expects.
-    const externalPayload = {
+     const externalPayload = {
       prompt,
-      fast_mode: "Balanced",
+      fast_mode: "Fast",
       lora_scale: 1,
-      num_frames: 81,
+      num_frames: 49,
       aspect_ratio: "16:9",
-      sample_shift: 5,
-      sample_steps: 30,
-      frames_per_second: 16,
-      sample_guide_scale: 5,
+      sample_shift: 4,
+      sample_steps: 14,
+      frames_per_second: 12,
+      sample_guide_scale: 4.5,
     };
 
     // 5) Forward the POST to the external endpoint.
