@@ -26,7 +26,7 @@ const PAYMENT_PLANS: PaymentPlan[] = [
   {
     id: 'monthly',
     name: 'Monthly Subscription',
-    usdPrice: 50,
+    usdPrice: 6.9,
     duration: '1 month',
     features: [
       '📊 All premium prediction reports',
@@ -691,7 +691,7 @@ You may choose one of the following plans:
 
 Plan          | Fee        | Billing Cycle
 ------------- | ---------- | -------------
-Monthly Plan   | USD 50.00  | Billed monthly
+Monthly Plan   | USD 6.9.00  | Billed monthly
 Annual Plan    | USD 500.00 | Billed annually
 
 All fees are exclusive of applicable taxes, which will be added at checkout.
@@ -774,13 +774,13 @@ These Terms are governed by the laws of Singapore, without regard to its conflic
             </div>
 
             <div className="space-y-4">
-              <button
+              {/* <button
                 onClick={() => handlePaymentMethodSelection('aarc')}
                 className="w-full p-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg border-2 border-transparent hover:border-purple-400 transition-all"
               >
                 <div className="text-lg font-bold mb-2">💳 AARC (Ethereum)</div>
                 <div className="text-sm opacity-90">Pay with any Ethereum wallet or card</div>
-              </button>
+              </button> */}
 
               <button
                 onClick={() => handlePaymentMethodSelection('solana')}
