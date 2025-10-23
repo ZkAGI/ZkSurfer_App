@@ -1340,7 +1340,7 @@ const HEX40_WITH_0X = /^0x[0-9a-fA-F]{40}$/
 const KeySchema = z
   .string()
   .trim()
-  .length(107, 'Must be exactly 107 characters.')
+  .length(66, 'Must be exactly 66 characters.')
   .regex(KEY_CHARS, 'Invalid characters.')
 
 const WalletSchema = z
