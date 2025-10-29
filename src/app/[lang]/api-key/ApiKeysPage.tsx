@@ -244,26 +244,26 @@ export default function ApiKeysPage({ dictionary }: ApiKeysPageProps) {
 
                     {showPurchaseModal && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                            <div className="bg-white p-6 rounded-lg w-80">
-                                <h2 className="text-xl font-bold mb-4 text-black">Buy Credits</h2>
+                            <div className="bg-[#08131f] p-6 rounded-lg w-80">
+                                <h2 className="text-xl font-bold mb-4 text-white">Buy Credits</h2>
                                 <input
                                     type="number"
                                     min={1}
                                     value={purchaseAmount}
                                     onChange={e => setPurchaseAmount(Number(e.target.value))}
                                     placeholder="Amount in USD"
-                                    className="w-full mb-4 px-3 py-2 border rounded text-black"
+                                    className="w-full mb-4 px-3 py-2 border rounded text-white bg-[#1f2937]"
                                 />
                                 <div className="flex justify-end space-x-2">
                                     <button
                                         onClick={() => setShowPurchaseModal(false)}
-                                        className="px-4 py-2 rounded border text-black"
+                                        className="px-4 py-2 rounded bg-red-500 text-white"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         onClick={handleBuy}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded"
+                                        className="px-4 py-2 bg-green-600 text-white rounded"
                                     >
                                         Buy
                                     </button>

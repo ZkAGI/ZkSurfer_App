@@ -76,7 +76,6 @@ import CreateAgentModal from '@/component/agent/CreateAgentModal';
 import { useZeeUiStore } from '@/stores/zee-ui-store';
 import JsonPreviewModal from '@/component/ui/JsonPreviewModal';
 
-
 interface GeneratedTweet {
     tweet: string;
     id?: number;
@@ -388,8 +387,9 @@ const TOGGLE_API_URL = 'https://zynapse.zkagi.ai/characters/toggle-status';
 // const apiKey = process.env.NEXT_PUBLIC_API_KEY;
 // const AGENTS_API_URL = 'https://zynapse.zkagi.ai/characters/status';
 // const TOGGLE_API_URL = 'https://zynapse.zkagi.ai/characters/toggle-status';
-
-
+const API_KEYS_URL = "https://zynapse.zkagi.ai/get-api-keys-by-wallet";
+const BALANCE_API_URL = "https://zynapse.zkagi.ai/v1/check-balance";
+const API_KEY = "zk-123321";
 
 const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
     const params = useParams();
@@ -427,7 +427,6 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
     const [convertProgress, setConvertProgress] = useState(0);
     const [showImageSelectModal, setShowImageSelectModal] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
 
     // const [showAgentTypePopup, setShowAgentTypePopup] = useState(false);
     const [selectedAgentType, setSelectedAgentType] = useState<string | null>(null);
@@ -483,7 +482,79 @@ const HomeContent: FC<HomeContentProps> = ({ dictionary }) => {
     // const { data: walletClient } = useWalletClient();
     // const publicClient = usePublicClient();
 
-    const { selectedModel, setSelectedModel, credits, apiKey, setCredits } = useModelStore();
+    const { selectedModel, setSelectedModel, credits, apiKey, setCredits, setApiKey } = useModelStore();
+
+    const [isLoadingCredits, setIsLoadingCredits] = useState(true);
+
+  // Fetch credits when component mounts or apiKey changes
+  useEffect(() => {
+    const initializeCredits = async () => {
+      if (!rawPubkey) {
+        setCredits(0);
+        setIsLoadingCredits(false);
+        return;
+      }
+
+      try {
+        setIsLoadingCredits(true);
+
+        // Step 1: Fetch API keys for this wallet
+        const keysResponse = await fetch(API_KEYS_URL, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "User-Agent": "Thunder Client",
+            "api-key": API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ wallet_address: rawPubkey.toString() }),
+        });
+
+        if (!keysResponse.ok) throw new Error("Failed to fetch API keys");
+
+        const keysData = await keysResponse.json();
+        const keys = keysData.api_keys || [];
+
+        if (keys.length === 0) {
+          console.log('No API keys found for this wallet');
+          setCredits(0);
+          setIsLoadingCredits(false);
+          return;
+        }
+
+        // Step 2: Set the first API key in store
+        const firstApiKey = keys[0];
+        setApiKey(firstApiKey);
+        console.log('API key set:', firstApiKey);
+
+        // Step 3: Fetch balance using the API key
+        const balanceResponse = await fetch(BALANCE_API_URL, {
+          method: "GET",
+          headers: {
+            "Accept": "/",
+            "User-Agent": "Thunder Client",
+            "Authorization": `Bearer ${firstApiKey}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!balanceResponse.ok) throw new Error("Failed to fetch balance");
+
+        const balanceData = await balanceResponse.json();
+        console.log('Balance fetched:', balanceData);
+        setCredits(balanceData.credit_balance || 0);
+
+      } catch (error) {
+        console.error("Error initializing credits:", error);
+        setCredits(0);
+      } finally {
+        setIsLoadingCredits(false);
+      }
+    };
+
+    initializeCredits();
+  }, [rawPubkey, setCredits, setApiKey]);
+
     const [isOpen, setIsOpen] = useState(false);
 
     const [displayMessages, setDisplayMessages] = useState<Message[]>([]); // Array for messages to be displayed
@@ -572,8 +643,6 @@ const [showAgentPicker, setShowAgentPicker] = useState(false);
 const [showCreateAgentForm, setShowCreateAgentForm] = useState(false);
 
 const [swarmMode, setSwarmMode] = useState(false);
-
-
 
 
 const closeAll = () => {
@@ -7108,6 +7177,17 @@ if (isCreateAgent) {
   multiple={isGenPrivate}   // allow multiple docs for generate-private
   disabled={!wallet.connected}
 /> */}
+<div
+        className="flex items-center justify-center text-sm font-semibold bg-gray-800 text-white px-3 py-2 rounded"
+        style={{ minWidth: 92 }}
+      >
+        {isLoadingCredits ? (
+          'Loading...'
+        ) : (
+          `Credits: ${Number(credits ?? 0).toFixed(2)}`
+        )}
+      </div>
+
 {isPrivacy && (
     <input
       key="privacy-input"
