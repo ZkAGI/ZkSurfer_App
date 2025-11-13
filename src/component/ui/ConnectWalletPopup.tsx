@@ -71,7 +71,7 @@
 import React from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useDisconnect } from 'wagmi';
-import KimaTransferAgent from './KimaForm';
+// import KimaTransferAgent from './KimaForm';
 
 type WalletConnectPopupProps = {
     isOpen: boolean;
@@ -132,7 +132,7 @@ const WalletConnectPopup: React.FC<WalletConnectPopupProps> = ({ isOpen, onClose
                             return (
                                 <div className="space-y-2">
                                     {/* Pass the callback down */}
-                                    <KimaTransferAgent onTransferSuccess={onClose} />
+                                    {/* <KimaTransferAgent onTransferSuccess={onClose} /> */}
                                 </div>
                             );
                         }
