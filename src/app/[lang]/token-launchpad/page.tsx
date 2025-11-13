@@ -7,7 +7,7 @@ import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 // ---- CONFIG ----
-const FACTORY_ADDRESS = "0x60797f6939E406859e1acf94490d191A032E428D";
+const FACTORY_ADDRESS = "0x0f66Eb5f5E02Fd591BfE5740176Eeb0658b9B549";
 const INVITE_CODE = "Roar*2025";
 
 const FACTORY_ABI = [
@@ -367,12 +367,8 @@ function TokenLaunchpad() {
           {/* Card Header */}
           <div className="p-6 sm:p-8 border-b border-gray-800 bg-gradient-to-b from-[#0f172a] to-[#020617]">
             <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              zkTerminal Token Launchpad
+               Token Launchpad
             </h1>
-            <p className="text-gray-400 text-sm sm:text-base">
-              Deploy a fixed-supply ERC20 on Base. 100% of the supply is minted to
-              your wallet.
-            </p>
           </div>
 
           {/* Card Body */}
@@ -391,7 +387,7 @@ function TokenLaunchpad() {
                   id="tokenName"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Wanderlust Token"
+                  placeholder="Test Token"
                   className="w-full px-4 py-3 bg-[#020617] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
               </div>
@@ -409,7 +405,7 @@ function TokenLaunchpad() {
                   id="symbol"
                   value={symbol}
                   onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                  placeholder="WAND"
+                  placeholder="TEST"
                   className="w-full px-4 py-3 bg-[#020617] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all uppercase"
                 />
               </div>
