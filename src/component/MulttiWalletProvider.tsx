@@ -13,7 +13,8 @@ import {
   bsc,
   mainnet,
   optimism,
-  polygon
+  polygon,
+  baseSepolia
 } from 'viem/chains';
 import { phantomWallet } from '@rainbow-me/rainbowkit/wallets';
 import AarcProvider from './ui/AarcProvider';
@@ -23,6 +24,7 @@ const config = getDefaultConfig({
   appName: 'ZkAGI',
   projectId: '003076b15a7ec01e7a1929b1468c23ec',
   chains: [
+    baseSepolia,
     mainnet,
     base,
     arbitrum,

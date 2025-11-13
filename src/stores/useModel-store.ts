@@ -15,7 +15,7 @@ interface ModelState {
 
 export const useModelStore = create<ModelState>((set) => ({
   // keep your default model
-  selectedModel: "Mistral",
+  selectedModel: "DeepSeek",
 
   // new defaults
   credits: 0,

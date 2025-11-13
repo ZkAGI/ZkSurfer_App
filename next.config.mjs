@@ -413,7 +413,8 @@ const nextConfig = {
     KB_API_BASE: process.env.KB_API_BASE,
     PRIVACY_AI_URL: process.env.PRIVACY_AI_URL,
     NEXT_PUBLIC_VIDEO_GEN_ENDPOINT : process.env.NEXT_PUBLIC_VIDEO_GEN_ENDPOINT ,
-    BOT_API_BASE: process.env.BOT_API_BASE
+    BOT_API_BASE: process.env.BOT_API_BASE,
+    FACTORY: process.env.FACTORY,
   },
   experimental: {
     esmExternals: "loose",
