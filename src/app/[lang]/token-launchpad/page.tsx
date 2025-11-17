@@ -7,7 +7,8 @@ import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 // ---- CONFIG ----
-const FACTORY_ADDRESS = "0x0f66Eb5f5E02Fd591BfE5740176Eeb0658b9B549";
+const FACTORY_ADDRESS = "0x60797f6939E406859e1acf94490d191A032E428D";
+// "0x0f66Eb5f5E02Fd591BfE5740176Eeb0658b9B549";
 const INVITE_CODE = "Roar*2025";
 
 const FACTORY_ABI = [
@@ -367,7 +368,7 @@ function TokenLaunchpad() {
           {/* Card Header */}
           <div className="p-6 sm:p-8 border-b border-gray-800 bg-gradient-to-b from-[#0f172a] to-[#020617]">
             <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-               Token Launchpad
+               Token Minter
             </h1>
           </div>
 
