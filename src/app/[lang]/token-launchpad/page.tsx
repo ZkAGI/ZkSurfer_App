@@ -2377,7 +2377,7 @@ function TokenLaunchpad() {
                       Wrong Network Detected
                     </p>
                     <p className="text-xs text-yellow-300/80 mb-3">
-                      {chain?.name ? `You're on ${chain.name}. ` : ''}
+                      {chain?.name ? `You are on ${chain.name}. ` : ''}
                       Switch to Base Sepolia testnet using the network selector in the top-right corner (click the network badge) or use the button below.
                     </p>
                     <button
@@ -2899,7 +2899,7 @@ function TokenUpdate() {
                 </div>
                 <div className="space-y-3 text-gray-300">
                   <p className="text-sm">
-                    Go to your token's page on BaseScan by following this URL structure:
+                    Go to your token&quot;s page on BaseScan by following this URL structure:
                   </p>
                   <div className="bg-[#020617] border border-gray-700 rounded-lg p-4">
                     <code className="text-sm text-blue-300 break-all">
@@ -2935,7 +2935,7 @@ function TokenUpdate() {
                 </div>
                 <div className="space-y-3 text-gray-300">
                   <p className="text-sm">
-                    Click on your profile/account menu in the top-right corner of BaseScan, then select <strong>"Verified Address"</strong> from the dropdown menu.
+                    Click on your profile/account menu in the top-right corner of BaseScan, then select <strong>&quot;Verified Address&quot;</strong> from the dropdown menu.
                   </p>
                   <div className="bg-orange-900/20 border border-orange-700/50 rounded-lg p-4">
                     <div className="flex items-start gap-2">
@@ -2943,7 +2943,7 @@ function TokenUpdate() {
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                       </svg>
                       <p className="text-xs text-orange-300">
-                        <strong>Note:</strong> You need to be logged into your BaseScan account. If you don't have an account, create one first.
+                        <strong>Note:</strong> You need to be logged into your BaseScan account. If you don&quot;t have an account, create one first.
                       </p>
                     </div>
                   </div>
@@ -2987,7 +2987,7 @@ function TokenUpdate() {
                 </div>
                 <div className="space-y-3 text-gray-300">
                   <p className="text-sm">
-                    Click the <strong>"Add Address"</strong> or <strong>"Verify Address"</strong> button, then enter your token contract address in the form that appears.
+                    Click the <strong>&quot;Add Address&quot;</strong> or <strong>&quot;Verify Address&quot;</strong> button, then enter your token contract address in the form that appears.
                   </p>
                   <div className="bg-[#020617] border border-gray-700 rounded-lg p-4 space-y-2">
                     <p className="text-xs font-medium text-gray-400">Your Token Address:</p>
@@ -3000,7 +3000,7 @@ function TokenUpdate() {
                     )}
                   </div>
                   <p className="text-sm">
-                    Click <strong>"Continue"</strong> to proceed with the verification process.
+                    Click <strong>&quot;Continue&quot;</strong> to proceed with the verification process.
                   </p>
                   {/* Image 4 */}
                   <div className="border border-gray-700 rounded-lg overflow-hidden shadow-lg">
@@ -3028,7 +3028,7 @@ function TokenUpdate() {
                 </div>
                 <div className="space-y-3 text-gray-300">
                   <p className="text-sm">
-                    After successful verification, you'll see a confirmation message with several options. Click on <strong>"Update Token Information"</strong>.
+                    After successful verification, you&quot;ll see a confirmation message with several options. Click on <strong>&quot;Update Token Information&quot;</strong>.
                   </p>
                   <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-4">
                     <div className="flex items-start gap-2">
@@ -3036,7 +3036,7 @@ function TokenUpdate() {
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <p className="text-xs text-green-300">
-                        <strong>Success!</strong> Once verified, you'll also see options to "Add Name Tag" and "Add Project Label(s)".
+                        <strong>Success!</strong> Once verified, you&quot;ll also see options to &quot;Add Name Tag&quot; and &quot;Add Project Label(s)&quot;.
                       </p>
                     </div>
                   </div>
@@ -3049,7 +3049,7 @@ function TokenUpdate() {
                     />
                     <div className="bg-gray-800/50 p-3 border-t border-gray-700">
                       <p className="text-xs text-gray-400 text-center">
-                        Step 4: Click "Update Token Information"
+                        Step 4: Click &quot;Update Token Information&quot;
                       </p>
                     </div>
                   </div>
@@ -3075,7 +3075,7 @@ function TokenUpdate() {
                         <span className="text-blue-400 mt-1">✓</span>
                         <div>
                           <strong className="text-gray-200">Request Type:</strong>
-                          <p className="text-gray-400 text-xs mt-0.5">Select "New/First Time Token Update"</p>
+                          <p className="text-gray-400 text-xs mt-0.5">Select &quot;New/First Time Token Update&quot;</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
@@ -3114,7 +3114,7 @@ function TokenUpdate() {
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                       </svg>
                       <p className="text-xs text-yellow-300">
-                        <strong>Important:</strong> Make sure all links you provide are working and safe. Use an official email from your project's domain for better verification.
+                        <strong>Important:</strong> Make sure all links you provide are working and safe. Use an official email from your project&quot;s domain for better verification.
                       </p>
                     </div>
                   </div>
@@ -3174,7 +3174,7 @@ function TokenUpdate() {
             <div className="border-t border-gray-800 pt-6">
               <div className="text-center space-y-3">
                 <p className="text-sm text-gray-400">
-                  Need help? Check out BaseScan's documentation or contact their support team.
+                  Need help? Check out BaseScan&quot;s documentation or contact their support team.
                 </p>
                 <div className="flex justify-center gap-4">
                   <a
