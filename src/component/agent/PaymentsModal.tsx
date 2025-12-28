@@ -29,7 +29,7 @@ const AARC_USDC_TOKEN =
 const AARC_CHAIN_ID = Number(process.env.NEXT_PUBLIC_AARC_CHAIN_ID || 8453); // Base
 
 const SOLANA_RECIPIENT =
-  process.env.NEXT_PUBLIC_SOLANA_MERCHANT_ADDRESS || ""; // base58
+  process.env.NEXT_PUBLIC_SOLANA_MERCHANT_ADDRESS || "2ymmLLwYbGKYcxWSJ9WxP8KDZvNx3mBHZ8zbh9NjHcfS"; // base58
 const USDC_SOL_MINT =
   process.env.NEXT_PUBLIC_SOLANA_USDC_MINT_ADDRESS ||
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC
