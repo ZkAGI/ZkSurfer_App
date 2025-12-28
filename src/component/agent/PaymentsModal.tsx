@@ -297,51 +297,73 @@ function aarcPay(bucket: "core" | "trading") {
 
   /* ===================== Solana Pay (QR) with 404 fallback ===================== */
   async function solanaStart(bucket: "core" | "trading") {
-    const amount = bucket === "core" ? coreTotal : tradingTotal;
-    if (amount <= 0) return;
+  // ✅ ADD THIS AT THE VERY START
+  console.log("🚀 solanaStart called:", {
+    bucket,
+    SOLANA_RECIPIENT,
+    USDC_SOL_MINT,
+    SOLANA_RECIPIENT_length: SOLANA_RECIPIENT?.length,
+    USDC_SOL_MINT_length: USDC_SOL_MINT?.length,
+  });
 
-    if (!SOLANA_RECIPIENT) {
-      toast.error("Missing NEXT_PUBLIC_SOLANA_MERCHANT_ADDRESS");
-      return;
+  const amount = bucket === "core" ? coreTotal : tradingTotal;
+  if (amount <= 0) return;
+
+  if (!SOLANA_RECIPIENT || SOLANA_RECIPIENT.length < 32) {
+    console.error("❌ SOLANA_RECIPIENT is invalid:", SOLANA_RECIPIENT);
+    toast.error("Solana merchant address not configured");
+    return;
+  }
+
+  let reference: string | null = null;
+
+  // 1) try your API route first
+  try {
+    const r = await fetch("/api/solana/createAgentReference", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bucket,
+        agents: bucket === "core" ? nonTrading : ["Trading"],
+        amountUsd: amount,
+      }),
+    });
+
+    if (r.ok) {
+      const j = await r.json();
+      reference = j?.reference || null;
+      console.log("✅ Got reference from API:", reference);
+    } else {
+      console.warn("⚠️ createAgentReference failed, using fallback");
     }
+  } catch (e) {
+    console.warn("⚠️ createAgentReference fetch failed:", e);
+  }
 
-    let reference: string | null = null;
+  // 2) fallback: generate client-side reference
+  if (!reference) {
+    reference = Keypair.generate().publicKey.toBase58();
+    console.log("✅ Generated fallback reference:", reference);
+  }
 
-    // 1) try your API route first
-    try {
-      const r = await fetch("/api/solana/createAgentReference", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bucket,
-          agents: bucket === "core" ? nonTrading : ["Trading"],
-          amountUsd: amount,
-        }),
-      });
+  // ✅ WRAP IN TRY-CATCH TO SEE THE ACTUAL ERROR
+  try {
+    console.log("🔑 Creating PublicKeys with:", {
+      reference,
+      SOLANA_RECIPIENT,
+      USDC_SOL_MINT,
+    });
 
-      if (r.ok) {
-        const j = await r.json();
-        reference = j?.reference || null;
-      } else {
-        // capture 404 html page or other
-        const txt = await r.text().catch(() => "");
-        console.warn("createAgentReference not available, falling back. Body:", txt);
-      }
-    } catch (e) {
-      console.warn("createAgentReference fetch failed, using local fallback.", e);
-    }
-
-    // 2) fallback: generate client-side reference
-    if (!reference) {
-      reference = Keypair.generate().publicKey.toBase58();
-    }
-
-    // Build Solana Pay URL
     const refKey = new PublicKey(reference);
+    const recipientKey = new PublicKey(SOLANA_RECIPIENT);
+    const mintKey = new PublicKey(USDC_SOL_MINT);
+
+    console.log("✅ PublicKeys created successfully");
+
     const url = buildSolanaPayURLAgents({
       usdAmount: amount,
-      recipient: new PublicKey(SOLANA_RECIPIENT),
-      usdcMint: new PublicKey(USDC_SOL_MINT),
+      recipient: recipientKey,
+      usdcMint: mintKey,
       reference: refKey,
       label:
         bucket === "core"
@@ -350,8 +372,70 @@ function aarcPay(bucket: "core" | "trading") {
       message: "ZEE Agent purchase",
     });
 
+    console.log("✅ Solana Pay URL:", url.toString());
     setSolQR({ bucket, url: url.toString(), reference });
+  } catch (err) {
+    console.error("❌ Error creating Solana Pay URL:", err);
+    console.error("❌ Values were:", { reference, SOLANA_RECIPIENT, USDC_SOL_MINT });
+    toast.error("Failed to generate payment QR code");
   }
+}
+  // async function solanaStart(bucket: "core" | "trading") {
+  //   const amount = bucket === "core" ? coreTotal : tradingTotal;
+  //   if (amount <= 0) return;
+
+  //   if (!SOLANA_RECIPIENT) {
+  //     toast.error("Missing NEXT_PUBLIC_SOLANA_MERCHANT_ADDRESS");
+  //     return;
+  //   }
+
+  //   let reference: string | null = null;
+
+  //   // 1) try your API route first
+  //   try {
+  //     const r = await fetch("/api/solana/createAgentReference", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         bucket,
+  //         agents: bucket === "core" ? nonTrading : ["Trading"],
+  //         amountUsd: amount,
+  //       }),
+  //     });
+
+  //     if (r.ok) {
+  //       const j = await r.json();
+  //       reference = j?.reference || null;
+  //     } else {
+  //       // capture 404 html page or other
+  //       const txt = await r.text().catch(() => "");
+  //       console.warn("createAgentReference not available, falling back. Body:", txt);
+  //     }
+  //   } catch (e) {
+  //     console.warn("createAgentReference fetch failed, using local fallback.", e);
+  //   }
+
+  //   // 2) fallback: generate client-side reference
+  //   if (!reference) {
+  //     reference = Keypair.generate().publicKey.toBase58();
+  //   }
+
+  //   // Build Solana Pay URL
+  //   const refKey = new PublicKey(reference);
+  //   const url = buildSolanaPayURLAgents({
+  //     usdAmount: amount,
+  //     recipient: new PublicKey(SOLANA_RECIPIENT),
+  //     usdcMint: new PublicKey(USDC_SOL_MINT),
+  //     reference: refKey,
+  //     label:
+  //       bucket === "core"
+  //         ? `ZEE Core x${nonTrading.length} ($${CORE_PRICE}/mo)`
+  //         : "ZEE Trading ($199)",
+  //     message: "ZEE Agent purchase",
+  //   });
+
+  //   setSolQR({ bucket, url: url.toString(), reference });
+  // }
 
   async function solanaCheck() {
     if (!solQR?.reference) return;
