@@ -34,6 +34,13 @@ const USDC_SOL_MINT =
   process.env.NEXT_PUBLIC_SOLANA_USDC_MINT_ADDRESS ||
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC
 
+  if (typeof window !== 'undefined') {
+  console.log("🔍 PRODUCTION ENV CHECK:", {
+    SOLANA_RECIPIENT: SOLANA_RECIPIENT || "EMPTY!",
+    USDC_MINT: USDC_SOL_MINT || "EMPTY!",
+  });
+}
+
 /* ───────────────────────────────────────────────────────────── */
 
 type PaymentsModalProps = {
