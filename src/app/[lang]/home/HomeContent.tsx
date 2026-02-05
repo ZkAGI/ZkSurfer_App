@@ -1125,10 +1125,22 @@ const handleMedicalProofVerify = async () => {
         return;
     }
 
-    const { setWalletAddress: setStoreWallet, setAwaitingProofId } = useMedicalProofStore.getState();
-    setStoreWallet(walletAddress);
+    const {
+        setWalletAddress: setStoreWallet,
+        setAwaitingProofId,
+        setChatMode,
+        setActiveSessionId,
+        setActiveProofId
+    } = useMedicalProofStore.getState();
 
-    // Ask user to enter proof_id — NO listing API call
+    // ✅ CLEAR any stale chat state before starting verify flow
+    setChatMode(false);
+    setActiveSessionId(null);
+    setActiveProofId(null);
+
+    setStoreWallet(walletAddress);
+    setAwaitingProofId(true);
+
     const promptMessage: Message = {
         role: 'assistant',
         content:
@@ -1139,9 +1151,6 @@ const handleMedicalProofVerify = async () => {
         type: 'text',
     };
     setDisplayMessages(prev => [...prev, promptMessage]);
-
-    // Set flag so next user input is treated as proof_id
-    setAwaitingProofId(true);
 };
 
 const handleMedicalChatQuestion = async (question: string) => {
@@ -3862,18 +3871,6 @@ if (fullMessage.trim() === '/exit-medical-chat') {
     return;
 }
 
-// 2. Medical chat mode — intercept all non-/ messages as questions
-const { isChatMode: isMedicalChatMode } = useMedicalProofStore.getState();
-if (isMedicalChatMode && !fullMessage.startsWith('/')) {
-    await handleMedicalChatQuestion(fullMessage);
-
-    setInputMessage('');
-    if (inputRef.current) {
-        inputRef.current.style.height = '2.5rem';
-    }
-    return;
-}
-
 // 3. Awaiting proof ID input (user pastes their proof_id)
 const { isAwaitingProofId } = useMedicalProofStore.getState();
 if (isAwaitingProofId && !fullMessage.startsWith('/')) {
@@ -3996,6 +3993,19 @@ if (isAwaitingProofId && !fullMessage.startsWith('/')) {
     return;
 }
 
+
+// 2. Medical chat mode — intercept all non-/ messages as questions
+const { isChatMode: isMedicalChatMode } = useMedicalProofStore.getState();
+if (isMedicalChatMode && !fullMessage.startsWith('/')) {
+    await handleMedicalChatQuestion(fullMessage);
+
+    setInputMessage('');
+    if (inputRef.current) {
+        inputRef.current.style.height = '2.5rem';
+    }
+    return;
+}
+
 // 5. /medical-proof-verify command
 if (fullMessage.startsWith('/medical-proof-verify')) {
     await handleMedicalProofVerify();
@@ -4006,6 +4016,8 @@ if (fullMessage.startsWith('/medical-proof-verify')) {
     }
     return;
 }
+
+
 
 // 6. /medical-proof-create command
 if (fullMessage.startsWith('/medical-proof-create')) {
