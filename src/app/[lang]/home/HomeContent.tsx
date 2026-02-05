@@ -941,7 +941,6 @@ const handleMedicalFileUpload = async (files: File[]) => {
         return;
     }
 
-    // Single file only
     const file = files[0];
     if (!file) {
         const errorMessage: Message = {
@@ -981,18 +980,24 @@ const handleMedicalFileUpload = async (files: File[]) => {
         const uploadResponse = await response.json();
         console.log('✅ Upload response:', uploadResponse);
 
-        // Extract proof_id and asset_id from upload response
-        const proofId = uploadResponse.proof_id;
-        const assetId = uploadResponse.asset_id;
+        // ── Extract proof_id (asset_id) from response ──
+        // Response shape: { kb_id, created_assets: ["xxx"], proofs: [{ asset_id: "xxx", ... }] }
+        const proofId =
+            uploadResponse.proofs?.[0]?.asset_id ||
+            uploadResponse.created_assets?.[0] ||
+            null;
+
+        console.log('🔑 Proof ID (asset_id):', proofId);
 
         // ── Step 2: Download proof.json via proxy ──
         let proofBlobUrl: string | null = null;
 
-        if (currentKbId && assetId) {
+        if (currentKbId && proofId) {
             try {
                 console.log('📥 Downloading proof file via proxy...');
                 const downloadRes = await fetch(
-                    `/api/kb/download-proof?kb_id=${encodeURIComponent(currentKbId)}&asset_id=${encodeURIComponent(assetId)}`
+                    `/api/medical-proof/download-proof?kb_id=${encodeURIComponent(currentKbId)}&asset_id=${encodeURIComponent(proofId)}`,
+                    { cache: 'no-store' }
                 );
 
                 if (downloadRes.ok) {
@@ -1002,18 +1007,20 @@ const handleMedicalFileUpload = async (files: File[]) => {
                     // Auto-download
                     const a = document.createElement('a');
                     a.href = proofBlobUrl;
-                    a.download = `proof_${proofId || assetId}.json`;
+                    a.download = `proof_${proofId}.json`;
                     document.body.appendChild(a);
                     a.click();
-                    a.remove();
+                    document.body.removeChild(a);
                     console.log('✅ Proof file auto-downloaded');
                 } else {
-                    console.warn('⚠️ Could not download proof file:', await downloadRes.text());
+                    const errText = await downloadRes.text();
+                    console.warn('⚠️ Could not download proof file:', errText);
                 }
             } catch (downloadError) {
                 console.warn('⚠️ Proof file download failed:', downloadError);
-                // Non-fatal — continue showing success with proof_id
             }
+        } else {
+            console.warn('⚠️ No proof_id found in response, cannot download proof file');
         }
 
         // ── Step 3: Update store ──
@@ -1021,11 +1028,11 @@ const handleMedicalFileUpload = async (files: File[]) => {
         setProofData({
             kb_id: currentKbId,
             proof_name: `${walletAddress}_report_${currentKbId}`,
-            asset_id: assetId,
+            asset_id: proofId || undefined,
             created_at: new Date().toISOString(),
         });
 
-        // ── Step 4: Show success message with proof_id + disclaimer ──
+        // ── Step 4: Success message with proof_id + copy button + disclaimer ──
         const successMessage: Message = {
             role: 'assistant',
             content: (
@@ -1034,15 +1041,28 @@ const handleMedicalFileUpload = async (files: File[]) => {
                         ✅ Medical Document Uploaded & ZK Proof Generated!
                     </div>
 
-                    <div className="space-y-1 text-sm text-gray-300">
+                    <div className="space-y-2 text-sm text-gray-300">
                         <div>📄 <strong>File:</strong> {file.name}</div>
                         <div>📋 <strong>KB ID:</strong> <code className="text-blue-300">{currentKbId}</code></div>
+
                         {proofId && (
-                            <div>🔑 <strong>Proof ID:</strong> <code className="text-yellow-300 text-base">{proofId}</code></div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span>🔑 <strong>Proof ID:</strong></span>
+                                <code className="text-yellow-300 text-base font-bold">{proofId}</code>
+                                <button
+                                    className="px-2 py-0.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-xs transition-colors"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(proofId);
+                                        if (typeof toast !== 'undefined') {
+                                            toast.success('Proof ID copied to clipboard!');
+                                        }
+                                    }}
+                                >
+                                    📋 Copy
+                                </button>
+                            </div>
                         )}
-                        {assetId && (
-                            <div>📦 <strong>Asset ID:</strong> <code className="text-blue-300">{assetId}</code></div>
-                        )}
+
                         <div>🕐 <strong>Created:</strong> {new Date().toLocaleString()}</div>
                     </div>
 
@@ -1052,10 +1072,10 @@ const handleMedicalFileUpload = async (files: File[]) => {
                             onClick={() => {
                                 const a = document.createElement('a');
                                 a.href = proofBlobUrl!;
-                                a.download = `proof_${proofId || assetId}.json`;
+                                a.download = `proof_${proofId}.json`;
                                 document.body.appendChild(a);
                                 a.click();
-                                a.remove();
+                                document.body.removeChild(a);
                             }}
                         >
                             📥 Download Proof File Again
@@ -1092,7 +1112,6 @@ const handleMedicalFileUpload = async (files: File[]) => {
         setDisplayMessages(prev => [...prev, errorMessage]);
     }
 };
-
 const handleMedicalProofVerify = async () => {
     const walletAddress = wallet?.publicKey?.toString();
 
