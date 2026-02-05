@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const externalApiUrl = process.env.KB_BASE;
+        const externalApiUrl = process.env.KB_API_BASE;
         if (!externalApiUrl) {
-            throw new Error('KB_BASE environment variable is not set!');
+            throw new Error('KB_API_BASE environment variable is not set!');
         }
 
         const forwardFormData = new FormData();

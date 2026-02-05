@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic"; // don't cache
 export const revalidate = 0;
 
-const KB_BASE = process.env.KB_API_BASE || "http://45.251.34.28:8009";
+const KB_BASE = process.env.KB_API_BASE || "http://45.251.34.28:8009"; 
 
 export async function GET(
   _req: Request,
