@@ -75,6 +75,8 @@ import FlowGate from '@/component/zee/FlowGate';
 import CreateAgentModal from '@/component/agent/CreateAgentModal';
 import { useZeeUiStore } from '@/stores/zee-ui-store';
 import JsonPreviewModal from '@/component/ui/JsonPreviewModal';
+import ProofsTable from '@/components/ui/medical/ProofsTable';
+import MedicalAnswer from '@/components/ui/medical/MedicalAnswer';
 import { useMedicalProofStore } from '@/stores/medical-proof-store';
 
 interface GeneratedTweet {
@@ -1051,31 +1053,27 @@ const handleMedicalProofVerify = async () => {
         }
 
         // Store proofs and set selection mode
-        const { setProofsList, setAwaitingProofSelection, setWalletAddress } = useMedicalProofStore.getState();
+        const { setProofsList, setAwaitingProofSelection, setWalletAddress: setStoreWallet } = useMedicalProofStore.getState();
         setProofsList(proofs);
         setAwaitingProofSelection(true);
-        setWalletAddress(walletAddress);
+        setStoreWallet(walletAddress);
 
-        // Build table
-        let table = '📋 **Available Proofs:**\n\n';
-        table += '| # | Proof Name | File | KB ID | Created | Status |\n';
-        table += '|---|-----------|------|-------|---------|--------|\n';
-
-        proofs.forEach((proof: any, index: number) => {
-            const date = new Date(proof.created_at).toLocaleDateString();
-            const status = proof.has_proof ? '✅ Ready' : '⏳ Pending';
-            const kbShort = proof.kb_id.slice(0, 8) + '...';
-            table += `| **${index + 1}** | ${proof.proof_name} | ${proof.filename} | \`${kbShort}\` | ${date} | ${status} |\n`;
+        // Remove loading message and add ProofsTable component
+        setDisplayMessages(prev => {
+            const filtered = prev.filter(m => m.content !== '🔄 Fetching your proofs...');
+            return [...filtered, {
+                role: 'assistant',
+                content: (
+                    <ProofsTable
+                        proofs={proofs}
+                        onSelect={async (index: number) => {
+                            await handleProofSelection(index);
+                        }}
+                    />
+                ),
+                type: 'text'
+            }];
         });
-
-        table += '\n---\n\n🔢 **Enter the number of the proof you want to verify:**';
-
-        const tableMessage: Message = {
-            role: 'assistant',
-            content: table,
-            type: 'text'
-        };
-        setDisplayMessages(prev => [...prev, tableMessage]);
 
     } catch (error) {
         const errorMessage: Message = {
@@ -1136,9 +1134,9 @@ const handleProofSelection = async (selectionNumber: number) => {
             content: `✅ **Chat Session Created!**\n\n` +
                 `📋 **Proof:** ${selectedProof.proof_name}\n` +
                 `📄 **File:** ${selectedProof.filename}\n` +
-                `🔑 **Session ID:** \`${sessionData.session_id}\`\n\n` +
+                `🔑 **Session:** \`${sessionData.session_id.slice(0, 8)}...\`\n\n` +
                 `---\n\n` +
-                `💬 **You can now ask questions about this document.** Type your question below.\n\n` +
+                `💬 Ask questions about this document below.\n\n` +
                 `Type \`/exit-medical-chat\` to end the session.`,
             type: 'text'
         };
@@ -1200,22 +1198,31 @@ const handleMedicalChatQuestion = async (question: string) => {
 
         const data = await response.json();
 
-        // Build answer with citations
-        let answerContent = `📝 **Answer:**\n\n${data.answer}`;
-
-        if (data.citations && data.citations.length > 0) {
-            answerContent += '\n\n---\n\n📎 **Citations:**\n';
-            data.citations.forEach((citation: any) => {
-                answerContent += `\n[${citation.citation_id}] _${citation.metadata?.filename || 'document'}_ — "${citation.text.slice(0, 100)}${citation.text.length > 100 ? '...' : ''}"`;
-            });
+        let cleanAnswer = data.answer || '';
+        const thinkingEndMarker = '<unused95>';
+        if (cleanAnswer.includes(thinkingEndMarker)) {
+            cleanAnswer = cleanAnswer.split(thinkingEndMarker).pop()?.trim() || cleanAnswer;
+        } else if (cleanAnswer.includes('<unused94>')) {
+            // Fallback: remove everything from <unused94> to end of thinking block
+            cleanAnswer = cleanAnswer.replace(/<unused94>thought[\s\S]*?(?:<unused95>|$)/, '').trim();
         }
 
-        // Remove loading message and add answer
+        // If still empty after stripping, use original
+        if (!cleanAnswer) {
+            cleanAnswer = data.answer.replace(/<unused\d+>[\s\S]*?<unused\d+>/g, '').trim();
+        }
+
+        // Remove loading, add MedicalAnswer component
         setDisplayMessages(prev => {
             const filtered = prev.filter(m => m.content !== '🔄 Analyzing document...');
             return [...filtered, {
                 role: 'assistant',
-                content: answerContent,
+                content: (
+                    <MedicalAnswer
+                        answer={cleanAnswer}
+                        citations={data.citations}
+                    />
+                ),
                 type: 'text'
             }];
         });
@@ -3851,7 +3858,7 @@ if (fullMessage.trim() === '/exit-medical-chat') {
 
     const exitMessage: Message = {
         role: 'assistant',
-        content: '✅ Medical chat session ended. You can start a new session with `/medical-proof-verify`.',
+        content: '✅ Medical chat session ended. Use `/medical-proof-verify` to start a new session.',
         type: 'text'
     };
     setDisplayMessages(prev => [...prev, exitMessage]);
@@ -3863,7 +3870,7 @@ if (fullMessage.trim() === '/exit-medical-chat') {
     return;
 }
 
-// 2. Medical chat mode — intercept all messages as questions
+// 2. Medical chat mode — intercept all non-/ messages as questions
 const { isChatMode: isMedicalChatMode } = useMedicalProofStore.getState();
 if (isMedicalChatMode && !fullMessage.startsWith('/')) {
     await handleMedicalChatQuestion(fullMessage);
@@ -3871,11 +3878,12 @@ if (isMedicalChatMode && !fullMessage.startsWith('/')) {
     setInputMessage('');
     if (inputRef.current) {
         inputRef.current.style.height = '2.5rem';
+        return; 
     }
     return;
 }
 
-// 3. Proof selection (user enters a number)
+// 3. Proof selection (user types a number)
 const { isAwaitingProofSelection } = useMedicalProofStore.getState();
 if (isAwaitingProofSelection) {
     const num = parseInt(fullMessage.trim());
@@ -3891,7 +3899,7 @@ if (isAwaitingProofSelection) {
 }
 
 // 4. Download confirmation
-// const { isAwaitingDownloadConfirmation } = useMedicalProofStore.getState();
+const { isAwaitingDownloadConfirmation } = useMedicalProofStore.getState();
 // if (isAwaitingDownloadConfirmation && fullMessage.trim().toLowerCase() === 'yes') {
 //     await handleMedicalProofDownload();
 
@@ -3913,7 +3921,7 @@ if (fullMessage.startsWith('/medical-proof-verify')) {
     return;
 }
 
-// 6. /medical-proof-create command (already have this)
+// 6. /medical-proof-create command
 if (fullMessage.startsWith('/medical-proof-create')) {
     await handleMedicalProofCreate();
 
