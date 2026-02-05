@@ -75,6 +75,7 @@ import FlowGate from '@/component/zee/FlowGate';
 import CreateAgentModal from '@/component/agent/CreateAgentModal';
 import { useZeeUiStore } from '@/stores/zee-ui-store';
 import JsonPreviewModal from '@/component/ui/JsonPreviewModal';
+import { useMedicalProofStore } from '@/stores/medical-proof-store';
 
 interface GeneratedTweet {
     tweet: string;
@@ -88,7 +89,7 @@ export interface HomeContentProps {
 }
 
 //type Command = 'image-gen' | 'create-agent' | 'content';
-type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai' |'generate-private' | 'create-swarm';
+type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'generate-tweet-image' | 'generate-tweet-images' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai' |'generate-private' | 'create-swarm'|'medical-proof-create'| 'medical-proof-verify';
 //| 'bridge' | | 'video-lipsync' | 'UGC' | 'img-to-video';
 // |'train' |'post' |'select'|'launch'
 
@@ -857,6 +858,379 @@ const openCreateSwarmPopup = () => {
         setReportData(report);
         setIsReportOpen(true);
     };
+
+    const handleMedicalProofCreate = async () => {
+    // Get wallet address - adjust based on your wallet hook
+    const walletAddress = wallet?.publicKey?.toString();
+
+    if (!walletAddress) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content: '❌ No wallet connected. Please connect your wallet first to create a medical proof.',
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+        return;
+    }
+
+    const loadingMessage: Message = {
+        role: 'assistant',
+        content: '🔄 Creating private medical knowledge base...',
+        type: 'text'
+    };
+    setDisplayMessages(prev => [...prev, loadingMessage]);
+
+    try {
+        const formData = new FormData();
+        formData.append('user_id', walletAddress);
+        formData.append('kb_name', `Medical Reports_${walletAddress}`);
+
+        const response = await fetch('/api/medical-proof/create', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to create KB');
+        }
+
+        const kbResponse = await response.json();
+
+        // Store in Zustand
+        const { setKbId, setWalletAddress, setAwaitingFileUpload } = useMedicalProofStore.getState();
+        setKbId(kbResponse.kb_id);
+        setWalletAddress(walletAddress);
+        setAwaitingFileUpload(true);
+
+        const successMessage: Message = {
+            role: 'assistant',
+            content: `✅ **Knowledge Base Created Successfully!**\n\n` +
+                `📋 **KB ID:** \`${kbResponse.kb_id}\`\n` +
+                `👤 **Owner:** \`${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}\`\n` +
+                `🔒 **Visibility:** Private\n\n` +
+                `---\n\n` +
+                `📤 **Next Step:** Please upload your medical documents (PDF, DOC, TXT files).\n\n` +
+                `Drag and drop files or use the upload button.`,
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, successMessage]);
+
+    } catch (error) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content: `❌ Failed to create knowledge base: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+    }
+};
+
+const handleMedicalFileUpload = async (files: File[]) => {
+    const { currentKbId, walletAddress, setAwaitingFileUpload, setProofData } = useMedicalProofStore.getState();
+
+    if (!currentKbId || !walletAddress) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content: '❌ No active medical KB session. Please run /medical-proof-create first.',
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+        return;
+    }
+
+    // Single file only
+    const file = files[0];
+    if (!file) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content: '❌ No file selected. Please upload a medical document.',
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+        return;
+    }
+
+    const loadingMessage: Message = {
+        role: 'assistant',
+        content: `🔄 Uploading ${file.name} and generating ZK proof...`,
+        type: 'text'
+    };
+    setDisplayMessages(prev => [...prev, loadingMessage]);
+
+    try {
+        const formData = new FormData();
+        formData.append('user_id', walletAddress);
+        formData.append('kb_id', currentKbId);
+        formData.append('proof_name', `${walletAddress}_report_${currentKbId}`);
+        formData.append('file', file); // Single file
+
+        const response = await fetch('/api/medical-proof/upload', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to upload file');
+        }
+
+        const uploadResponse = await response.json();
+
+        setAwaitingFileUpload(false);
+        setProofData({
+            kb_id: currentKbId,
+            proof_name: `${walletAddress}_report_${currentKbId}`,
+            created_at: new Date().toISOString(),
+        });
+
+        const successMessage: Message = {
+            role: 'assistant',
+            content: `✅ **Medical Document Uploaded & ZK Proof Generated!**\n\n` +
+                `📋 **KB ID:** \`${currentKbId}\`\n` +
+                `📄 **File Uploaded:** ${file.name}\n` +
+                `🔐 **Proof Name:** \`${walletAddress}_report_${currentKbId}\`\n` +
+                `🕐 **Created At:** ${new Date().toLocaleString()}\n\n` +
+                `---\n\n` +
+                `🔍 Use \`/medical-proof-verify\` to verify the proof.`,
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, successMessage]);
+
+    } catch (error) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content: `❌ Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+    }
+};
+
+const handleMedicalProofVerify = async () => {
+    const walletAddress = wallet?.publicKey?.toString();
+
+    if (!walletAddress) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content: '❌ No wallet connected. Please connect your wallet first.',
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+        return;
+    }
+
+    const loadingMessage: Message = {
+        role: 'assistant',
+        content: '🔄 Fetching your proofs...',
+        type: 'text'
+    };
+    setDisplayMessages(prev => [...prev, loadingMessage]);
+
+    try {
+        const response = await fetch(
+            `/api/medical-proof/list?user_id=${encodeURIComponent(walletAddress)}`
+        );
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to list proofs');
+        }
+
+        const data = await response.json();
+        const proofs = data.proofs || [];
+
+        if (proofs.length === 0) {
+            const noProofsMessage: Message = {
+                role: 'assistant',
+                content: '📋 No proofs found. Use `/medical-proof-create` to create one first.',
+                type: 'text'
+            };
+            setDisplayMessages(prev => [...prev, noProofsMessage]);
+            return;
+        }
+
+        // Store proofs and set selection mode
+        const { setProofsList, setAwaitingProofSelection, setWalletAddress } = useMedicalProofStore.getState();
+        setProofsList(proofs);
+        setAwaitingProofSelection(true);
+        setWalletAddress(walletAddress);
+
+        // Build table
+        let table = '📋 **Available Proofs:**\n\n';
+        table += '| # | Proof Name | File | KB ID | Created | Status |\n';
+        table += '|---|-----------|------|-------|---------|--------|\n';
+
+        proofs.forEach((proof: any, index: number) => {
+            const date = new Date(proof.created_at).toLocaleDateString();
+            const status = proof.has_proof ? '✅ Ready' : '⏳ Pending';
+            const kbShort = proof.kb_id.slice(0, 8) + '...';
+            table += `| **${index + 1}** | ${proof.proof_name} | ${proof.filename} | \`${kbShort}\` | ${date} | ${status} |\n`;
+        });
+
+        table += '\n---\n\n🔢 **Enter the number of the proof you want to verify:**';
+
+        const tableMessage: Message = {
+            role: 'assistant',
+            content: table,
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, tableMessage]);
+
+    } catch (error) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content: `❌ Failed to fetch proofs: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+    }
+};
+
+const handleProofSelection = async (selectionNumber: number) => {
+    const { proofsList, walletAddress, setAwaitingProofSelection, setActiveSessionId, setActiveProofId, setChatMode } = useMedicalProofStore.getState();
+
+    if (selectionNumber < 1 || selectionNumber > proofsList.length) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content: `❌ Invalid selection. Please enter a number between 1 and ${proofsList.length}.`,
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+        return;
+    }
+
+    const selectedProof = proofsList[selectionNumber - 1];
+    setAwaitingProofSelection(false);
+
+    const loadingMessage: Message = {
+        role: 'assistant',
+        content: `🔄 Creating chat session for **${selectedProof.proof_name}**...`,
+        type: 'text'
+    };
+    setDisplayMessages(prev => [...prev, loadingMessage]);
+
+    try {
+        const response = await fetch('/api/medical-proof/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: walletAddress,
+                proof_id: selectedProof.proof_id,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to create session');
+        }
+
+        const sessionData = await response.json();
+
+        setActiveSessionId(sessionData.session_id);
+        setActiveProofId(selectedProof.proof_id);
+        setChatMode(true);
+
+        const sessionMessage: Message = {
+            role: 'assistant',
+            content: `✅ **Chat Session Created!**\n\n` +
+                `📋 **Proof:** ${selectedProof.proof_name}\n` +
+                `📄 **File:** ${selectedProof.filename}\n` +
+                `🔑 **Session ID:** \`${sessionData.session_id}\`\n\n` +
+                `---\n\n` +
+                `💬 **You can now ask questions about this document.** Type your question below.\n\n` +
+                `Type \`/exit-medical-chat\` to end the session.`,
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, sessionMessage]);
+
+    } catch (error) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content: `❌ Failed to create session: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+    }
+};
+
+const handleMedicalChatQuestion = async (question: string) => {
+    const { activeSessionId } = useMedicalProofStore.getState();
+
+    if (!activeSessionId) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content: '❌ No active session. Please run `/medical-proof-verify` first.',
+            type: 'text'
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+        return;
+    }
+
+    // Show user question
+    const userMessage: Message = {
+        role: 'user',
+        content: question,
+        type: 'text'
+    };
+    setDisplayMessages(prev => [...prev, userMessage]);
+
+    const loadingMessage: Message = {
+        role: 'assistant',
+        content: '🔄 Analyzing document...',
+        type: 'text'
+    };
+    setDisplayMessages(prev => [...prev, loadingMessage]);
+
+    try {
+        const response = await fetch('/api/medical-proof/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: activeSessionId,
+                question: question,
+                top_k: 5,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to get answer');
+        }
+
+        const data = await response.json();
+
+        // Build answer with citations
+        let answerContent = `📝 **Answer:**\n\n${data.answer}`;
+
+        if (data.citations && data.citations.length > 0) {
+            answerContent += '\n\n---\n\n📎 **Citations:**\n';
+            data.citations.forEach((citation: any) => {
+                answerContent += `\n[${citation.citation_id}] _${citation.metadata?.filename || 'document'}_ — "${citation.text.slice(0, 100)}${citation.text.length > 100 ? '...' : ''}"`;
+            });
+        }
+
+        // Remove loading message and add answer
+        setDisplayMessages(prev => {
+            const filtered = prev.filter(m => m.content !== '🔄 Analyzing document...');
+            return [...filtered, {
+                role: 'assistant',
+                content: answerContent,
+                type: 'text'
+            }];
+        });
+
+    } catch (error) {
+        setDisplayMessages(prev => {
+            const filtered = prev.filter(m => m.content !== '🔄 Analyzing document...');
+            return [...filtered, {
+                role: 'assistant',
+                content: `❌ Failed to get answer: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                type: 'text'
+            }];
+        });
+    }
+};
 
 
     // const openReport = async () => {
@@ -2405,6 +2779,14 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const files = Array.from(e.target.files);
   console.log('✅ Files captured:', files.map(f => `${f.name} (${f.type})`));
 
+  const { isAwaitingFileUpload } = useMedicalProofStore.getState();
+  if (isAwaitingFileUpload) {
+    console.log('🏥 Medical proof upload mode active');
+    await handleMedicalFileUpload(files);
+    e.target.value = '';
+    return;
+  }
+
   if (isPrivacy) {
     // ✅ PRIVACY AI MODE - Single JSON proof file
     const file = files[0];
@@ -3462,6 +3844,86 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
   if (inputRef.current) inputRef.current.style.height = '2.5rem';
   return;
 }
+
+if (fullMessage.trim() === '/exit-medical-chat') {
+    const { exitChatMode } = useMedicalProofStore.getState();
+    exitChatMode();
+
+    const exitMessage: Message = {
+        role: 'assistant',
+        content: '✅ Medical chat session ended. You can start a new session with `/medical-proof-verify`.',
+        type: 'text'
+    };
+    setDisplayMessages(prev => [...prev, exitMessage]);
+
+    setInputMessage('');
+    if (inputRef.current) {
+        inputRef.current.style.height = '2.5rem';
+    }
+    return;
+}
+
+// 2. Medical chat mode — intercept all messages as questions
+const { isChatMode: isMedicalChatMode } = useMedicalProofStore.getState();
+if (isMedicalChatMode && !fullMessage.startsWith('/')) {
+    await handleMedicalChatQuestion(fullMessage);
+
+    setInputMessage('');
+    if (inputRef.current) {
+        inputRef.current.style.height = '2.5rem';
+    }
+    return;
+}
+
+// 3. Proof selection (user enters a number)
+const { isAwaitingProofSelection } = useMedicalProofStore.getState();
+if (isAwaitingProofSelection) {
+    const num = parseInt(fullMessage.trim());
+    if (!isNaN(num)) {
+        await handleProofSelection(num);
+
+        setInputMessage('');
+        if (inputRef.current) {
+            inputRef.current.style.height = '2.5rem';
+        }
+        return;
+    }
+}
+
+// 4. Download confirmation
+// const { isAwaitingDownloadConfirmation } = useMedicalProofStore.getState();
+// if (isAwaitingDownloadConfirmation && fullMessage.trim().toLowerCase() === 'yes') {
+//     await handleMedicalProofDownload();
+
+//     setInputMessage('');
+//     if (inputRef.current) {
+//         inputRef.current.style.height = '2.5rem';
+//     }
+//     return;
+// }
+
+// 5. /medical-proof-verify command
+if (fullMessage.startsWith('/medical-proof-verify')) {
+    await handleMedicalProofVerify();
+
+    setInputMessage('');
+    if (inputRef.current) {
+        inputRef.current.style.height = '2.5rem';
+    }
+    return;
+}
+
+// 6. /medical-proof-create command (already have this)
+if (fullMessage.startsWith('/medical-proof-create')) {
+    await handleMedicalProofCreate();
+
+    setInputMessage('');
+    if (inputRef.current) {
+        inputRef.current.style.height = '2.5rem';
+    }
+    return;
+}
+
 
         if (fullMessage.startsWith('/create-agent')) {
   useZeeUiStore.getState().openFromCTA();   // open FlowGate

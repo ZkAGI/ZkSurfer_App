@@ -415,6 +415,7 @@ const nextConfig = {
     NEXT_PUBLIC_VIDEO_GEN_ENDPOINT : process.env.NEXT_PUBLIC_VIDEO_GEN_ENDPOINT ,
     BOT_API_BASE: process.env.BOT_API_BASE,
     FACTORY: process.env.FACTORY,
+    KB_BASE: process.env.KB_BASE,
   },
   experimental: {
     esmExternals: "loose",

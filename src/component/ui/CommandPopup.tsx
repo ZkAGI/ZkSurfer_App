@@ -1,6 +1,7 @@
 import React from 'react';
 
-type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai'| 'generate-private' | 'create-swarm';
+type Command = 'image-gen' | 'create-agent' | 'tokens' | 'tweet' | 'tweets' | 'generate-tweet' | 'save' | 'saves' | 'character-gen'  | 'api' | 'generate-voice-clone' | 'video-gen' | 'privacy-ai'| 'generate-private' | 'create-swarm' | 'medical-proof-create'
+  | 'medical-proof-verify';;
 // | 'bridge' |'video-lipsync' | 'UGC' | 'img-to-video'  ;
 // |'train' |'post' |'select'|'launch'
 
@@ -32,6 +33,14 @@ const CommandPopup: React.FC<CommandPopupProps> = ({ onSelect }) => {
         {
             command: 'api',
             description: 'Generate api-key for Zynapse API',
+        },
+        {
+            command: 'medical-proof-create',
+            description: 'Create a private medical knowledge base and upload medical documents with ZK proof generation',
+        },
+        {
+            command: 'medical-proof-verify',
+            description: 'Verify a medical ZK proof using KB ID and proof ID',
         },
         // {
         //     command: 'content',
