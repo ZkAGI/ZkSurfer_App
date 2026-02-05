@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
 
         console.log('Calling:', fullUrl);
 
-        const externalResponse = await fetch(fullUrl, { method: 'GET' });
+        const externalResponse = await fetch(fullUrl, { method: 'GET',cache: 'no-store' });
 
         if (!externalResponse.ok) {
             const errorText = await externalResponse.text();
