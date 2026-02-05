@@ -1,16 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface ProofItem {
-  proof_id: string;
-  proof_name: string;
-  filename: string;
-  kb_id: string;
-  created_at: string;
-  has_proof: boolean;
-  visibility: string;
-}
-
 interface MedicalProofState {
   currentKbId: string | null;
   walletAddress: string | null;
@@ -23,9 +13,8 @@ interface MedicalProofState {
   isAwaitingFileUpload: boolean;
   isAwaitingDownloadConfirmation: boolean;
 
-  // Verify flow
-  proofsList: ProofItem[];
-  isAwaitingProofSelection: boolean;
+  // Verify flow (simplified - no more listing)
+  isAwaitingProofId: boolean;       // NEW: replaces isAwaitingProofSelection
   activeSessionId: string | null;
   activeProofId: string | null;
   isChatMode: boolean;
@@ -37,8 +26,7 @@ interface MedicalProofState {
   setAwaitingFileUpload: (awaiting: boolean) => void;
   setAwaitingDownloadConfirmation: (awaiting: boolean) => void;
 
-  setProofsList: (proofs: ProofItem[]) => void;
-  setAwaitingProofSelection: (awaiting: boolean) => void;
+  setAwaitingProofId: (awaiting: boolean) => void;  // NEW: replaces setAwaitingProofSelection
   setActiveSessionId: (sessionId: string | null) => void;
   setActiveProofId: (proofId: string | null) => void;
   setChatMode: (active: boolean) => void;
@@ -55,8 +43,7 @@ export const useMedicalProofStore = create<MedicalProofState>()(
       isAwaitingFileUpload: false,
       isAwaitingDownloadConfirmation: false,
 
-      proofsList: [],
-      isAwaitingProofSelection: false,
+      isAwaitingProofId: false,
       activeSessionId: null,
       activeProofId: null,
       isChatMode: false,
@@ -67,8 +54,7 @@ export const useMedicalProofStore = create<MedicalProofState>()(
       setAwaitingFileUpload: (awaiting) => set({ isAwaitingFileUpload: awaiting }),
       setAwaitingDownloadConfirmation: (awaiting) => set({ isAwaitingDownloadConfirmation: awaiting }),
 
-      setProofsList: (proofs) => set({ proofsList: proofs }),
-      setAwaitingProofSelection: (awaiting) => set({ isAwaitingProofSelection: awaiting }),
+      setAwaitingProofId: (awaiting) => set({ isAwaitingProofId: awaiting }),
       setActiveSessionId: (sessionId) => set({ activeSessionId: sessionId }),
       setActiveProofId: (proofId) => set({ activeProofId: proofId }),
       setChatMode: (active) => set({ isChatMode: active }),
@@ -76,16 +62,14 @@ export const useMedicalProofStore = create<MedicalProofState>()(
         activeSessionId: null,
         activeProofId: null,
         isChatMode: false,
-        proofsList: [],
-        isAwaitingProofSelection: false,
+        isAwaitingProofId: false,
       }),
       reset: () => set({
         currentKbId: null,
         proofData: null,
         isAwaitingFileUpload: false,
         isAwaitingDownloadConfirmation: false,
-        proofsList: [],
-        isAwaitingProofSelection: false,
+        isAwaitingProofId: false,
         activeSessionId: null,
         activeProofId: null,
         isChatMode: false,

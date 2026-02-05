@@ -934,7 +934,7 @@ const handleMedicalFileUpload = async (files: File[]) => {
     if (!currentKbId || !walletAddress) {
         const errorMessage: Message = {
             role: 'assistant',
-            content: '❌ No active medical KB session. Please run /medical-proof-create first.',
+            content: '❌ No active medical KB session. Please run `/medical-proof-create` first.',
             type: 'text'
         };
         setDisplayMessages(prev => [...prev, errorMessage]);
@@ -955,17 +955,18 @@ const handleMedicalFileUpload = async (files: File[]) => {
 
     const loadingMessage: Message = {
         role: 'assistant',
-        content: `🔄 Uploading ${file.name} and generating ZK proof...`,
+        content: `🔄 Uploading **${file.name}** and generating ZK proof...`,
         type: 'text'
     };
     setDisplayMessages(prev => [...prev, loadingMessage]);
 
     try {
+        // ── Step 1: Upload file ──
         const formData = new FormData();
         formData.append('user_id', walletAddress);
         formData.append('kb_id', currentKbId);
         formData.append('proof_name', `${walletAddress}_report_${currentKbId}`);
-        formData.append('file', file); // Single file
+        formData.append('file', file);
 
         const response = await fetch('/api/medical-proof/upload', {
             method: 'POST',
@@ -978,23 +979,106 @@ const handleMedicalFileUpload = async (files: File[]) => {
         }
 
         const uploadResponse = await response.json();
+        console.log('✅ Upload response:', uploadResponse);
 
+        // Extract proof_id and asset_id from upload response
+        const proofId = uploadResponse.proof_id;
+        const assetId = uploadResponse.asset_id;
+
+        // ── Step 2: Download proof.json via proxy ──
+        let proofBlobUrl: string | null = null;
+
+        if (currentKbId && assetId) {
+            try {
+                console.log('📥 Downloading proof file via proxy...');
+                const downloadRes = await fetch(
+                    `/api/kb/download-proof?kb_id=${encodeURIComponent(currentKbId)}&asset_id=${encodeURIComponent(assetId)}`
+                );
+
+                if (downloadRes.ok) {
+                    const proofBlob = await downloadRes.blob();
+                    proofBlobUrl = URL.createObjectURL(proofBlob);
+
+                    // Auto-download
+                    const a = document.createElement('a');
+                    a.href = proofBlobUrl;
+                    a.download = `proof_${proofId || assetId}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    console.log('✅ Proof file auto-downloaded');
+                } else {
+                    console.warn('⚠️ Could not download proof file:', await downloadRes.text());
+                }
+            } catch (downloadError) {
+                console.warn('⚠️ Proof file download failed:', downloadError);
+                // Non-fatal — continue showing success with proof_id
+            }
+        }
+
+        // ── Step 3: Update store ──
         setAwaitingFileUpload(false);
         setProofData({
             kb_id: currentKbId,
             proof_name: `${walletAddress}_report_${currentKbId}`,
+            asset_id: assetId,
             created_at: new Date().toISOString(),
         });
 
+        // ── Step 4: Show success message with proof_id + disclaimer ──
         const successMessage: Message = {
             role: 'assistant',
-            content: `✅ **Medical Document Uploaded & ZK Proof Generated!**\n\n` +
-                `📋 **KB ID:** \`${currentKbId}\`\n` +
-                `📄 **File Uploaded:** ${file.name}\n` +
-                `🔐 **Proof Name:** \`${walletAddress}_report_${currentKbId}\`\n` +
-                `🕐 **Created At:** ${new Date().toLocaleString()}\n\n` +
-                `---\n\n` +
-                `🔍 Use \`/medical-proof-verify\` to verify the proof.`,
+            content: (
+                <div className="space-y-4">
+                    <div className="text-green-400 font-semibold text-base">
+                        ✅ Medical Document Uploaded & ZK Proof Generated!
+                    </div>
+
+                    <div className="space-y-1 text-sm text-gray-300">
+                        <div>📄 <strong>File:</strong> {file.name}</div>
+                        <div>📋 <strong>KB ID:</strong> <code className="text-blue-300">{currentKbId}</code></div>
+                        {proofId && (
+                            <div>🔑 <strong>Proof ID:</strong> <code className="text-yellow-300 text-base">{proofId}</code></div>
+                        )}
+                        {assetId && (
+                            <div>📦 <strong>Asset ID:</strong> <code className="text-blue-300">{assetId}</code></div>
+                        )}
+                        <div>🕐 <strong>Created:</strong> {new Date().toLocaleString()}</div>
+                    </div>
+
+                    {proofBlobUrl && (
+                        <button
+                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors text-sm"
+                            onClick={() => {
+                                const a = document.createElement('a');
+                                a.href = proofBlobUrl!;
+                                a.download = `proof_${proofId || assetId}.json`;
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                            }}
+                        >
+                            📥 Download Proof File Again
+                        </button>
+                    )}
+
+                    <div className="border-t border-gray-700 pt-3 mt-3">
+                        <div className="text-yellow-400 font-semibold text-sm">
+                            ⚠️ Important — Save Your Proof ID & Proof File
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1 leading-relaxed">
+                            Your <strong>Proof ID</strong> and <strong>proof.json file</strong> are generated once and cannot
+                            be recovered if lost. There is no way to regenerate or retrieve them. Please save both in a
+                            secure location. You will need your Proof ID to verify this document using{' '}
+                            <code className="text-gray-300">/medical-proof-verify</code>.
+                        </div>
+                    </div>
+
+                    <div className="text-sm text-gray-400">
+                        🔍 Use <code className="text-gray-300">/medical-proof-verify</code> to start a chat session with this proof.
+                    </div>
+                </div>
+            ) as any,
             type: 'text'
         };
         setDisplayMessages(prev => [...prev, successMessage]);
@@ -1022,134 +1106,23 @@ const handleMedicalProofVerify = async () => {
         return;
     }
 
-    const loadingMessage: Message = {
+    const { setWalletAddress: setStoreWallet, setAwaitingProofId } = useMedicalProofStore.getState();
+    setStoreWallet(walletAddress);
+
+    // Ask user to enter proof_id — NO listing API call
+    const promptMessage: Message = {
         role: 'assistant',
-        content: '🔄 Fetching your proofs...',
-        type: 'text'
+        content:
+            `🔐 **Medical Proof Verification**\n\n` +
+            `Please enter your **Proof ID** below.\n\n` +
+            `💡 *Your Proof ID was displayed when you successfully created a proof using \`/generate-private\`.*\n\n` +
+            `Example: \`4d5357fd-22b5-4e8c-9eda-48767df5e37c\``,
+        type: 'text',
     };
-    setDisplayMessages(prev => [...prev, loadingMessage]);
+    setDisplayMessages(prev => [...prev, promptMessage]);
 
-    try {
-        const response = await fetch(
-            `/api/medical-proof/list?user_id=${encodeURIComponent(walletAddress)}`
-        );
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to list proofs');
-        }
-
-        const data = await response.json();
-        const proofs = data.proofs || [];
-
-        if (proofs.length === 0) {
-            const noProofsMessage: Message = {
-                role: 'assistant',
-                content: '📋 No proofs found. Use `/medical-proof-create` to create one first.',
-                type: 'text'
-            };
-            setDisplayMessages(prev => [...prev, noProofsMessage]);
-            return;
-        }
-
-        // Store proofs and set selection mode
-        const { setProofsList, setAwaitingProofSelection, setWalletAddress: setStoreWallet } = useMedicalProofStore.getState();
-        setProofsList(proofs);
-        setAwaitingProofSelection(true);
-        setStoreWallet(walletAddress);
-
-        // Remove loading message and add ProofsTable component
-        setDisplayMessages(prev => {
-            const filtered = prev.filter(m => m.content !== '🔄 Fetching your proofs...');
-            return [...filtered, {
-                role: 'assistant',
-                content: (
-                    <ProofsTable
-                        proofs={proofs}
-                        onSelect={async (index: number) => {
-                            await handleProofSelection(index);
-                        }}
-                    />
-                ),
-                type: 'text'
-            }];
-        });
-
-    } catch (error) {
-        const errorMessage: Message = {
-            role: 'assistant',
-            content: `❌ Failed to fetch proofs: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            type: 'text'
-        };
-        setDisplayMessages(prev => [...prev, errorMessage]);
-    }
-};
-
-const handleProofSelection = async (selectionNumber: number) => {
-    const { proofsList, walletAddress, setAwaitingProofSelection, setActiveSessionId, setActiveProofId, setChatMode } = useMedicalProofStore.getState();
-
-    if (selectionNumber < 1 || selectionNumber > proofsList.length) {
-        const errorMessage: Message = {
-            role: 'assistant',
-            content: `❌ Invalid selection. Please enter a number between 1 and ${proofsList.length}.`,
-            type: 'text'
-        };
-        setDisplayMessages(prev => [...prev, errorMessage]);
-        return;
-    }
-
-    const selectedProof = proofsList[selectionNumber - 1];
-    setAwaitingProofSelection(false);
-
-    const loadingMessage: Message = {
-        role: 'assistant',
-        content: `🔄 Creating chat session for **${selectedProof.proof_name}**...`,
-        type: 'text'
-    };
-    setDisplayMessages(prev => [...prev, loadingMessage]);
-
-    try {
-        const response = await fetch('/api/medical-proof/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user_id: walletAddress,
-                proof_id: selectedProof.proof_id,
-            }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to create session');
-        }
-
-        const sessionData = await response.json();
-
-        setActiveSessionId(sessionData.session_id);
-        setActiveProofId(selectedProof.proof_id);
-        setChatMode(true);
-
-        const sessionMessage: Message = {
-            role: 'assistant',
-            content: `✅ **Chat Session Created!**\n\n` +
-                `📋 **Proof:** ${selectedProof.proof_name}\n` +
-                `📄 **File:** ${selectedProof.filename}\n` +
-                `🔑 **Session:** \`${sessionData.session_id.slice(0, 8)}...\`\n\n` +
-                `---\n\n` +
-                `💬 Ask questions about this document below.\n\n` +
-                `Type \`/exit-medical-chat\` to end the session.`,
-            type: 'text'
-        };
-        setDisplayMessages(prev => [...prev, sessionMessage]);
-
-    } catch (error) {
-        const errorMessage: Message = {
-            role: 'assistant',
-            content: `❌ Failed to create session: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            type: 'text'
-        };
-        setDisplayMessages(prev => [...prev, errorMessage]);
-    }
+    // Set flag so next user input is treated as proof_id
+    setAwaitingProofId(true);
 };
 
 const handleMedicalChatQuestion = async (question: string) => {
@@ -3878,37 +3851,131 @@ if (isMedicalChatMode && !fullMessage.startsWith('/')) {
     setInputMessage('');
     if (inputRef.current) {
         inputRef.current.style.height = '2.5rem';
-        return; 
     }
     return;
 }
 
-// 3. Proof selection (user types a number)
-const { isAwaitingProofSelection } = useMedicalProofStore.getState();
-if (isAwaitingProofSelection) {
-    const num = parseInt(fullMessage.trim());
-    if (!isNaN(num)) {
-        await handleProofSelection(num);
+// 3. Awaiting proof ID input (user pastes their proof_id)
+const { isAwaitingProofId } = useMedicalProofStore.getState();
+if (isAwaitingProofId && !fullMessage.startsWith('/')) {
+    const proofId = fullMessage.trim();
 
-        setInputMessage('');
-        if (inputRef.current) {
-            inputRef.current.style.height = '2.5rem';
-        }
-        return;
+    // Show user's input
+    const userMessage: Message = {
+        role: 'user',
+        content: proofId,
+        type: 'text',
+    };
+    setDisplayMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    if (inputRef.current) {
+        inputRef.current.style.height = '2.5rem';
     }
+
+    // UUID format validation
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(proofId)) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content:
+                `❌ **Invalid Proof ID format.**\n\n` +
+                `Please enter a valid Proof ID (UUID format).\n\n` +
+                `Example: \`4d5357fd-22b5-4e8c-9eda-48767df5e37c\`\n\n` +
+                `💡 *Check the success message from when you ran \`/generate-private\`.*`,
+            type: 'text',
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+        return; // Keep awaitingProofId = true so they can retry
+    }
+
+    // Show loading
+    const loadingMessage: Message = {
+        role: 'assistant',
+        content: `🔄 Creating chat session for proof \`${proofId.slice(0, 8)}...\`...`,
+        type: 'text',
+    };
+    setDisplayMessages(prev => [...prev, loadingMessage]);
+
+    const {
+        walletAddress,
+        setAwaitingProofId: setAwaiting,
+        setActiveSessionId,
+        setActiveProofId,
+        setChatMode,
+    } = useMedicalProofStore.getState();
+
+    try {
+        const response = await fetch('/api/medical-proof/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: walletAddress,
+                proof_id: proofId,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+            const errorMsg = error.error || error.detail || 'Failed to create session';
+
+            // Check if proof doesn't exist
+            const isNotFound =
+                response.status === 404 ||
+                errorMsg.toLowerCase().includes('not found') ||
+                errorMsg.toLowerCase().includes('does not exist') ||
+                errorMsg.toLowerCase().includes('invalid proof');
+
+            if (isNotFound) {
+                const notFoundMessage: Message = {
+                    role: 'assistant',
+                    content:
+                        `❌ **Proof not found.**\n\n` +
+                        `The Proof ID \`${proofId}\` doesn't exist or doesn't belong to your wallet.\n\n` +
+                        `Please double-check and try again.\n\n` +
+                        `💡 *You can find your Proof ID in the success message from \`/generate-private\`.*`,
+                    type: 'text',
+                };
+                setDisplayMessages(prev => [...prev, notFoundMessage]);
+                return; // Keep awaitingProofId = true so they can retry
+            }
+
+            throw new Error(errorMsg);
+        }
+
+        const sessionData = await response.json();
+
+        // Success — set session state
+        setAwaiting(false);
+        setActiveSessionId(sessionData.session_id);
+        setActiveProofId(proofId);
+        setChatMode(true);
+
+        const sessionMessage: Message = {
+            role: 'assistant',
+            content:
+                `✅ **Chat Session Created!**\n\n` +
+                `🔑 **Proof:** \`${proofId.slice(0, 8)}...${proofId.slice(-4)}\`\n` +
+                `💬 **Session:** \`${sessionData.session_id.slice(0, 8)}...\`\n\n` +
+                `---\n\n` +
+                `Ask questions about your document below.\n\n` +
+                `Type \`/exit-medical-chat\` to end the session.`,
+            type: 'text',
+        };
+        setDisplayMessages(prev => [...prev, sessionMessage]);
+
+    } catch (error) {
+        const errorMessage: Message = {
+            role: 'assistant',
+            content:
+                `❌ **Failed to create session:** ${error instanceof Error ? error.message : 'Unknown error'}\n\n` +
+                `Please try again with a valid Proof ID, or type \`/exit-medical-chat\` to cancel.`,
+            type: 'text',
+        };
+        setDisplayMessages(prev => [...prev, errorMessage]);
+        // Keep awaitingProofId = true so they can retry
+    }
+    return;
 }
-
-// 4. Download confirmation
-const { isAwaitingDownloadConfirmation } = useMedicalProofStore.getState();
-// if (isAwaitingDownloadConfirmation && fullMessage.trim().toLowerCase() === 'yes') {
-//     await handleMedicalProofDownload();
-
-//     setInputMessage('');
-//     if (inputRef.current) {
-//         inputRef.current.style.height = '2.5rem';
-//     }
-//     return;
-// }
 
 // 5. /medical-proof-verify command
 if (fullMessage.startsWith('/medical-proof-verify')) {
