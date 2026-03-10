@@ -973,9 +973,52 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ data, onViewReport, isM
       !Number.isNaN(score)
     );
 
-  const avgSentiment = sentimentScores.length > 0
+  let avgSentiment: number | null = sentimentScores.length > 0
     ? sentimentScores.reduce((sum, score) => sum + score, 0) / sentimentScores.length
     : null;
+
+  // Fallback: compute a per-day score from hourly forecast metrics when no news sentiment is available
+  if (avgSentiment === null && data.hourlyForecast) {
+    const forecast = data.hourlyForecast;
+    const allEntries = [
+      ...(forecast.BTC || []),
+      ...(forecast.ETH || []),
+      ...(forecast.SOL || []),
+    ].filter(entry => entry && typeof entry.accuracy_percent === 'number');
+
+    if (allEntries.length > 0) {
+      // Use accuracy_percent (0-100) and deviation_percent to compute a day-specific score
+      const avgAccuracy = allEntries.reduce((sum, e) => sum + (e.accuracy_percent ?? 0), 0) / allEntries.length;
+      const avgDeviation = allEntries.reduce((sum, e) => sum + Math.abs(e.deviation_percent ?? 0), 0) / allEntries.length;
+      const avgSentimentRaw = allEntries.reduce((sum, e) => sum + (e.sentiment_score ?? 2.5), 0) / allEntries.length;
+
+      // Blend: 40% accuracy-based (0-5), 30% deviation-based (lower deviation = better), 30% raw sentiment
+      const accuracyComponent = (avgAccuracy / 100) * 5; // 0-5 scale
+      const deviationComponent = Math.max(0, Math.min(5, 5 - (avgDeviation / 10))); // lower deviation = higher score
+      const sentimentComponent = avgSentimentRaw > 5 ? avgSentimentRaw / 20 : avgSentimentRaw;
+
+      avgSentiment = Math.round(
+        (accuracyComponent * 0.4 + deviationComponent * 0.3 + sentimentComponent * 0.3) * 10
+      ) / 10;
+
+      // Clamp to 0-5 range
+      avgSentiment = Math.max(0, Math.min(5, avgSentiment));
+    } else {
+      // Last resort: use sentiment_score directly if no accuracy data
+      const forecastScores = [
+        ...(forecast.BTC || []),
+        ...(forecast.ETH || []),
+        ...(forecast.SOL || []),
+      ]
+        .map(entry => entry.sentiment_score)
+        .filter((s): s is number => typeof s === 'number' && !Number.isNaN(s));
+
+      if (forecastScores.length > 0) {
+        const rawAvg = forecastScores.reduce((sum, s) => sum + s, 0) / forecastScores.length;
+        avgSentiment = rawAvg > 5 ? rawAvg / 20 : rawAvg;
+      }
+    }
+  }
 
   const getSentimentInfo = (score: number | null) => {
     if (score === null) {
@@ -1114,6 +1157,30 @@ const PastPredictions: React.FC<PastPredictionsProps> = ({ onViewReport, isMobil
           console.warn('Failed to parse analysis JSON for item:', baseItem.news_id);
         }
       }
+
+      // Fallback: try parsing the analysis string directly as JSON
+      if (Object.keys(parsed).length === 0) {
+        try {
+          const directParsed = JSON.parse(item.analysis);
+          if (directParsed && typeof directParsed === 'object') {
+            parsed = directParsed;
+          }
+        } catch {
+          // Not valid JSON, ignore
+        }
+      }
+    }
+
+    // Also check for sentiment_score directly on the item (from API)
+    if (parsed.sentiment_score == null && typeof item.sentiment_score === 'number') {
+      parsed.sentiment_score = item.sentiment_score;
+    }
+    // Check common alternative key names for sentiment score
+    if (parsed.sentiment_score == null) {
+      const altScore = parsed.sentimentScore ?? parsed.sentiment ?? parsed.score ?? parsed.Sentiment_Score;
+      if (typeof altScore === 'number' && !isNaN(altScore)) {
+        parsed.sentiment_score = altScore;
+      }
     }
 
     const normalizeSentiment = (score: number): 'bearish' | 'neutral' | 'bullish' => {
@@ -1123,14 +1190,18 @@ const PastPredictions: React.FC<PastPredictionsProps> = ({ onViewReport, isMobil
       return 'bullish';
     };
 
-    const sentimentScore = (typeof parsed.sentiment_score === 'number' && !isNaN(parsed.sentiment_score))
-      ? parsed.sentiment_score
-      : 2.5;
+    let sentimentScore: number | undefined = undefined;
+    if (typeof parsed.sentiment_score === 'number' && !isNaN(parsed.sentiment_score)) {
+      // Normalize to 0-5 scale if the score appears to be on a 0-100 scale
+      sentimentScore = parsed.sentiment_score > 5
+        ? parsed.sentiment_score / 20
+        : parsed.sentiment_score;
+    }
 
     return {
       ...baseItem,
       sentimentScore,
-      sentimentTag: normalizeSentiment(sentimentScore),
+      sentimentTag: sentimentScore !== undefined ? normalizeSentiment(sentimentScore) : 'neutral',
       advice: parsed.investment?.advice || 'Hold',
       reason: parsed.investment?.reason || '',
       rationale: parsed.rationale || ''
@@ -1158,54 +1229,94 @@ const PastPredictions: React.FC<PastPredictionsProps> = ({ onViewReport, isMobil
           throw new Error('No data received from API');
         }
 
-        if (!past_news_last_30_days) {
-          throw new Error('API response missing past_news_last_30_days property');
+        // Collect all unique dates from both news and forecast data
+        const allDatesSet = new Set<string>();
+
+        // Add dates from past_news_last_30_days
+        if (Array.isArray(past_news_last_30_days)) {
+          past_news_last_30_days.forEach(dayData => {
+            if (dayData?.fetched_date) {
+              allDatesSet.add(dayData.fetched_date);
+            }
+          });
         }
 
-        if (!Array.isArray(past_news_last_30_days)) {
-          throw new Error('past_news_last_30_days is not an array');
+        // Add dates from forecast_hourly_last_30_days (extract date part from time strings)
+        if (forecast_hourly_last_30_days) {
+          const addForecastDates = (entries: HourlyEntry[] | undefined) => {
+            entries?.forEach(entry => {
+              if (entry.time) {
+                const dateStr = entry.time.split('T')[0];
+                allDatesSet.add(dateStr);
+              }
+            });
+          };
+          addForecastDates(forecast_hourly_last_30_days.BTC);
+          addForecastDates(forecast_hourly_last_30_days.ETH);
+          addForecastDates(forecast_hourly_last_30_days.SOL);
         }
 
-        // Process and enhance the data with hourly forecasts
-        const processedData = past_news_last_30_days.map((dayData, index) => {
-          if (!dayData) {
-            console.warn(`Skipping null/undefined day data at index ${index}`);
-            return null;
-          }
+        if (allDatesSet.size === 0) {
+          throw new Error('No dates found in API response');
+        }
+
+        // Build a lookup map for news data by date
+        const newsByDate = new Map<string, { crypto_news: any[]; macro_news: any[] }>();
+        if (Array.isArray(past_news_last_30_days)) {
+          past_news_last_30_days.forEach(dayData => {
+            if (dayData?.fetched_date) {
+              newsByDate.set(dayData.fetched_date, {
+                crypto_news: dayData.crypto_news || [],
+                macro_news: dayData.macro_news || []
+              });
+            }
+          });
+        }
+
+        // Process all dates, merging news + forecast data
+        const processedData = Array.from(allDatesSet).map(dateStr => {
+          const newsData = newsByDate.get(dateStr);
 
           // Get the hourly forecast for this date if available
           let hourlyForecastForDate: { BTC: HourlyEntry[]; ETH: HourlyEntry[]; SOL: HourlyEntry[] } | undefined;
-          
+
           if (forecast_hourly_last_30_days) {
-            const dateStr = dayData.fetched_date;
-            
-            // Filter hourly forecasts for this specific date
             hourlyForecastForDate = {
-              BTC: forecast_hourly_last_30_days.BTC?.filter(entry => 
+              BTC: forecast_hourly_last_30_days.BTC?.filter(entry =>
                 entry.time.startsWith(dateStr)
               ) || [],
-              ETH: forecast_hourly_last_30_days.ETH?.filter(entry => 
+              ETH: forecast_hourly_last_30_days.ETH?.filter(entry =>
                 entry.time.startsWith(dateStr)
               ) || [],
-              SOL: forecast_hourly_last_30_days.SOL?.filter(entry => 
+              SOL: forecast_hourly_last_30_days.SOL?.filter(entry =>
                 entry.time.startsWith(dateStr)
               ) || []
             };
           }
 
           const processedDayData: EnhancedPastPredictionData = {
-            fetched_date: dayData.fetched_date || new Date().toISOString().split('T')[0],
-            crypto_news: Array.isArray(dayData.crypto_news)
-              ? dayData.crypto_news.map(item => processNewsItem(item)).filter(Boolean) as PastCryptoNews[]
+            fetched_date: dateStr,
+            crypto_news: Array.isArray(newsData?.crypto_news)
+              ? newsData.crypto_news.map(item => processNewsItem(item)).filter(Boolean) as PastCryptoNews[]
               : [],
-            macro_news: Array.isArray(dayData.macro_news)
-              ? dayData.macro_news.map(item => processNewsItem(item)).filter(Boolean) as PastMacroNews[]
+            macro_news: Array.isArray(newsData?.macro_news)
+              ? newsData.macro_news.map(item => processNewsItem(item)).filter(Boolean) as PastMacroNews[]
               : [],
             hourlyForecast: hourlyForecastForDate
           };
 
+          // Debug: log per-day score breakdown
+          const newsScores = [...processedDayData.crypto_news, ...processedDayData.macro_news]
+            .map(n => n.sentimentScore)
+            .filter((s): s is number => typeof s === 'number');
+          const forecastScoresDebug = hourlyForecastForDate
+            ? [...(hourlyForecastForDate.BTC || []), ...(hourlyForecastForDate.ETH || []), ...(hourlyForecastForDate.SOL || [])]
+              .map(e => e.sentiment_score)
+            : [];
+          console.log(`[PastPredictions] ${dateStr}: newsScores=[${newsScores.join(',')}], forecastScores=[${forecastScoresDebug.join(',')}]`);
+
           return processedDayData;
-        }).filter(Boolean) as EnhancedPastPredictionData[];
+        });
 
         // Sort by date (most recent first)
         processedData.sort((a, b) => 
