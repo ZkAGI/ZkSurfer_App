@@ -248,11 +248,8 @@ import { CustomWalletModalProvider } from "./ui/CustomWalletModalProvider";
 import { MagicWalletAdapter, MagicWalletName } from "./MagicWalletAdapter";
 import { CivicAuthProvider } from "@civic/auth-web3/react";
 import type { WalletName } from "@solana/wallet-adapter-base";
-import PrivyBridge from "./privy/PrivyBridge";                       
+import PrivyBridge from "./privy/PrivyBridge";
 import { PrivyWalletAdapter, PrivyWalletName } from "./privy/PrivyWalletAdapter";
-
-
-require("@solana/wallet-adapter-react-ui/styles.css");
 
 /** ---------- constants ---------- */
 const CIVIC_WALLET_NAME = "Civic";
@@ -434,7 +431,7 @@ export default function AppWalletProvider({
       try {
         const apiKey = process.env.NEXT_PUBLIC_MAGIC_PUBLISHABLE_KEY || "";
         if (!apiKey) {
-          console.error("Missing Magic API key");
+          // Magic wallet is optional — skip silently when key is not configured
           return;
         }
         const adapter = new MagicWalletAdapter(apiKey, endpoint);

@@ -19,14 +19,15 @@ import { getDictionary } from '@/app/i18n/dictionaries';
 import { Locale } from '@/app/i18n/settings';
 
 interface ApiKeyPageProps {
-    params: {
-        lang: Locale;
-    };
+    params: Promise<{
+        lang: string;
+    }>;
 }
 
 const ApiKeyPage: NextPage<ApiKeyPageProps> = async ({ params }) => {
     // Get the dictionary for the current locale
-    const dictionary = await getDictionary(params.lang);
+    const { lang } = await params;
+    const dictionary = await getDictionary(lang as Locale);
 
     // Pass the dictionary to your ApiKeysPage component
     return <ApiKeysPage dictionary={dictionary} />;

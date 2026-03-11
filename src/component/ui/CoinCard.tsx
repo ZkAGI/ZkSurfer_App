@@ -1,10 +1,9 @@
 'use client';
 import { FC, useEffect, useRef, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
 import { Coin } from '@/types/marketplaceTypes';
 import { toast } from 'sonner';
-import React from 'react';
+import { ExternalLink, AlertCircle } from 'lucide-react';
 
 interface CoinCardProps {
     coin: Coin;
@@ -17,7 +16,6 @@ const Description: FC<{ text: string }> = ({ text }) => {
     const descriptionRef = useRef<HTMLParagraphElement>(null);
 
     useEffect(() => {
-        // Check if the text overflows 3 lines
         if (descriptionRef.current) {
             const element = descriptionRef.current;
             setIsOverflowing(element.scrollHeight > element.offsetHeight);
@@ -25,75 +23,122 @@ const Description: FC<{ text: string }> = ({ text }) => {
     }, [text]);
 
     return (
-        <div className="text-xs text-white font-abeezee">
+        <div className="text-sm text-dsMuted leading-relaxed">
             <p
                 ref={descriptionRef}
-                className={`transition-all ${!isExpanded ? 'line-clamp-3' : ''
-                    }`}
+                className={`transition-all ${!isExpanded ? 'line-clamp-2' : ''}`}
             >
                 {text}
             </p>
             {isOverflowing && (
                 <button
-                    className="text-[#7E83A9] font-bold mt-1 italic"
+                    className="text-dsPurple-light text-xs font-medium mt-1 hover:text-dsPurple transition-colors"
                     onClick={(e) => {
-                        e.stopPropagation(); // Prevent click event propagation to the card
+                        e.stopPropagation();
                         setIsExpanded(!isExpanded);
                     }}
                 >
-                    {isExpanded ? 'Read Less...' : 'Read More...'}
+                    {isExpanded ? 'Show less' : 'Read more'}
                 </button>
             )}
         </div>
     );
 };
 
-export const CoinCard: FC<CoinCardProps> = ({ coin }) => (
+export const CoinCard: FC<CoinCardProps> = ({ coin }) => {
+    const cardRef = useRef<HTMLDivElement>(null);
 
-    // if (!coin.address) {
-    //     return null;
-    // }
+    useEffect(() => {
+        const card = cardRef.current;
+        if (!card) return;
 
-    <Card
-        className={`text-left w-full cursor-pointer transition-colors relative overflow-hidden rounded-xl border-[#7E83A9] ${!coin.address ? 'cursor-not-allowed' : ''
+        const handleMouseMove = (e: MouseEvent) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        };
+
+        card.addEventListener('mousemove', handleMouseMove);
+        return () => card.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+
+    const handleClick = () => {
+        if (coin.address) {
+            window.open(`https://pump.fun/coin/${coin.address}`, '_blank');
+        } else {
+            toast.error('This agent has not been launched yet!', {
+                duration: 3000,
+            });
+        }
+    };
+
+    return (
+        <div
+            ref={cardRef}
+            onClick={handleClick}
+            className={`ds-card group cursor-pointer ${
+                !coin.address ? 'opacity-80' : ''
             }`}
-        onClick={() => {
-            if (coin.address) {
-                // Redirect to the coin URL
-                window.open(`https://pump.fun/coin/${coin.address}`, '_blank');
-            } else {
-                // Show toast if the address is null
-                toast.error('This coin has not been launched on pump.fun yet!', {
-                    duration: 3000,
-                });
-            }
-        }}
-    >
-        <div className="absolute inset-0 bg-gradient-to-bl from-[#643ADE] via-[#070121] to-[#283081] hover:bg-[#3DF9FF]/20 opacity-95" />
-        <div className="absolute inset-0 backdrop-blur-sm" />
-        <CardContent className="relative z-10 p-4">
-            <div className="flex items-center gap-4">
-                {/* Image */}
-                <div className="relative w-16 h-16 flex-shrink-0">
+        >
+            <div className="flex items-start gap-4">
+                {/* Agent Image */}
+                <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden
+                                bg-gradient-to-br from-dsPurple/20 to-dsPurple-dark/20 border border-dsBorder">
                     <Image
-                        src={coin.image || '/api/placeholder/40/40'}
+                        src={coin.image || '/api/placeholder/64/64'}
                         alt={coin.name}
-                        className="rounded-md object-cover"
+                        className="object-cover"
                         width={64}
                         height={64}
                     />
+                    {!coin.address && (
+                        <div className="absolute inset-0 bg-dsBg/60 flex items-center justify-center">
+                            <AlertCircle size={20} className="text-amber-400" />
+                        </div>
+                    )}
                 </div>
 
-                <div className="flex-1">
-                    <h3
-                        className="text-lg font-ttfirs bg-gradient-to-r from-[#A4C8FF] via-[#A992ED] to-[#643ADE] text-transparent bg-clip-text"
-                    >
-                        {coin.name}
-                    </h3>
+                {/* Agent Info */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                        <h3 className="text-base font-semibold text-white truncate
+                                       group-hover:text-dsPurple-light transition-colors">
+                            {coin.name}
+                        </h3>
+                        {coin.address ? (
+                            <ExternalLink size={14} className="text-dsMuted flex-shrink-0
+                                           group-hover:text-dsPurple-light transition-colors" />
+                        ) : (
+                            <span className="ds-badge text-[10px] bg-amber-500/15 text-amber-400 border-amber-500/30 flex-shrink-0">
+                                Pending
+                            </span>
+                        )}
+                    </div>
+
+                    {coin.symbol && (
+                        <span className="ds-badge-number text-xs mb-2 block">
+                            ${coin.symbol}
+                        </span>
+                    )}
 
                     <Description text={coin.description} />
                 </div>
             </div>
-        </CardContent>
-    </Card>
-);
+
+            {/* Bottom Action Hint */}
+            <div className={`mt-4 pt-3 border-t border-dsBorder/50 flex items-center justify-between
+                            opacity-0 group-hover:opacity-100 transition-opacity`}>
+                <span className="text-xs text-dsMuted">
+                    {coin.address ? 'View on Pump.fun' : 'Not yet deployed'}
+                </span>
+                {coin.address && (
+                    <div className="w-6 h-6 rounded-md bg-dsPurple/15 flex items-center justify-center">
+                        <ExternalLink size={12} className="text-dsPurple-light" />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};

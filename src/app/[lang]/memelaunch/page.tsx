@@ -191,7 +191,7 @@ function renderJsonForm(
     data: any,
     onChange: (updatedData: any) => void,
     path: string[] = []
-): JSX.Element {
+): React.ReactElement {
     if (typeof data !== "object" || data === null) {
         // Render primitive data as an input field
         return (
@@ -814,7 +814,7 @@ function renderJsonForm(
     );
 }
 
-const SearchParamsWrapper = ({ children }: { children: (searchParams: URLSearchParams) => JSX.Element }) => {
+const SearchParamsWrapper = ({ children }: { children: (searchParams: URLSearchParams) => React.ReactElement }) => {
     const searchParams = useSearchParams();
     return children(searchParams);
 };

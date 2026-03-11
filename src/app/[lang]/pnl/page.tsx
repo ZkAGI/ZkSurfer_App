@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
+import { useRouter, useParams } from 'next/navigation'
 import {
   LineChart,
   Line,
@@ -13,7 +14,7 @@ import {
   AreaChart,
   Area,
 } from 'recharts'
-import { TrendingDown, TrendingUp, Maximize2, X } from 'lucide-react'
+import { TrendingDown, TrendingUp, Maximize2, X, ArrowLeft, BarChart3, Activity } from 'lucide-react'
 
 // -------------------------------------------------------------
 // Types
@@ -597,13 +598,15 @@ const swrFetcher = (url: string) =>
 const tokenColors: Record<string, string> = { BTC: '#F7931A', ETH: '#627EEA', SOL: '#14F195' }
 
 const TimeFrameToggle: React.FC<{ timeFrame: TimeFrame; onChange: (t: TimeFrame) => void }> = ({ timeFrame, onChange }) => (
-  <div className="flex bg-gray-800 rounded-lg p-1 border border-gray-700">
+  <div className="flex bg-dsBgAlt rounded-xl p-1 border border-dsBorder">
     {(['daily', 'monthly', 'all-time'] as TimeFrame[]).map((v) => (
       <button
         key={v}
         onClick={() => onChange(v)}
-        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-          timeFrame === v ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+          timeFrame === v
+            ? 'bg-dsPurple text-white shadow-lg shadow-dsPurple/25'
+            : 'text-dsMuted hover:text-white hover:bg-dsBorder/50'
         }`}
       >
         {v === 'all-time' ? 'All-time' : v.charAt(0).toUpperCase() + v.slice(1)}
@@ -663,17 +666,19 @@ const CumulativePnLCard: React.FC<{
     t?.trades?.map((tr, i) => ({ x: i, y: tr.cumulativeReturn })) ?? [];
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700 h-full">
-      <h3 className="text-sm font-medium text-gray-400">{title}</h3>
+    <div className="ds-card h-full">
+      <h3 className="text-sm font-medium text-dsMuted">{title}</h3>
 
       <div className="flex items-end mt-3 space-x-3">
-        {isPositive ? <TrendingUp className="w-8 h-8 text-green-500" /> : <TrendingDown className="w-8 h-8 text-red-500" />}
-        <span className={`text-6xl font-extrabold tracking-tight ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isPositive ? 'bg-dsGreen/15' : 'bg-red-500/15'}`}>
+          {isPositive ? <TrendingUp className="w-6 h-6 text-dsGreen" /> : <TrendingDown className="w-6 h-6 text-red-400" />}
+        </div>
+        <span className={`text-5xl font-extrabold tracking-tight ${isPositive ? 'text-dsGreen' : 'text-red-400'}`}>
           {fmtPct(aggPct)}
         </span>
       </div>
 
-      <div className="mt-2 text-sm text-gray-400">
+      <div className="mt-2 text-sm text-dsMuted">
         Portfolio cumulative return
       </div>
 
@@ -690,15 +695,16 @@ const CumulativePnLCard: React.FC<{
           const gid = `grad-${sym}-${timeFrame}`;
 
           return (
-            <div key={sym} className="rounded-xl border border-gray-700 bg-gray-900/40 p-4 flex flex-col justify-between min-h-[120px]">
+            <div key={sym} className="rounded-xl border border-dsBorder bg-dsBg p-4 flex flex-col justify-between min-h-[120px]
+                                      hover:border-dsPurple/30 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-white">{sym}</span>
-                <span className={`text-lg font-bold ${pct >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`text-lg font-bold ${pct >= 0 ? 'text-dsGreen' : 'text-red-400'}`}>
                   {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
                 </span>
               </div>
 
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-xs text-dsMuted mt-1">
                 {periodLabel}
               </div>
 
@@ -817,27 +823,27 @@ const PnLChart: React.FC<{ data: PnLData[]; timeFrame: TimeFrame }> = ({ data, t
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700 h-full">
-       <h3 className="text-lg font-semibold text-white mb-4">
+    <div className="ds-card h-full">
+      <h3 className="ds-heading-sm mb-4">
         {timeFrame === 'daily' ? 'Daily' : timeFrame === 'monthly' ? 'Monthly' : 'All Time'} PnL Plots
       </h3>
       <div className="h-64 md:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="timestamp" tickFormatter={fmtX} className="text-xs" stroke="#9CA3AF" />
-            <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} className="text-xs" stroke="#9CA3AF" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e2333" />
+            <XAxis dataKey="timestamp" tickFormatter={fmtX} className="text-xs" stroke="#6b7280" />
+            <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} className="text-xs" stroke="#6b7280" />
             <Tooltip
               labelFormatter={(ts) => new Date(ts as string).toLocaleString('en-US')}
               formatter={(v: number) => [`${v >= 0 ? '+' : ''}${v.toFixed(2)}%`, 'Return']}
               contentStyle={{
-                backgroundColor: '#1F2937',
-                border: '1px solid #374151',
-                borderRadius: 8,
+                backgroundColor: '#0b0e17',
+                border: '1px solid #1e2333',
+                borderRadius: 12,
                 color: 'white',
               }}
             />
-            <Line type="monotone" dataKey="value" stroke="#7C3AED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#7C3AED' }} />
+            <Line type="monotone" dataKey="value" stroke="#7c6af7" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#7c6af7' }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -851,39 +857,42 @@ const TokenTableModal: React.FC<{ tokenData: TokenData; timeFrame: TimeFrame; on
   onClose,
 }) => {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl border border-gray-700 w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        <div className="flex justify-between items-center p-6 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">
+    <div className="ds-modal-backdrop">
+      <div className="ds-modal w-full max-w-4xl max-h-[90vh] overflow-hidden">
+        <div className="flex justify-between items-center p-6 border-b border-dsBorder">
+          <h2 className="ds-heading-md">
             {tokenData.symbol} - {timeFrame} Details
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X className="w-6 h-6" />
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-lg bg-dsBorder/50 hover:bg-dsBorder flex items-center justify-center transition-colors"
+          >
+            <X className="w-5 h-5 text-dsMuted" />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-gray-800">
-                <tr className="border-b border-gray-700 text-gray-400">
-                  <th className="text-left py-3">Step</th>
-                  <th className="text-left py-3">Time</th>
-                  <th className="text-left py-3">Trades</th>
-                  <th className="text-left py-3">Period Return %</th>
-                  <th className="text-left py-3">Cumulative Return %</th>
+            <table className="ds-table">
+              <thead>
+                <tr>
+                  <th>Step</th>
+                  <th>Time</th>
+                  <th>Trades</th>
+                  <th>Period Return %</th>
+                  <th>Cumulative Return %</th>
                 </tr>
               </thead>
               <tbody>
                 {tokenData.trades.map((tr, i) => (
-                  <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/50">
-                    <td className="py-3 text-gray-300">{tr.day}</td>
-                    <td className="py-3 text-gray-300">{tr.date}</td>
-                    <td className="py-3 text-gray-300">{tr.trades}</td>
-                    <td className={`py-3 font-bold text-lg ${tr.dailyPnLPercent >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <tr key={i}>
+                    <td>{tr.day}</td>
+                    <td>{tr.date}</td>
+                    <td>{tr.trades}</td>
+                    <td className={`font-bold text-lg ${tr.dailyPnLPercent >= 0 ? 'text-dsGreen' : 'text-red-400'}`}>
                       {tr.dailyPnLPercent >= 0 ? '+' : ''}{tr.dailyPnLPercent.toFixed(3)}%
                     </td>
-                    <td className={`py-3 font-bold text-lg ${tr.cumulativeReturn >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <td className={`font-bold text-lg ${tr.cumulativeReturn >= 0 ? 'text-dsGreen' : 'text-red-400'}`}>
                       {tr.cumulativeReturn >= 0 ? '+' : ''}{tr.cumulativeReturn.toFixed(2)}%
                     </td>
                   </tr>
@@ -903,14 +912,23 @@ const TokenTable: React.FC<{ tokenData: TokenData; timeFrame: TimeFrame }> = ({ 
 
   return (
     <>
-      <div className="bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700 flex flex-col h-[500px]">
+      <div className="ds-card flex flex-col h-[500px]">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">{tokenData.symbol}</h3>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-dsPurple/15 flex items-center justify-center">
+              <Activity className="w-5 h-5 text-dsPurple-light" />
+            </div>
+            <h3 className="ds-heading-sm">{tokenData.symbol}</h3>
+          </div>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-400">Performance</span>
+            <span className="text-sm text-dsMuted">Performance</span>
             {showMaximize && (
-              <button onClick={() => setIsMaximized(true)} className="text-gray-400 hover:text-white p-1" title="Maximize">
-                <Maximize2 className="w-4 h-4" />
+              <button
+                onClick={() => setIsMaximized(true)}
+                className="w-8 h-8 rounded-lg hover:bg-dsBorder/50 flex items-center justify-center transition-colors"
+                title="Maximize"
+              >
+                <Maximize2 className="w-4 h-4 text-dsMuted" />
               </button>
             )}
           </div>
@@ -918,25 +936,25 @@ const TokenTable: React.FC<{ tokenData: TokenData; timeFrame: TimeFrame }> = ({ 
 
         <div className="flex-1 overflow-y-auto">
           <table className="w-full text-xs table-fixed">
-            <thead className="sticky top-0 bg-gray-800">
-              <tr className="border-b border-gray-700 text-gray-400">
-                <th className="text-left py-2 w-12">Step</th>
-                <th className="text-left py-2 w-20">Time</th>
-                <th className="text-left py-2 w-16">Trades</th>
-                <th className="text-left py-2 w-24">Period Return %</th>
-                <th className="text-left py-2 w-24">Cumulative %</th>
+            <thead className="sticky top-0 bg-dsBgAlt">
+              <tr className="border-b border-dsBorder text-dsMuted">
+                <th className="text-left py-2 w-12 font-medium">Step</th>
+                <th className="text-left py-2 w-20 font-medium">Time</th>
+                <th className="text-left py-2 w-16 font-medium">Trades</th>
+                <th className="text-left py-2 w-24 font-medium">Period Return %</th>
+                <th className="text-left py-2 w-24 font-medium">Cumulative %</th>
               </tr>
             </thead>
             <tbody>
               {tokenData.trades.map((tr, i) => (
-                <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/50">
-                  <td className="py-2 text-gray-300">{tr.day}</td>
-                  <td className="py-2 text-gray-300">{tr.date}</td>
-                  <td className="py-2 text-gray-300">{tr.trades}</td>
-                  <td className={`py-2 font-bold text-base ${tr.dailyPnLPercent >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <tr key={i} className="border-b border-dsBorder/50 hover:bg-dsBorder/30 transition-colors">
+                  <td className="py-2 text-white/80">{tr.day}</td>
+                  <td className="py-2 text-white/80">{tr.date}</td>
+                  <td className="py-2 text-white/80">{tr.trades}</td>
+                  <td className={`py-2 font-bold text-base ${tr.dailyPnLPercent >= 0 ? 'text-dsGreen' : 'text-red-400'}`}>
                     {tr.dailyPnLPercent >= 0 ? '+' : ''}{tr.dailyPnLPercent.toFixed(3)}%
                   </td>
-                  <td className={`py-2 font-bold text-base ${tr.cumulativeReturn >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <td className={`py-2 font-bold text-base ${tr.cumulativeReturn >= 0 ? 'text-dsGreen' : 'text-red-400'}`}>
                     {tr.cumulativeReturn >= 0 ? '+' : ''}{tr.cumulativeReturn.toFixed(2)}%
                   </td>
                 </tr>
@@ -957,6 +975,9 @@ const TokenTable: React.FC<{ tokenData: TokenData; timeFrame: TimeFrame }> = ({ 
 // Main Dashboard
 // -------------------------------------------------------------
 const PnLDashboard: React.FC = () => {
+  const router = useRouter()
+  const params = useParams()
+  const lang = params.lang as string || 'en'
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('all-time')
   const [cumulativePnL, setCumulativePnL] = useState<number>(0)
   const [chartData, setChartData] = useState<PnLData[]>([])
@@ -1049,28 +1070,50 @@ const PnLDashboard: React.FC = () => {
   }, [prediction, timeFrame])
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
-          <h1 className="text-3xl font-bold text-white">Performance Dashboard</h1>
+    <div className="min-h-screen bg-dsBg">
+      {/* Header */}
+      <div className="ds-topbar sticky top-0 z-10">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push(`/${lang}/home`)}
+            className="w-9 h-9 rounded-lg bg-dsBorder/50 hover:bg-dsBorder flex items-center justify-center transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 text-dsMuted" />
+          </button>
+          <div className="w-10 h-10 rounded-xl bg-dsPurple/15 flex items-center justify-center">
+            <BarChart3 className="w-5 h-5 text-dsPurple-light" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold text-white">Performance Dashboard</h1>
+            <p className="text-xs text-dsMuted">Track your portfolio performance</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="px-3 py-1.5 rounded-full bg-dsGreen/10 border border-dsGreen/20">
+            <span className="text-xs font-medium text-dsGreen flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 bg-dsGreen rounded-full animate-pulse" />
+              Live Data
+            </span>
+          </div>
           <TimeFrameToggle timeFrame={timeFrame} onChange={setTimeFrame} />
         </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {(loading || (timeFrame === 'daily' && predictionLoading)) && (
-          <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-400 mt-2">
+          <div className="text-center py-12">
+            <div className="w-12 h-12 border-4 border-dsPurple/30 border-t-dsPurple rounded-full animate-spin mx-auto" />
+            <p className="text-dsMuted mt-4">
               {timeFrame === 'daily' ? 'Loading hourly predictions...' : 'Loading performance data...'}
             </p>
           </div>
         )}
 
         {(error || (timeFrame === 'daily' && predictionError)) && (
-          <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 mb-6">
-            <div className="text-red-400 text-sm">
+          <div className="ds-alert-error mb-6">
+            <p className="text-sm">
               Error: {error || (predictionError instanceof Error ? predictionError.message : 'Failed to load predictions')}
-            </div>
+            </p>
           </div>
         )}
 
@@ -1078,10 +1121,10 @@ const PnLDashboard: React.FC = () => {
           <>
             {/* Top Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <CumulativePnLCard 
-                timeFrame={timeFrame} 
-                tokenData={tokenData} 
-                value={cumulativePnL} 
+              <CumulativePnLCard
+                timeFrame={timeFrame}
+                tokenData={tokenData}
+                value={cumulativePnL}
                 cumulativeTotals={cumulativeTotals}
               />
               <PnLChart data={chartData} timeFrame={timeFrame} />

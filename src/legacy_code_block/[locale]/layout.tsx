@@ -41,13 +41,14 @@ export const metadata: Metadata = {
     manifest: "/manifest.json",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
-    params: { locale },
+    params,
 }: {
     children: ReactNode;
-    params: { locale: string };
+    params: Promise<{ locale: string }>;
 }) {
+    const { locale } = await params;
     return (
         <html lang={locale} dir="ltr">
             <head />

@@ -4,13 +4,14 @@ import MemeLaunchPage from '../memelaunch/page';
 import { MemeLaunchPageProps } from '../memelaunch/page';
 
 interface MemeLaunchPageServerProps {
-  params: {
-    lang: Locale;
-  };
+  params: Promise<{
+    lang: string;
+  }>;
 }
 
 const MemeLaunchPageServer = async ({ params }: MemeLaunchPageServerProps) => {
-  const dictionary = await getDictionary(params.lang);
+  const { lang } = await params;
+  const dictionary = await getDictionary(lang as Locale);
   const typedDictionary = dictionary as MemeLaunchPageProps['dictionary'];
   return <MemeLaunchPage dictionary={typedDictionary} />;
 };

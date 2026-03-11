@@ -106,14 +106,14 @@ export async function POST(request: NextRequest) {
   
   try {
     // Environment checks (same as before)
-    if (!process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY) {
+    if (!process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json(
         { error: 'Missing STRIPE_SECRET_KEY environment variable' },
         { status: 500 }
       )
     }
 
-    const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY, {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-07-30.basil',
     })
 

@@ -1,8 +1,9 @@
-export default function Page({ params }: { params: { locale: string } }) {
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
     return (
         <div>
             <h1>Test Page</h1>
-            <p>Current locale: {params.locale}</p>
+            <p>Current locale: {locale}</p>
         </div>
     );
 }

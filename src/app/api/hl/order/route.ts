@@ -469,28 +469,36 @@ import { getDayState, pushTrade, getDailyProfit, getDailyLoss } from '@/lib/dayS
 
 export const runtime = 'nodejs';
 
-const PK = process.env.NEXT_PUBLIC_HL_PRIVATE_KEY;
-const MAIN_WALLET = process.env.NEXT_PUBLIC_HL_MAIN_WALLET;
+// Server-only: DO NOT use NEXT_PUBLIC_ prefix for private keys
+// Note: Environment variables are validated at runtime in the handler
 
-const day = getDayState();
-const dailyProfit = getDailyProfit();
-const dailyLoss = getDailyLoss();
+function getHyperliquidSDK() {
+    const PK = process.env.HL_PRIVATE_KEY;
+    const MAIN_WALLET = process.env.NEXT_PUBLIC_HL_MAIN_WALLET;
 
+    if (!PK) throw new Error('HL_PRIVATE_KEY missing in env');
+    if (!MAIN_WALLET) throw new Error('HL_MAIN_WALLET missing in env');
 
-
-if (!PK) throw new Error('HL_PRIVATE_KEY missing in env');
-if (!MAIN_WALLET) throw new Error('HL_MAIN_WALLET missing in env');
-
-const sdk = new Hyperliquid({
-    privateKey: PK,
-    walletAddress: MAIN_WALLET,
-    testnet: false
-});
+    return {
+        sdk: new Hyperliquid({
+            privateKey: PK,
+            walletAddress: MAIN_WALLET,
+            testnet: false
+        }),
+        MAIN_WALLET
+    };
+}
 
 const ASSET_MAP = { 0: 'BTC-PERP' };
 
 export async function POST(req: NextRequest) {
     try {
+        // Get SDK lazily to avoid build-time errors
+        const { sdk, MAIN_WALLET } = getHyperliquidSDK();
+        const day = getDayState();
+        const dailyProfit = getDailyProfit();
+        const dailyLoss = getDailyLoss();
+
         const body = await req.json();
         const { asset, side, price, size, takeProfit, stopLoss, leverage = 1 } = body;
 

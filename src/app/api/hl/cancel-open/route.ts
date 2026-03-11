@@ -3,20 +3,32 @@ import { Hyperliquid } from 'hyperliquid';
 
 export const runtime = 'nodejs';
 
-const PK = process.env.NEXT_PUBLIC_HL_PRIVATE_KEY;
-const MAIN_WALLET = process.env.NEXT_PUBLIC_HL_MAIN_WALLET;
+// Server-only: DO NOT use NEXT_PUBLIC_ prefix for private keys
+// Note: Environment variables are validated at runtime in the handler
 
-if (!PK) throw new Error('HL_PRIVATE_KEY missing in env');
-if (!MAIN_WALLET) throw new Error('HL_MAIN_WALLET missing in env');
+let cachedSdk: { sdk: Hyperliquid; MAIN_WALLET: string } | null = null;
 
-// Initialize SDK
-const sdk = new Hyperliquid({
-  privateKey: PK,
-  walletAddress: MAIN_WALLET,
-  testnet: false
-});
+function getHyperliquidSDK() {
+  if (cachedSdk) return cachedSdk;
 
-console.log('[HL] Cancel SDK initialized for wallet:', MAIN_WALLET);
+  const PK = process.env.HL_PRIVATE_KEY;
+  const MAIN_WALLET = process.env.NEXT_PUBLIC_HL_MAIN_WALLET;
+
+  if (!PK) throw new Error('HL_PRIVATE_KEY missing in env');
+  if (!MAIN_WALLET) throw new Error('HL_MAIN_WALLET missing in env');
+
+  cachedSdk = {
+    sdk: new Hyperliquid({
+      privateKey: PK,
+      walletAddress: MAIN_WALLET,
+      testnet: false
+    }),
+    MAIN_WALLET
+  };
+
+  console.log('[HL] Cancel SDK initialized for wallet:', MAIN_WALLET);
+  return cachedSdk;
+}
 
 // Asset mapping
 const ASSET_MAP: Record<number, string> = {
@@ -25,6 +37,9 @@ const ASSET_MAP: Record<number, string> = {
 
 export async function POST(req: NextRequest) {
   try {
+    // Get SDK lazily to avoid build-time errors
+    const { sdk, MAIN_WALLET } = getHyperliquidSDK();
+
     const body = await req.json();
     console.log('[HL] Cancel request body:', body);
 
@@ -33,16 +48,16 @@ export async function POST(req: NextRequest) {
     // Handle different cancel actions
     switch (action) {
       case 'cancel_order':
-        return await cancelSpecificOrder(asset, orderId, coin);
+        return await cancelSpecificOrder(sdk, asset, orderId, coin);
 
       case 'cancel_all':
-        return await cancelAllOrders();
+        return await cancelAllOrders(sdk);
 
       case 'cancel_all_for_asset':
-        return await cancelAllForAsset(asset, coin);
+        return await cancelAllForAsset(sdk, asset, coin);
 
       case 'cancel_open_orders':
-        return await cancelOpenOrders();
+        return await cancelOpenOrders(sdk, MAIN_WALLET);
 
       default:
         throw new Error(`Unknown action: ${action}`);
@@ -55,7 +70,7 @@ export async function POST(req: NextRequest) {
 }
 
 // Cancel a specific order by ID
-async function cancelSpecificOrder(asset?: number, orderId?: number, coin?: string) {
+async function cancelSpecificOrder(sdk: Hyperliquid, asset?: number, orderId?: number, coin?: string) {
   if (!orderId) {
     throw new Error('Order ID is required');
   }
@@ -74,7 +89,7 @@ async function cancelSpecificOrder(asset?: number, orderId?: number, coin?: stri
 }
 
 // Cancel all orders
-async function cancelAllOrders() {
+async function cancelAllOrders(sdk: Hyperliquid) {
   console.log('[HL] Canceling all orders');
 
   const result = await (sdk.custom as any).cancelAllOrders();
@@ -84,7 +99,7 @@ async function cancelAllOrders() {
 }
 
 // Cancel all orders for a specific asset
-async function cancelAllForAsset(asset?: number, coin?: string) {
+async function cancelAllForAsset(sdk: Hyperliquid, asset?: number, coin?: string) {
   const coinSymbol = coin || ASSET_MAP[asset || 0] || 'BTC-PERP';
 
   console.log(`[HL] Canceling all orders for ${coinSymbol}`);
@@ -96,7 +111,7 @@ async function cancelAllForAsset(asset?: number, coin?: string) {
 }
 
 // Cancel all open orders (get open orders first, then cancel them)
-async function cancelOpenOrders() {
+async function cancelOpenOrders(sdk: Hyperliquid, MAIN_WALLET: string) {
   try {
     console.log('[HL] Getting open orders first...');
 

@@ -135,23 +135,31 @@ import { getDayState } from '@/lib/dayState';
 
 export const runtime = 'nodejs';
 
-const PK = process.env.NEXT_PUBLIC_HL_PRIVATE_KEY;
-const MAIN_WALLET = process.env.NEXT_PUBLIC_HL_MAIN_WALLET;
+// Server-only: DO NOT use NEXT_PUBLIC_ prefix for private keys
+// Note: Environment variables are validated at runtime in the handler
 
-if (!PK) throw new Error('HL_PRIVATE_KEY missing in env');
-if (!MAIN_WALLET) throw new Error('HL_MAIN_WALLET missing in env');
+function getHyperliquidSDK() {
+  const PK = process.env.HL_PRIVATE_KEY;
+  const MAIN_WALLET = process.env.NEXT_PUBLIC_HL_MAIN_WALLET;
 
-const sdk = new Hyperliquid({
-  privateKey: PK,
-  walletAddress: MAIN_WALLET,
-  testnet: false // 🚨 CHECK: Are you using testnet or mainnet?
-});
+  if (!PK) throw new Error('HL_PRIVATE_KEY missing in env');
+  if (!MAIN_WALLET) throw new Error('HL_MAIN_WALLET missing in env');
+
+  return {
+    sdk: new Hyperliquid({
+      privateKey: PK,
+      walletAddress: MAIN_WALLET,
+      testnet: false
+    }),
+    MAIN_WALLET,
+    PK
+  };
+}
 
 export async function GET() {
   try {
-    if (!MAIN_WALLET) {
-      throw new Error('MAIN_WALLET environment variable is not set');
-    }
+    // Get SDK lazily to avoid build-time errors
+    const { sdk, MAIN_WALLET, PK } = getHyperliquidSDK();
 
     console.log('🔍 === DEBUGGING PnL API ===');
     console.log('🔑 Private Key (first 10 chars):', PK?.substring(0, 10) + '...');
@@ -274,8 +282,8 @@ export async function GET() {
         errorOccurred: true,
         errorMessage: e.message,
         env: {
-          hasPrivateKey: !!PK,
-          hasWallet: !!MAIN_WALLET
+          hasPrivateKey: !!process.env.HL_PRIVATE_KEY,
+          hasWallet: !!process.env.NEXT_PUBLIC_HL_MAIN_WALLET
         }
       }
     });

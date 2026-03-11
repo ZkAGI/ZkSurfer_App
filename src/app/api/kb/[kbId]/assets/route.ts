@@ -8,9 +8,9 @@ const KB_BASE = process.env.KB_API_BASE || "http://45.251.34.28:8009";
 
 export async function GET(
   _req: Request,
-  ctx: { params: { kbId: string } }
+  ctx: { params: Promise<{ kbId: string }> }
 ) {
-  const kbId = ctx.params?.kbId;
+  const { kbId } = await ctx.params;
   if (!kbId) {
     return NextResponse.json(
       { error: "kbId is required" },

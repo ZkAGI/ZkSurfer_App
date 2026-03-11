@@ -1408,22 +1408,41 @@ import { getDayState, pushTrade } from '@/lib/dayState';
 export const runtime = 'nodejs';
 
 // ——— SDK Configuration ————————————————————————————————————————————————
-const PK = process.env.NEXT_PUBLIC_HL_PRIVATE_KEY;
-const MAIN_WALLET_RAW = process.env.NEXT_PUBLIC_HL_MAIN_WALLET;
-const USER_WALLET_RAW = process.env.NEXT_PUBLIC_HL_USER_WALLET;
+// Server-only: DO NOT use NEXT_PUBLIC_ prefix for private keys
+// Note: SDK is initialized lazily in the handler to avoid build-time errors
 
-if (!PK) throw new Error('HL_PRIVATE_KEY missing in env');
-if (!MAIN_WALLET_RAW) throw new Error('HL_MAIN_WALLET missing in env');
-if (!USER_WALLET_RAW) throw new Error('USER_WALLET_RAW missing in env');
+let _sdk: Hyperliquid | null = null;
+let MAIN_WALLET: string = '';
+let USER_WALLET: string = '';
 
-const MAIN_WALLET: string = MAIN_WALLET_RAW;
-const USER_WALLET: string = USER_WALLET_RAW;
+function getSDK(): Hyperliquid {
+    if (_sdk) return _sdk;
 
-const sdk = new Hyperliquid({
-    privateKey: PK,
-    walletAddress: MAIN_WALLET,
-    testnet: false
-});
+    const PK = process.env.HL_PRIVATE_KEY;
+    const mainWallet = process.env.NEXT_PUBLIC_HL_MAIN_WALLET;
+    const userWallet = process.env.NEXT_PUBLIC_HL_USER_WALLET;
+
+    if (!PK) throw new Error('HL_PRIVATE_KEY missing in env');
+    if (!mainWallet) throw new Error('HL_MAIN_WALLET missing in env');
+    if (!userWallet) throw new Error('USER_WALLET missing in env');
+
+    _sdk = new Hyperliquid({
+        privateKey: PK,
+        walletAddress: mainWallet,
+        testnet: false
+    });
+    MAIN_WALLET = mainWallet;
+    USER_WALLET = userWallet;
+    return _sdk;
+}
+
+// Helper getter for SDK that's used by helper functions
+const sdk = { get exchange() { return getSDK().exchange; }, get info() { return getSDK().info; }, get custom() { return getSDK().custom; } };
+
+function getHyperliquidSDK() {
+    const sdkInstance = getSDK();
+    return { sdk: sdkInstance, MAIN_WALLET, USER_WALLET };
+}
 
 // ——— SIMPLIFIED CONSTANTS WITH IMMEDIATE PROFIT TARGETS ————————————————————————————————————————————————
 const LOT_SIZE = 0.00001;
@@ -2016,6 +2035,9 @@ async function placeReversedOrder(originalSignal: string, size: number, price: n
 // ——— MAIN HANDLER ————————————————————————————————————————————————
 export async function GET() {
     try {
+        // Initialize SDK lazily
+        const { sdk, MAIN_WALLET, USER_WALLET } = getHyperliquidSDK();
+
         console.log('🚀 SIMPLIFIED TRADING BOT with Immediate Profit Targets:', new Date().toISOString());
 
         // 🔍 STEP 1: Simplified position management

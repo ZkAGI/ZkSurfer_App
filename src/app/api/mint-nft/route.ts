@@ -2,19 +2,23 @@ import { NextResponse } from "next/server";
 import { SolanaAgentKit } from "solana-agent-kit";
 import { PublicKey } from "@solana/web3.js";
 
-// SERVER-ONLY environment variables
-const rpcUrl = process.env.NEXT_PUBLIC_RPC_ENDPOINT;
-const centralWalletSecret = process.env.NEXT_PUBLIC_CENTRAL_WALLET_SECRET;
-if (!centralWalletSecret) {
-  throw new Error("CENTRAL_WALLET_SECRET is not defined.");
+// Lazy-loaded agent to avoid build-time errors
+let _agent: SolanaAgentKit | null = null;
+function getAgent() {
+  if (_agent) return _agent;
+  const rpcUrl = process.env.NEXT_PUBLIC_RPC_ENDPOINT;
+  const centralWalletSecret = process.env.NEXT_PUBLIC_CENTRAL_WALLET_SECRET;
+  if (!centralWalletSecret) {
+    throw new Error("CENTRAL_WALLET_SECRET is not defined.");
+  }
+  if (!rpcUrl) {
+    throw new Error("rpcUrls are not defined");
+  }
+  _agent = new SolanaAgentKit(centralWalletSecret, rpcUrl, {
+    OPENAI_API_KEY: process.env.NEXT_PUBLIC_OPENAI_API_KEY || undefined,
+  });
+  return _agent;
 }
-if (!rpcUrl) {
-  throw new Error("rpcUrls are not defined");
-}
-
-const agent = new SolanaAgentKit(centralWalletSecret, rpcUrl, {
-  OPENAI_API_KEY: process.env.NEXT_PUBLIC_OPENAI_API_KEY || undefined,
-});
 
 // Helper function: Upload image and metadata to Pinata
 const uploadToPinata = async (base64Image: string, address: string) => {
@@ -114,7 +118,7 @@ const uploadToPinata = async (base64Image: string, address: string) => {
 
 // Deploy collection
 async function deployCollection(): Promise<PublicKey> {
-  const collection = await agent.deployCollection({
+  const collection = await getAgent().deployCollection({
     name: "ZkAGI Community Mints",
     uri: "https://gateway.pinata.cloud/ipfs/your-collection-uri",
     royaltyBasisPoints: 500,
@@ -137,7 +141,7 @@ async function createNft(
 
   // Convert recipient to PublicKey and mint NFT
   const recipientPubkey = new PublicKey(recipient);
-  const nft = await agent.mintNFT(collectionAddress, { name, uri }, recipientPubkey);
+  const nft = await getAgent().mintNFT(collectionAddress, { name, uri }, recipientPubkey);
   return nft.mint.toString();
 }
 

@@ -5,14 +5,15 @@ import { Locale } from '@/app/i18n/settings';
 import { MarketplacePageProps } from './MemeMarketplace';
 
 interface ExplorePageProps {
-    params: {
-        lang: Locale;
-    };
+    params: Promise<{
+        lang: string;
+    }>;
 }
 
 const MemeMarketplacePage: NextPage<ExplorePageProps> = async ({ params }) => {
     // Get the dictionary for the current locale
-    const dictionary = await getDictionary(params.lang);
+    const { lang } = await params;
+    const dictionary = await getDictionary(lang as Locale);
     const typedDictionary = dictionary as MarketplacePageProps['dictionary'];
 
     // Pass the dictionary to your ExploreAgentsPage component

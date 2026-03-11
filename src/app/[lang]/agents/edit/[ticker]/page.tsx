@@ -384,13 +384,14 @@ async function getTickerInfo(ticker: string): Promise<TickerData> {
 export default async function EditAgentPage({
     params,
 }: {
-    params: { ticker: string; lang: Locale };
+    params: Promise<{ ticker: string; lang: string }>;
 }) {
     // Get dictionary for current locale
-    const dictionary = await getDictionary(params.lang);
+    const { lang, ticker } = await params;
+    const dictionary = await getDictionary(lang as Locale);
 
     // Fetch data on the server side
-    const data = await getTickerInfo(params.ticker);
+    const data = await getTickerInfo(ticker);
 
     // Extract fields we need
     const { image_base64, description, training_data } = data || {};
@@ -402,7 +403,7 @@ export default async function EditAgentPage({
 
     return (
         <EditAgentClient
-            ticker={params.ticker}
+            ticker={ticker}
             dictionary={dictionary}
             image_base64={image_base64}
             description={description}

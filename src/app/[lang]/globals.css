@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -146,4 +147,1408 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Professional spacing classes - Paperclip inspired */
+@layer utilities {
+  .section-spacing {
+    @apply py-12 md:py-16;
+  }
+
+  .card-spacing {
+    @apply p-6 md:p-8;
+  }
+
+  .container-narrow {
+    @apply max-w-4xl mx-auto px-4;
+  }
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gentlePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-gentlePulse {
+  animation: gentlePulse 2s ease-in-out infinite;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* Card hover glow effect */
+.card-glow {
+  @apply relative overflow-hidden;
+}
+
+.card-glow::before {
+  content: '';
+  @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+              rgba(100, 58, 222, 0.15), transparent 40%);
+}
+
+.card-glow:hover::before {
+  @apply opacity-100;
+}
+
+/* Feature card styling */
+.feature-card {
+  @apply relative bg-gradient-to-br from-[#0A1426] to-[#0F1A2E]
+         border border-[#1E2A45] rounded-2xl p-6
+         transition-all duration-300 ease-out
+         hover:border-zkPurple/50 hover:scale-[1.02];
+}
+
+.feature-card:hover {
+  box-shadow: 0 0 40px -10px rgba(100, 58, 222, 0.3);
+}
+
+/* Number badge styling */
+.number-badge {
+  @apply text-zkPurple/60 text-sm font-mono tracking-wider;
+}
+
+/* Terminal-style input */
+.terminal-input {
+  @apply bg-[#0A1426] rounded-2xl border border-[#1E2A45]
+         focus-within:border-zkPurple/50 transition-colors;
+}
+
+/* Command prefix styling */
+.command-prefix {
+  @apply text-zkNeonGreen font-mono;
+}
+
+/* Message bubble styles */
+.message-bubble-user {
+  @apply bg-zkPurple/10 border border-zkPurple/20 rounded-2xl px-5 py-3;
+}
+
+.message-bubble-assistant {
+  @apply bg-[#0A1426] rounded-2xl px-5 py-3;
+}
+
+/* Keyboard hint styling */
+.kbd-hint {
+  @apply px-1.5 py-0.5 bg-[#1E2A45] rounded text-white text-xs font-mono;
+}
+
+/* Professional loading skeleton */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  @apply relative overflow-hidden bg-[#1E2A45] rounded;
+}
+
+.skeleton::after {
+  content: '';
+  @apply absolute inset-0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Improved button styles */
+.btn-primary {
+  @apply px-4 py-2 bg-zkPurple text-white font-medium rounded-lg
+         hover:bg-zkPurple/90 active:scale-[0.98] transition-all
+         disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+}
+
+.btn-secondary {
+  @apply px-4 py-2 bg-[#1E2A45] text-white font-medium rounded-lg
+         border border-[#2E3A55] hover:bg-[#2E3A55] active:scale-[0.98]
+         transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-ghost {
+  @apply px-4 py-2 text-zkDarkPurple font-medium rounded-lg
+         hover:bg-[#1E2A45] hover:text-white active:scale-[0.98]
+         transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Status indicators */
+.status-online {
+  @apply w-2 h-2 bg-zkNeonGreen rounded-full animate-pulse;
+}
+
+.status-offline {
+  @apply w-2 h-2 bg-red-500 rounded-full;
+}
+
+.status-pending {
+  @apply w-2 h-2 bg-yellow-500 rounded-full animate-pulse;
+}
+
+/* Toast/notification styling improvements */
+.toast-success {
+  @apply bg-[#0A1426] border border-zkNeonGreen/30 text-white;
+}
+
+.toast-error {
+  @apply bg-[#0A1426] border border-red-500/30 text-white;
+}
+
+.toast-info {
+  @apply bg-[#0A1426] border border-zkIndigo/30 text-white;
+}
+
+/* Improved scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A1426;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1E2A45;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2E3A55;
+}
+
+/* Focus ring utilities */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-zkPurple/50 focus:ring-offset-2 focus:ring-offset-[#0A1426];
+}
+
+/* Gradient text utility */
+.gradient-text {
+  @apply bg-gradient-to-r from-zkIndigo via-zkLightPurple to-zkPurple bg-clip-text text-transparent;
+}
+
+/* Card variants */
+.card {
+  @apply bg-[#0A1426] border border-[#1E2A45] rounded-xl p-4;
+}
+
+.card-hover {
+  @apply card transition-all duration-200 hover:border-zkPurple/30 hover:shadow-lg hover:shadow-zkPurple/5;
+}
+
+/* Dashboard stat card */
+.stat-card {
+  @apply card flex flex-col gap-2;
+}
+
+.stat-value {
+  @apply text-2xl font-bold text-white font-mono;
+}
+
+.stat-label {
+  @apply text-sm text-zkDarkPurple;
+}
+
+/* Empty state styling */
+.empty-state {
+  @apply flex flex-col items-center justify-center py-12 text-center;
+}
+
+.empty-state-icon {
+  @apply w-16 h-16 text-zkDarkPurple/50 mb-4;
+}
+
+.empty-state-title {
+  @apply text-lg font-medium text-white mb-2;
+}
+
+.empty-state-description {
+  @apply text-sm text-zkDarkPurple max-w-sm;
+}
+
+/* Professional input styling */
+.input {
+  @apply w-full px-4 py-3 bg-[#0A1426] border border-[#1E2A45] rounded-xl
+         text-white placeholder:text-zkDarkPurple
+         focus:outline-none focus:border-zkPurple/50 focus:ring-1 focus:ring-zkPurple/20
+         transition-colors;
+}
+
+.input-error {
+  @apply input border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20;
+}
+
+/* Label styling */
+.label {
+  @apply block text-sm font-medium text-zkDarkPurple mb-2;
+}
+
+/* Badge/tag styling */
+.badge {
+  @apply inline-flex items-center px-2 py-1 text-xs font-medium rounded-full;
+}
+
+.badge-purple {
+  @apply badge bg-zkPurple/20 text-zkLightPurple border border-zkPurple/30;
+}
+
+.badge-green {
+  @apply badge bg-zkNeonGreen/20 text-zkNeonGreen border border-zkNeonGreen/30;
+}
+
+.badge-red {
+  @apply badge bg-red-500/20 text-red-400 border border-red-500/30;
+}
+
+.badge-blue {
+  @apply badge bg-zkIndigo/20 text-zkIndigo border border-zkIndigo/30;
+}
+
+/* Divider */
+.divider {
+  @apply h-px bg-[#1E2A45] my-4;
+}
+
+/* Section header */
+.section-header {
+  @apply text-lg font-semibold text-white mb-4;
+}
+
+/* Tooltip base */
+.tooltip {
+  @apply absolute z-50 px-3 py-2 text-xs text-white bg-[#0A1426] border border-[#1E2A45] rounded-lg shadow-xl
+         opacity-0 pointer-events-none transition-opacity;
+}
+
+.tooltip-visible {
+  @apply opacity-100 pointer-events-auto;
+}
+
+/* ========================================
+   NEW DESIGN SYSTEM STYLES
+   ======================================== */
+
+/* Design System Card with glow effect */
+.ds-card {
+  @apply relative bg-dsBgAlt border border-dsBorder rounded-2xl p-6
+         transition-all duration-300 ease-out overflow-hidden;
+}
+
+.ds-card::before {
+  content: '';
+  @apply absolute inset-0 opacity-0 transition-opacity duration-300 pointer-events-none;
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+              rgba(124, 106, 247, 0.12), transparent 40%);
+}
+
+.ds-card:hover::before {
+  @apply opacity-100;
+}
+
+.ds-card:hover {
+  @apply border-dsPurple/40;
+  box-shadow: 0 0 40px -10px rgba(124, 106, 247, 0.25);
+}
+
+/* Feature card with numbered badge */
+.ds-feature-card {
+  @apply ds-card cursor-pointer;
+}
+
+.ds-feature-card:hover {
+  @apply scale-[1.02];
+}
+
+/* Design System Sidebar */
+.ds-sidebar {
+  @apply w-64 bg-dsBgAlt border border-dsBorder rounded-xl flex flex-col h-full;
+}
+
+.ds-sidebar-nav-item {
+  @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-dsMuted font-dmSans text-sm
+         hover:bg-dsBorder/50 hover:text-white transition-colors cursor-pointer;
+}
+
+.ds-sidebar-nav-item.active {
+  @apply bg-dsPurple/10 text-dsPurple-light border-l-2 border-dsPurple;
+}
+
+/* Design System Topbar */
+.ds-topbar {
+  @apply h-14 bg-dsBgAlt/80 backdrop-blur-md border-b border-dsBorder
+         flex items-center justify-between px-6;
+}
+
+/* Badge variants */
+.ds-badge {
+  @apply inline-flex items-center px-2.5 py-1 text-xs font-dmMono font-medium rounded-full;
+}
+
+.ds-badge-new {
+  @apply ds-badge bg-dsGreen/15 text-dsGreen border border-dsGreen/30;
+}
+
+.ds-badge-popular {
+  @apply ds-badge bg-dsPurple/15 text-dsPurple-light border border-dsPurple/30;
+}
+
+.ds-badge-zkagi {
+  @apply ds-badge bg-gradient-to-r from-dsPurple/20 to-dsPurple-dark/20
+         text-dsPurple-light border border-dsPurple/40;
+}
+
+.ds-badge-number {
+  @apply text-dsPurple/50 text-sm font-dmMono tracking-wider;
+}
+
+/* Stats panel with progress bar */
+.ds-stats-panel {
+  @apply bg-dsBgAlt border border-dsBorder rounded-xl p-4;
+}
+
+.ds-progress-bar {
+  @apply w-full h-1.5 bg-dsBorder rounded-full overflow-hidden;
+}
+
+.ds-progress-bar-fill {
+  @apply h-full bg-gradient-to-r from-dsPurple to-dsPurple-light rounded-full
+         transition-all duration-500 ease-out;
+}
+
+/* Background glow component */
+.ds-glow {
+  @apply absolute pointer-events-none;
+  background: radial-gradient(ellipse at center, rgba(124, 106, 247, 0.15), transparent 70%);
+  filter: blur(80px);
+}
+
+.ds-glow-top-left {
+  @apply ds-glow -top-32 -left-32 w-96 h-96;
+}
+
+.ds-glow-bottom-right {
+  @apply ds-glow -bottom-32 -right-32 w-96 h-96;
+}
+
+.ds-glow-center {
+  @apply ds-glow top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px];
+}
+
+/* Blink animation for cursor */
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Design System Button variants */
+.ds-btn {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 font-dmSans font-medium
+         rounded-xl transition-all duration-200 active:scale-[0.98]
+         disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+}
+
+.ds-btn-primary {
+  @apply ds-btn bg-dsPurple text-white hover:bg-dsPurple-dark;
+}
+
+.ds-btn-secondary {
+  @apply ds-btn bg-dsBorder text-white border border-dsMuted-dark hover:bg-dsMuted-dark;
+}
+
+.ds-btn-ghost {
+  @apply ds-btn text-dsMuted hover:bg-dsBorder hover:text-white;
+}
+
+/* Design System Input */
+.ds-input {
+  @apply w-full px-4 py-3 bg-dsBg border border-dsBorder rounded-xl font-dmSans
+         text-white placeholder:text-dsMuted
+         focus:outline-none focus:border-dsPurple/50 focus:ring-1 focus:ring-dsPurple/20
+         transition-colors;
+}
+
+.ds-input-with-icon {
+  @apply relative;
+}
+
+.ds-input-with-icon input {
+  @apply ds-input pl-11;
+}
+
+.ds-input-with-icon .icon {
+  @apply absolute left-4 top-1/2 -translate-y-1/2 text-dsMuted;
+}
+
+/* Command tag in input */
+.ds-command-tag {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 bg-dsPurple/15 border border-dsPurple/30
+         rounded-lg text-dsPurple-light text-sm font-dmMono;
+}
+
+/* Credits card styling */
+.ds-credits-card {
+  @apply bg-gradient-to-br from-dsBgAlt to-dsBg border border-dsBorder rounded-xl p-4;
+}
+
+.ds-credits-value {
+  @apply text-2xl font-syne font-bold text-white;
+}
+
+.ds-credits-label {
+  @apply text-sm font-dmSans text-dsMuted;
+}
+
+/* Typography utilities */
+.ds-heading {
+  @apply font-syne font-bold text-white;
+}
+
+.ds-heading-lg {
+  @apply ds-heading text-3xl md:text-4xl;
+}
+
+.ds-heading-md {
+  @apply ds-heading text-xl md:text-2xl;
+}
+
+.ds-heading-sm {
+  @apply ds-heading text-lg;
+}
+
+.ds-body {
+  @apply font-dmSans text-dsMuted;
+}
+
+.ds-mono {
+  @apply font-dmMono;
+}
+
+/* Icon container with color */
+.ds-icon-box {
+  @apply w-10 h-10 rounded-xl flex items-center justify-center;
+}
+
+/* Category colors */
+.ds-icon-purple { @apply bg-dsPurple-light/15 text-dsPurple-light; }
+.ds-icon-green { @apply bg-dsGreen/15 text-dsGreen; }
+.ds-icon-blue { @apply bg-blue-400/15 text-blue-400; }
+.ds-icon-amber { @apply bg-amber-400/15 text-amber-400; }
+
+/* Gradient text */
+.ds-gradient-text {
+  @apply bg-gradient-to-r from-dsPurple-light via-dsPurple to-dsPurple-dark bg-clip-text text-transparent;
+}
+
+/* Additional animation for slide in */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Page wrapper */
+.ds-page {
+  @apply min-h-screen bg-dsBg;
+}
+
+/* Container utilities */
+.ds-container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.ds-container-narrow {
+  @apply max-w-4xl mx-auto px-4 sm:px-6;
+}
+
+/* Section spacing */
+.ds-section {
+  @apply py-8 md:py-12;
+}
+
+/* Link styles */
+.ds-link {
+  @apply text-dsPurple-light hover:text-dsPurple transition-colors;
+}
+
+/* Table styles */
+.ds-table {
+  @apply w-full border-collapse;
+}
+
+.ds-table th {
+  @apply px-4 py-3 text-left text-sm font-medium text-dsMuted bg-dsBgAlt/50 border-b border-dsBorder;
+}
+
+.ds-table td {
+  @apply px-4 py-3 text-sm text-white border-b border-dsBorder/50;
+}
+
+.ds-table tr:hover {
+  @apply bg-dsBgAlt/30;
+}
+
+/* Form group */
+.ds-form-group {
+  @apply space-y-2;
+}
+
+.ds-form-label {
+  @apply block text-sm font-medium text-dsMuted;
+}
+
+.ds-form-hint {
+  @apply text-xs text-dsMuted/70 mt-1;
+}
+
+/* Alert/Notice styles */
+.ds-alert {
+  @apply p-4 rounded-xl border;
+}
+
+.ds-alert-info {
+  @apply ds-alert bg-dsPurple/5 border-dsPurple/20 text-dsPurple-light;
+}
+
+.ds-alert-success {
+  @apply ds-alert bg-dsGreen/5 border-dsGreen/20 text-dsGreen;
+}
+
+.ds-alert-warning {
+  @apply ds-alert bg-amber-500/5 border-amber-500/20 text-amber-400;
+}
+
+.ds-alert-error {
+  @apply ds-alert bg-red-500/5 border-red-500/20 text-red-400;
+}
+
+/* Tabs */
+.ds-tabs {
+  @apply flex items-center gap-1 p-1 bg-dsBorder/30 rounded-lg;
+}
+
+.ds-tab {
+  @apply px-4 py-2 text-sm font-medium text-dsMuted rounded-md transition-all;
+}
+
+.ds-tab:hover {
+  @apply text-white;
+}
+
+.ds-tab.active {
+  @apply bg-dsPurple text-white;
+}
+
+/* Divider */
+.ds-divider {
+  @apply h-px bg-dsBorder my-6;
+}
+
+/* Modal backdrop */
+.ds-modal-backdrop {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm;
+}
+
+.ds-modal {
+  @apply ds-card w-full max-w-md mx-4 animate-slideUp;
+}
+
+/* Avatar */
+.ds-avatar {
+  @apply w-10 h-10 rounded-full bg-dsBorder flex items-center justify-center overflow-hidden;
+}
+
+.ds-avatar-sm {
+  @apply w-8 h-8;
+}
+
+.ds-avatar-lg {
+  @apply w-14 h-14;
+}
+
+/* Tooltip */
+.ds-tooltip {
+  @apply absolute z-50 px-3 py-2 text-xs text-white bg-dsBgAlt border border-dsBorder rounded-lg shadow-xl
+         opacity-0 pointer-events-none transition-opacity;
+}
+
+.ds-tooltip.visible {
+  @apply opacity-100 pointer-events-auto;
+}
+
+/* ========================================
+   PREDICTION REPORT DESIGN SYSTEM
+   ======================================== */
+
+/* Report overlay with blur animation */
+@keyframes overlayFadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(12px); }
+}
+
+@keyframes panelSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes panelSlideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0.5;
+  }
+}
+
+@keyframes statsReveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cardStagger {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px -5px rgba(124, 106, 247, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px -5px rgba(124, 106, 247, 0.5);
+  }
+}
+
+@keyframes shimmerLine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes numberCount {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* ─── Wallet Adapter Modal Override (high specificity to beat adapter CSS) ─── */
+body div[role="dialog"].wallet-adapter-modal,
+div[role="dialog"].wallet-adapter-modal,
+.wallet-adapter-modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 1100 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+body .wallet-adapter-modal.wallet-adapter-modal-fade-in,
+.wallet-adapter-modal.wallet-adapter-modal-fade-in {
+  opacity: 1;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-overlay,
+.wallet-adapter-modal .wallet-adapter-modal-overlay,
+.wallet-adapter-modal-overlay {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.65) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-container,
+.wallet-adapter-modal .wallet-adapter-modal-container,
+.wallet-adapter-modal-container {
+  position: relative !important;
+  z-index: 10 !important;
+  width: 92vw !important;
+  max-width: 420px !important;
+  max-height: 85vh !important;
+  margin: auto !important;
+  animation: walletModalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-wrapper,
+.wallet-adapter-modal .wallet-adapter-modal-wrapper,
+.wallet-adapter-modal-wrapper {
+  background: linear-gradient(168deg, #0d1120 0%, #070a14 50%, #0b0e1a 100%) !important;
+  border: 1px solid rgba(124, 106, 247, 0.15) !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  box-shadow: 0 0 80px rgba(124, 106, 247, 0.08), 0 24px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+  position: relative !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-wrapper::-webkit-scrollbar { width: 4px; }
+body .wallet-adapter-modal .wallet-adapter-modal-wrapper::-webkit-scrollbar-track { background: transparent; }
+body .wallet-adapter-modal .wallet-adapter-modal-wrapper::-webkit-scrollbar-thumb { background: rgba(124,106,247,0.15); border-radius: 4px; }
+
+body .wallet-adapter-modal .wallet-adapter-modal-title,
+.wallet-adapter-modal .wallet-adapter-modal-title,
+.wallet-adapter-modal-title {
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  margin-bottom: 20px !important;
+  text-align: center !important;
+  letter-spacing: -0.2px !important;
+  line-height: 1.4 !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-button-close,
+.wallet-adapter-modal .wallet-adapter-modal-button-close,
+.wallet-adapter-modal-button-close {
+  position: absolute !important;
+  top: 16px !important;
+  right: 16px !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: none !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: background 0.2s !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-button-close:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-button-close svg {
+  fill: #6b7280 !important;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-list,
+.wallet-adapter-modal .wallet-adapter-modal-list,
+.wallet-adapter-modal-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-list li {
+  list-style: none !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-button,
+.wallet-adapter-modal .wallet-adapter-button,
+.wallet-adapter-modal-list .wallet-adapter-button {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 14px 16px !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: #e5e7eb !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  height: auto !important;
+  line-height: 1.4 !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-button:hover,
+.wallet-adapter-modal .wallet-adapter-button:hover {
+  background: rgba(167, 139, 250, 0.08) !important;
+  border-color: rgba(167, 139, 250, 0.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-button:active {
+  transform: scale(0.99) !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-button-start-icon,
+.wallet-adapter-button-start-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  flex-shrink: 0 !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-button-start-icon img,
+.wallet-adapter-button-start-icon img {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-button span,
+.wallet-adapter-modal .wallet-adapter-button span {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #34d399 !important;
+  background: rgba(52, 211, 153, 0.1) !important;
+  padding: 2px 8px !important;
+  border-radius: 99px !important;
+  margin-left: auto !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-list-more,
+.wallet-adapter-modal .wallet-adapter-modal-list-more,
+.wallet-adapter-modal-list-more {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: 100% !important;
+  padding: 10px !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #6b7280 !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  transition: color 0.2s !important;
+  margin-top: 4px !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-list-more:hover {
+  color: #a78bfa !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-list-more svg {
+  fill: currentColor !important;
+  transition: transform 0.2s !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-list-more-icon-rotate,
+.wallet-adapter-modal-list-more-icon-rotate {
+  transform: rotate(180deg) !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-middle,
+.wallet-adapter-modal-middle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px 0 !important;
+}
+
+body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
+  fill: #4b5563 !important;
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.wallet-adapter-collapse {
+  overflow: hidden;
+}
+
+/* ─── Wallet Modal Animations ─── */
+@keyframes walletModalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes walletSectionIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes walletItemIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.wallet-modal-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.wallet-modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.wallet-modal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(124,106,247,0.15);
+  border-radius: 4px;
+}
+.wallet-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(124,106,247,0.3);
+}
+
+/* Report panel base */
+.report-panel {
+  background: linear-gradient(180deg, #0b0e17 0%, #07090f 100%);
+  box-shadow: -8px 0 60px rgba(0,0,0,0.7), -2px 0 30px rgba(124,106,247,0.08);
+}
+
+.report-panel-open {
+  animation: panelSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Report overlay */
+.report-overlay {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.report-overlay-open {
+  animation: overlayFadeIn 0.3s ease-out forwards;
+}
+
+/* Report header */
+.report-header {
+  background: linear-gradient(135deg, rgba(124,106,247,0.06) 0%, rgba(52,211,153,0.03) 50%, transparent 100%);
+  border-bottom: 1px solid rgba(124,106,247,0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.report-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(124,106,247,0.04), transparent);
+  animation: shimmerLine 4s ease-in-out infinite;
+}
+
+.report-header-past {
+  background: linear-gradient(135deg, rgba(96,165,250,0.08) 0%, rgba(124,106,247,0.04) 50%, transparent 100%);
+}
+
+/* Stats grid card */
+.report-stat-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: statsReveal 0.5s ease-out backwards;
+}
+
+.report-stat-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(124, 106, 247, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px -8px rgba(124, 106, 247, 0.15);
+}
+
+.report-stat-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(300px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+              rgba(124, 106, 247, 0.08), transparent 50%);
+  pointer-events: none;
+}
+
+.report-stat-card:hover::after {
+  opacity: 1;
+}
+
+/* Staggered card animations */
+.report-stagger-1 { animation-delay: 0.05s; }
+.report-stagger-2 { animation-delay: 0.1s; }
+.report-stagger-3 { animation-delay: 0.15s; }
+.report-stagger-4 { animation-delay: 0.2s; }
+
+/* Report section card */
+.report-section-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  animation: cardStagger 0.5s ease-out backwards;
+}
+
+.report-section-card:hover {
+  border-color: rgba(124, 106, 247, 0.15);
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.3);
+}
+
+/* Report badge */
+.report-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  border-radius: 99px;
+  transition: all 0.2s ease;
+}
+
+.report-badge:hover {
+  transform: scale(1.05);
+}
+
+.report-badge-bullish {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+}
+
+.report-badge-bearish {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.report-badge-neutral {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.report-badge-historical {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+/* Asset tab button */
+.report-asset-tab {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+  position: relative;
+}
+
+.report-asset-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 60%;
+  height: 2px;
+  background: linear-gradient(90deg, #7c6af7, #a78bfa);
+  border-radius: 2px;
+  transition: transform 0.2s ease;
+}
+
+.report-asset-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(124,106,247,0.3), rgba(167,139,250,0.2));
+}
+
+.report-asset-tab.active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.report-asset-tab:hover:not(.active) {
+  color: #a78bfa;
+  background: rgba(124, 106, 247, 0.05);
+}
+
+/* Report stat value animation */
+.report-stat-value {
+  font-family: 'DM Mono', monospace;
+  letter-spacing: -0.02em;
+  animation: numberCount 0.6s ease-out backwards;
+}
+
+/* Report section header */
+.report-section-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7280;
+}
+
+/* Report close button */
+.report-close-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.report-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: rotate(90deg);
+}
+
+/* News card in report */
+.report-news-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.25s ease;
+  animation: cardStagger 0.4s ease-out backwards;
+}
+
+.report-news-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(124, 106, 247, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Report download button */
+.report-download-btn {
+  width: 100%;
+  padding: 10px 0;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: white;
+  background: linear-gradient(135deg, rgba(124,106,247,0.2), rgba(124,106,247,0.1));
+  border: 1px solid rgba(124,106,247,0.25);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.report-download-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(124,106,247,0.3), rgba(124,106,247,0.15));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.report-download-btn:hover::before {
+  opacity: 1;
+}
+
+.report-download-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -8px rgba(124, 106, 247, 0.3);
+}
+
+.report-download-btn:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* Place trade button */
+.report-trade-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 18px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #059669, #10b981);
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.report-trade-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.report-trade-btn:hover::after {
+  opacity: 1;
+}
+
+.report-trade-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+}
+
+.report-trade-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Scrollbar styling for report panel */
+.report-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.report-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.report-scroll::-webkit-scrollbar-thumb {
+  background: rgba(124, 106, 247, 0.15);
+  border-radius: 3px;
+}
+
+.report-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 106, 247, 0.3);
+}
+
+/* Forecast asset grid button */
+.report-forecast-btn {
+  border-radius: 10px;
+  padding: 10px 8px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: transparent;
+}
+
+.report-forecast-btn.active {
+  background: rgba(124, 106, 247, 0.12);
+  border-color: rgba(124, 106, 247, 0.2);
+}
+
+.report-forecast-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Live pulse indicator */
+.report-live-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34d399;
+  position: relative;
+}
+
+.report-live-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: rgba(52, 211, 153, 0.3);
+  animation: breathe 2s ease-in-out infinite;
+}
+
+/* Report content area glow */
+.report-content-glow {
+  position: relative;
+}
+
+.report-content-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(124,106,247,0.2), transparent);
 }

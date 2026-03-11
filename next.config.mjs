@@ -341,6 +341,8 @@ import { createCivicAuthPlugin } from "@civic/auth/nextjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Acknowledge Turbopack while keeping webpack config for fallback
+  turbopack: {},
   env: {
     NEXT_PUBLIC_BASE_URL: "https://zynapse.zkagi.ai",
     API_KEY: "zk-123321",
@@ -417,9 +419,7 @@ const nextConfig = {
     FACTORY: process.env.FACTORY,
     KB_BASE: process.env.KB_BASE,
   },
-  experimental: {
-    esmExternals: "loose",
-  },
+  // Note: esmExternals is now the default in Next.js 16
   transpilePackages: [
     "@3land/listings-sdk",
     "node-fetch",

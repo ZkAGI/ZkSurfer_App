@@ -166,9 +166,9 @@ import PaymentSuccessContent from './PaymentSuccessContent'
 export default function PaymentSuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-dsBg flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
+          <div className="w-12 h-12 border-4 border-dsPurple/30 border-t-dsPurple rounded-full animate-spin mx-auto" />
           <p className="text-white mt-4">Loading payment details...</p>
         </div>
       </div>

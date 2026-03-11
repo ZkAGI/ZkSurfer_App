@@ -2,18 +2,29 @@
 import { Wallet, TypedDataDomain, TypedDataField } from 'ethers';
 
 // ---- ENV ----
-// PRIVATE_KEY: test wallet for Testnet ONLY
+// PRIVATE_KEY: Server-only - do NOT use NEXT_PUBLIC_ prefix
 // SIGNATURE_CHAIN_ID: hex id of the chain you sign on (Arbitrum = 0xa4b1)
 // HYPERLIQ_CHAIN: "Testnet" or "Mainnet"
-const PRIVATE_KEY = process.env.NEXT_PUBLIC_HL_PRIVATE_KEY!;
-const SIGNATURE_CHAIN_ID = process.env.NEXT_PUBLIC_HL_SIGNATURE_CHAIN_ID ?? '0xa4b1';
-const HYPERLIQ_CHAIN = process.env.NEXT_PUBLIC_HL_CHAIN ?? 'Testnet';
+// Note: Environment variables are validated at runtime, not at module load time
 
-if (!PRIVATE_KEY) {
-    throw new Error('Missing HL_PRIVATE_KEY in env');
+let _wallet: Wallet | null = null;
+
+function getWallet(): Wallet {
+    if (_wallet) return _wallet;
+
+    // Use server-only env var (HL_PRIVATE_KEY instead of NEXT_PUBLIC_HL_PRIVATE_KEY)
+    const PRIVATE_KEY = process.env.HL_PRIVATE_KEY;
+
+    if (!PRIVATE_KEY) {
+        throw new Error('Missing HL_PRIVATE_KEY in env');
+    }
+
+    _wallet = new Wallet(PRIVATE_KEY);
+    return _wallet;
 }
 
-const wallet = new Wallet(PRIVATE_KEY);
+const SIGNATURE_CHAIN_ID = process.env.NEXT_PUBLIC_HL_SIGNATURE_CHAIN_ID ?? '0xa4b1';
+const HYPERLIQ_CHAIN = process.env.NEXT_PUBLIC_HL_CHAIN ?? 'Testnet';
 
 /**
  * Canonicalize payload like Hyperliquid Python SDK does:
@@ -54,6 +65,7 @@ export async function signAction(params: {
      */
     const canonical = JSON.stringify(payload, Object.keys(payload).sort());
     // ethers v6: signMessage does EIP-191 \x19Ethereum Signed Message prefix automatically
+    const wallet = getWallet();
     const signature = await wallet.signMessage(canonical);
 
     return {

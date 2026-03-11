@@ -153,7 +153,7 @@ export default function TokenLaunchpadPage() {
 
 // Side Navigation Component
 function SideNav({ activeTab, setActiveTab }: { activeTab: TabType; setActiveTab: (tab: TabType) => void }) {
-  const navItems: { id: TabType; label: string; icon: JSX.Element }[] = [
+  const navItems: { id: TabType; label: string; icon: React.ReactElement }[] = [
     {
       id: 'launch',
       label: 'Token Launch',

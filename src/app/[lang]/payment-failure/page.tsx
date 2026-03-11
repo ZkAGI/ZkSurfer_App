@@ -1,61 +1,64 @@
 // app/payment-failure/page.tsx
 "use client";
 
-
-import { useRouter } from "next/navigation";
-import { FiX, FiRefreshCw, FiAlertCircle } from "react-icons/fi";
+import { useRouter, useParams } from "next/navigation";
+import { AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
 
 export default function PaymentFailurePage() {
     const router = useRouter();
-
+    const params = useParams();
+    const lang = params.lang as string || 'en';
 
     return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-            <div className="relative bg-white rounded-2xl shadow-lg max-w-sm w-full p-6">
-                {/* ← Back  •  ↻ Refresh */}
-                {/* <button
-                    onClick={() => router.back()}
-                    className="absolute top-4 left-4 text-gray-400 hover:text-gray-600"
-                >
-                    <FiX size={24} />
-                </button>
-                <button
-                    onClick={() => router.refresh()}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-                >
-                    <FiRefreshCw size={24} />
-                </button> */}
+        <div className="min-h-screen bg-dsBg flex items-center justify-center p-4">
+            <div className="ds-card max-w-md w-full text-center">
+                {/* Error Icon */}
+                <div className="w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/20
+                                flex items-center justify-center mx-auto mb-6">
+                    <AlertCircle className="w-10 h-10 text-red-400" />
+                </div>
 
-                <div className="flex flex-col items-center space-y-4">
-                    {/* error icon */}
-                    <div className="bg-red-100 rounded-full p-4">
-                        <FiAlertCircle className="w-8 h-8 text-red-600" />
-                    </div>
+                {/* Title */}
+                <h1 className="ds-heading-lg mb-3">Payment Failed</h1>
 
-                    <h1 className="text-2xl font-bold text-gray-900">Payment Failed</h1>
-                    <p className="text-center text-gray-600">
-                        Oops! Something went wrong and your payment didn&apos;t go through.
+                {/* Description */}
+                <p className="ds-body mb-8">
+                    Something went wrong and your payment couldn&apos;t be processed.
+                    Please try again or contact support if the issue persists.
+                </p>
+
+                {/* Info Box */}
+                <div className="ds-alert-error text-left mb-8">
+                    <p className="text-sm">
+                        No charges were made to your account. You can safely retry the payment.
                     </p>
+                </div>
 
-                    {/* <div className="w-full bg-gray-50 rounded-xl p-4 flex justify-between items-center mt-4">
-                        <div>
-                            <p className="text-sm text-gray-500">Attempted to send to</p>
-                            <p className="font-medium text-gray-800">{recipient}</p>
-                        </div>
-                        <p className="text-lg font-semibold text-red-600">
-                            {Number(amount).toLocaleString()} {currency}
-                        </p>
-                    </div> */}
-
-                    <div className="w-full border-t border-gray-200 my-6" />
-
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row gap-3">
                     <button
-                        // onClick={() => router.back()}
-                        className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                        onClick={() => router.push(`/${lang}/home`)}
+                        className="ds-btn-ghost flex-1"
                     >
+                        <ArrowLeft size={16} />
+                        Go Back
+                    </button>
+                    <button
+                        onClick={() => router.back()}
+                        className="ds-btn-primary flex-1"
+                    >
+                        <RefreshCw size={16} />
                         Try Again
                     </button>
                 </div>
+
+                {/* Support Link */}
+                <p className="text-xs text-dsMuted mt-8">
+                    Need help?{' '}
+                    <a href="mailto:support@zkagi.ai" className="ds-link">
+                        Contact Support
+                    </a>
+                </p>
             </div>
         </div>
     );

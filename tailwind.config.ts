@@ -196,6 +196,10 @@ const config = {
 			},
 		},
 		extend: {
+			spacing: {
+				'18': '4.5rem',
+				'22': '5.5rem',
+			},
 			colors: {
 				// Your custom ZK colors
 				zkIndigo: '#A4C8FF',
@@ -215,6 +219,20 @@ const config = {
 				zkDarkerBackground: '#010921',
 				zkNeonGreen: '#2AF698',
 				zkLavender: '#5A49AC',
+				// New design system colors
+				dsBg: '#07090f',
+				dsBgAlt: '#0b0e17',
+				dsPurple: {
+					DEFAULT: '#7c6af7',
+					light: '#a78bfa',
+					dark: '#4f46e5',
+				},
+				dsGreen: '#34d399',
+				dsMuted: {
+					DEFAULT: '#6b7280',
+					dark: '#374151',
+				},
+				dsBorder: '#1e2333',
 				// Default theme colors
 				border: "hsl(var(--border))",
 				input: "hsl(var(--input))",
@@ -254,11 +272,35 @@ const config = {
 				lg: "var(--radius)",
 				md: "calc(var(--radius) - 2px)",
 				sm: "calc(var(--radius) - 4px)",
+				'2xl': '1rem',
+				'3xl': '1.5rem',
 			},
 			fontFamily: {
 				ttfirs: ["TT Firs Neue", "sans-serif"],
 				sourceCode: ["Source Code Pro", "sans-serif"],
 				abeezee: ['ABeeZee', 'sans-serif'],
+				dmSans: ['DM Sans', 'sans-serif'],
+				dmMono: ['DM Mono', 'monospace'],
+				syne: ['Syne', 'sans-serif'],
+			},
+			keyframes: {
+				blink: {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0' },
+				},
+				rotateGlow: {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' },
+				},
+				float: {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' },
+				},
+			},
+			animation: {
+				blink: 'blink 1s step-end infinite',
+				rotateGlow: 'rotateGlow 3s linear infinite',
+				float: 'float 3s ease-in-out infinite',
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

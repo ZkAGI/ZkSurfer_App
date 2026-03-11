@@ -165,7 +165,7 @@ function calcSize(price: number, leverage: number = 1) {
   // 1) maximum notional you can open on‑chain
   const maxNotional = availableMargin * leverage;
 
-  // 2) cap by your strategy’s base USD cap
+  // 2) cap by your strategy's base USD cap
   const strategyNotional = Math.min(BASE_USD_CAP * leverage, maxNotional);
 
   // 3) convert dollars to coins
@@ -412,24 +412,40 @@ const hourlyFc = reportData?.forecastTodayHourly?.[selectedAsset] ?? [];
             <>
                 {/* overlay */}
                 <div
-                    className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity ${isOpen ? 'opacity-100 z-40' : 'opacity-0 -z-10'
-                        }`}
-                    aria-hidden
+                    className={`fixed inset-0 ${isOpen ? 'report-overlay report-overlay-open z-40' : 'opacity-0 -z-10'}`}
+                    aria-hidden="true"
                 />
                 {/* sliding panel */}
                 <div
                     ref={panelRef}
                     className={`
-                        fixed inset-y-0 right-0 ${isMobile ? 'w-full' : 'w-3/5'} bg-[#0a1628] 
-                        transform transition-transform duration-300 ease-in-out
-                        ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-                        flex flex-col shadow-xl z-50 text-white
+                        fixed inset-y-0 right-0 ${isMobile ? 'w-full' : 'w-5/6'}
+                        ${isOpen ? 'report-panel-open' : 'translate-x-full'}
+                        report-panel flex flex-col z-50 text-white
                     `}
                 >
                     <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mb-4"></div>
-                            <p>Loading report data...</p>
+                        <div className="text-center animate-fadeIn">
+                            <div className="relative w-16 h-16 mx-auto mb-5">
+                                <div className="absolute inset-0 rounded-full animate-spin" style={{
+                                    border: '2px solid rgba(124,106,247,0.1)',
+                                    borderTopColor: '#a78bfa',
+                                }} />
+                                <div className="absolute inset-2 rounded-full animate-spin" style={{
+                                    border: '2px solid rgba(124,106,247,0.05)',
+                                    borderBottomColor: '#7c6af7',
+                                    animationDirection: 'reverse',
+                                    animationDuration: '1.5s',
+                                }} />
+                            </div>
+                            <p className="text-sm font-dmSans text-dsMuted">Loading report data...</p>
+                            <div className="mt-3 flex items-center justify-center gap-1">
+                                {[0, 1, 2].map(i => (
+                                    <div key={i} className="w-1.5 h-1.5 rounded-full bg-dsPurple-light" style={{
+                                        animation: `breathe 1.4s ease-in-out ${i * 0.2}s infinite`,
+                                    }} />
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -636,384 +652,378 @@ const payload: PlaceOrderBody = {
         <>
             {/* overlay */}
             <div
-                className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity ${isOpen ? 'opacity-100 z-40' : 'opacity-0 -z-10'
-                    }`}
-                aria-hidden
+                className={`fixed inset-0 transition-all duration-300 ${isOpen ? 'report-overlay report-overlay-open z-40' : 'opacity-0 -z-10'}`}
+                aria-hidden="true"
             />
             {/* sliding panel */}
             <div
                 ref={panelRef}
                 className={`
-                    fixed inset-y-0 right-0 ${isMobile ? 'w-full' : 'w-5/6'} bg-[#0a1628] 
-                    transform transition-transform duration-300 ease-in-out
+                    fixed inset-y-0 right-0 ${isMobile ? 'w-full' : 'w-5/6'}
+                    transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
                     ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-                    flex flex-col shadow-xl z-50 text-white
+                    report-panel flex flex-col z-50 text-white font-dmSans
                 `}
             >
                 {/* Header */}
-              <header className="relative p-6 border-b border-gray-700 pt-[calc(1rem+env(safe-area-inset-top))]">
-  <div className="flex flex-wrap items-center gap-3">
-    {/* Brand (left) */}
-    <div className="flex items-center space-x-2 shrink-0">
-      <Image src="images/tiger.svg" alt="logo" width={40} height={40} className="p-2" />
+              <header className={`relative px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] report-header ${isPastData(data) ? 'report-header-past' : ''}`}>
+  {/* Ambient glow */}
+  <div className="absolute -top-20 -right-20 w-60 h-60 pointer-events-none" style={{
+    background: 'radial-gradient(ellipse at center, rgba(124,106,247,0.08), transparent 70%)',
+    filter: 'blur(60px)',
+  }} />
+
+  <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
+    {/* Brand + Badge */}
+    <div className="flex items-center space-x-3 shrink-0 animate-fadeIn">
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center p-1" style={{
+        background: 'linear-gradient(135deg, rgba(124,106,247,0.2), rgba(167,139,250,0.1))',
+        border: '1px solid rgba(124,106,247,0.25)',
+        boxShadow: '0 0 20px -5px rgba(124,106,247,0.2)',
+      }}>
+        <Image src="images/tiger.svg" alt="logo" width={24} height={24} />
+      </div>
       <div>
-        <h1 className="text-lg font-bold">ZkAGI Newsroom</h1>
-        {isPastData(data) && <p className="text-xs text-blue-400">Historical Data</p>}
+        <h1 className="text-base font-syne font-bold tracking-tight text-white">
+          {isPastData(data) ? 'Historical Report' : 'ZkAGI Newsroom'}
+        </h1>
+        <p className="text-xs font-dmMono text-dsMuted">{getCurrentDate()}</p>
       </div>
     </div>
 
-    {/* Controls — to the LEFT of the title on desktop */}
-    <div className="w-full md:w-auto md:ml-6 flex items-center gap-2 shrink-0">
-      <select
-        value={selectedAsset}
-        onChange={(e) => setSelectedAsset(e.target.value as 'BTC' | 'ETH' | 'SOL')}
-        className="flex-1 md:flex-none bg-[#1a2332] text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+    {/* Live indicator + Close button */}
+    <div className="flex items-center gap-3">
+      {!isPastData(data) && (
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full animate-fadeIn" style={{
+          background: 'rgba(52,211,153,0.08)',
+          border: '1px solid rgba(52,211,153,0.15)',
+        }}>
+          <div className="report-live-pulse" />
+          <span className="text-[10px] font-dmMono font-semibold text-dsGreen">LIVE</span>
+        </div>
+      )}
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="report-close-btn"
       >
-        <option value="BTC">BTC</option>
-        <option value="ETH">ETH</option>
-        <option value="SOL">SOL</option>
-      </select>
+        <IoMdClose size={18} />
+      </button>
+    </div>
+  </div>
 
-      {/* <Link
-        href="/predictions"
-        target="_blank"
-        className="flex-1 md:flex-none inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-      >
-        Place Trade
-      </Link> */}
-      <Link
-  href={{ pathname: '/predictions', query: { uid } }}
-  target="_blank"
-  className="flex-1 md:flex-none inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-  aria-disabled={!uid}
-  onClick={(e) => { if (!uid) e.preventDefault(); }} // prevent navigating if wallet not ready
-  title={uid ? '' : 'Connect wallet first'}
->
-  Place Trade
-</Link>
+  {/* Controls row */}
+  <div className="flex items-center gap-2.5 flex-wrap relative z-10 animate-slideUp">
+    {/* Asset selector tabs */}
+    <div className="flex rounded-xl overflow-hidden" style={{
+      border: '1px solid rgba(255,255,255,0.08)',
+      background: 'rgba(255,255,255,0.02)',
+    }}>
+      {(['BTC', 'ETH', 'SOL'] as const).map(asset => (
+        <button
+          key={asset}
+          onClick={() => setSelectedAsset(asset)}
+          className={`report-asset-tab ${selectedAsset === asset ? 'active' : ''}`}
+        >
+          {asset}
+        </button>
+      ))}
     </div>
 
-    {/* Title + date — sits to the LEFT of the close on desktop & right-aligned */}
-    <div className="w-full md:w-auto md:ml-auto md:text-right">
-      <h2 className="text-lg font-bold">{getReportTitle()}</h2>
-      <p className="text-sm text-gray-400">{getCurrentDate()}</p>
+    {isPastData(data) && (
+      <span className="report-badge report-badge-historical">Historical</span>
+    )}
+
+    {/* Sentiment badge */}
+    <span className={`report-badge ${isBullish ? 'report-badge-bullish' : isBearish ? 'report-badge-bearish' : 'report-badge-neutral'}`}>
+      {isBullish ? '↑' : isBearish ? '↓' : '→'} {marketLabel}
+    </span>
+
+    <div className="ml-auto flex items-center gap-2">
+      {!isPastData(data) && (
+        <Link
+          href={{ pathname: '/predictions', query: { uid } }}
+          target="_blank"
+          className="report-trade-btn"
+          aria-disabled={!uid}
+          onClick={(e) => { if (!uid) e.preventDefault(); }}
+          title={uid ? '' : 'Connect wallet first'}
+        >
+          Place Trade
+        </Link>
+      )}
     </div>
-
-    {/* Close — rightmost on desktop */}
-    <button
-      onClick={onClose}
-      className="hidden md:inline-flex ml-2 text-gray-400 hover:text-white shrink-0"
-      aria-label="Close"
-    >
-      <IoMdClose size={22} />
-    </button>
-
-    {/* Close — pinned top-right on mobile */}
-    <button
-      onClick={onClose}
-      className="md:hidden absolute top-3 right-3 pr-[env(safe-area-inset-right)] text-gray-400 hover:text-white"
-      aria-label="Close"
-    >
-      <IoMdClose size={24} />
-    </button>
   </div>
 </header>
 
 
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6" data-pdf-content>
-                    {/* Top Section: Prediction Accuracy and 4 Cards Side by Side */}
-                    <section className={`${isMobile ? 'flex-col space-y-4' : 'grid grid-cols-3 gap-6'}`}>
-                        {/* Prediction Accuracy Chart - Left Side */}
-                        <div className="col-span-2 bg-[#1a2332] rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <span className="text-sm text-gray-300">
-                                    {isPastData(data) ? 'Historical Analysis' : 'Prediction Accuracy'}
-                                </span>
-                                <span className="text-green-400 font-bold">
-                                    {/* {isPastData(data) ? 'ARCHIVE' : `${rawAcc}%`} */}
-                                      {isPastData(data)
-    ? 'ARCHIVE'
-    : formattedAccuracyDisplay}
-                                </span>
-                            </div>
+                <div className="flex-1 overflow-y-auto report-scroll" data-pdf-content>
 
-                            {/* Price Chart or Historical Notice */}
-                            {!isPastData(data) ? (
-                                <PriceChart
-                                    priceHistory={reportData.priceHistoryLast7Days || []}
-                                    forecast={reportData.forecastNext3Days || []}
-                                    // hourlyForecast={reportData.forecastTodayHourly || []}
-                                    hourlyForecast={reportData.forecastTodayHourly?.[selectedAsset] || []}
-    selectedAsset={selectedAsset}
-    onAssetChange={setSelectedAsset}
-                                />
-                            ) : (
-                                // <div className="h-40 flex items-center justify-center bg-gray-800/50 rounded-lg">
-                                //     <div className="text-center">
-                                //         <div className="text-4xl mb-2">📊</div>
-                                //         <p className="text-gray-400 text-sm">Historical Report</p>
-                                //         <p className="text-xs text-gray-500">
-                                //             {new Date(data.fetched_date).toLocaleDateString()}
-                                //         </p>
-                                //     </div>
-                                // </div>
-                                <section className="">
-  {/* Chart on the left */}
-  {/* <div className="col-span-1 bg-[#1a2332] rounded-lg p-4">
-    <span className="text-sm text-gray-300">Today’s Hourly Forecast</span>
-    <PriceChart
-      priceHistory={reportData.priceHistoryLast7Days}
-      forecast={reportData.forecastNext3Days}
-      hourlyForecast={reportData.forecastTodayHourly}
-    />
-  </div> */}
-
-  {/* Table on the right */}
-  <div className="col-span-1 bg-[#1a2332] rounded-lg p-4">
-    <span className="text-sm text-gray-300">Hourly Breakdown</span>
-    {/* <HourlyPredictionsTable
-      hourlyForecast={reportData.forecastTodayHourly ?? []}
-      className="mt-2"
-    /> */}
-    <HourlyPredictionsTable
-    hourlyForecast={reportData.forecastTodayHourly?.[selectedAsset] ?? []}
-    className="mt-2"
-/>
-  </div>
-</section>
-
-                            )}
-                        </div>
-
-{/* 3 Cards - Right Side - Single Column Layout */}
-<div className={`flex-1 ${isMobile ? 'flex flex-col gap-2' : 'flex flex-col gap-4 h-full'}`}>
-    {/* BTC PRICE CARD */}
-    <div className="bg-[#1a2332] rounded-lg p-4 text-center flex flex-col justify-center min-h-[120px]">
-        {loadingBtc ? (
-            <div className="text-gray-400">Loading…</div>
-        ) : (
-            <>
-                <div className="text-2xl font-bold">
-                    ${btcPrice?.toLocaleString()}
-                </div>
-                <div className={`text-sm ${(btcChange ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {btcChange! >= 0 ? '+' : ''}
-                    {btcChange?.toFixed(2)}%
-                </div>
-            </>
-        )}
-        <div className="text-xs text-gray-400">
-            {isPastData(data) ? 'BTC (Current)' : 'BTC'}
-        </div>
-    </div>
-
-    {/* <button
-  onClick={handleManualTrade}
-  disabled={placing}
-  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded disabled:opacity-50"
->
-  {placing ? 'Placing…' : 'Test Trade (HL Testnet)'}
-</button> */}
-
-    {/* MARKET SENTIMENT */}
-    <div className="bg-[#1a2332] rounded-lg p-4 text-center flex flex-col justify-center min-h-[120px]">
-        <div className="text-3xl">{marketEmoji}</div>
-        <div className={`${marketColor} font-bold text-sm`}>
-            {marketLabel}
-        </div>
-        <div className="text-xs text-gray-400">
-            {isPastData(data) ? 'HISTORICAL SENTIMENT' : 'MARKET SENTIMENT'}
-        </div>
-    </div>
-
-    {/* SENTIMENT GAUGE */}
-    <div className="bg-[#1a2332] rounded-lg p-2 flex flex-col items-center justify-center flex-1">
-        <Gauge
-            value={avgSentiment}
-            min={0}
-            max={5}
-            size={280}
-        />
-    </div>
-     {!isPastData(data) && reportData.forecastTodayHourly && (
-        <div>
-        {/* <HourlyPredictionsTable 
-            hourlyForecast={reportData.forecastTodayHourly}
-            className="mt-4"
-        /> */}
-        <HourlyPredictionsTable
-    hourlyForecast={reportData.forecastTodayHourly?.[selectedAsset] ?? []}
-    className="mt-4"
-/>
-         <TradingIntegration
-        // hourlyForecast={hourlyFc}
-            hourlyForecast={reportData.forecastTodayHourly?.[selectedAsset] ?? []}
-        onTradesUpdate={setTrades}
-      />
-        </div>
-    )}
-</div>
-                        {/* 4 Cards - Right Side */}
-                        {/* <div className={`flex-1 ${isMobile ? 'grid grid-cols-2 gap-2' : 'grid grid-cols-2 grid-rows-2 gap-4 h-full'}`}>
-                            {/* BTC PRICE CARD 
-                            <div className="bg-[#1a2332] rounded-lg p-4 text-center flex flex-col justify-center min-h-[120px]">
-                                {loadingBtc ? (
-                                    <div className="text-gray-400">Loading…</div>
-                                ) : (
-                                    <>
-                                        <div className="text-2xl font-bold">
-                                            ${btcPrice?.toLocaleString()}
-                                        </div>
-                                        <div className={`text-sm ${(btcChange ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                            {btcChange! >= 0 ? '+' : ''}
-                                            {btcChange?.toFixed(2)}%
-                                        </div>
-                                    </>
-                                )}
-                                <div className="text-xs text-gray-400">
-                                    {isPastData(data) ? 'BTC (Current)' : 'BTC'}
+                    {/* ── Stats Grid ── */}
+                    <div className="px-5 py-4 report-content-glow" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-3`}>
+                            {/* Price */}
+                            <div className="report-stat-card report-stagger-1">
+                                <div className="report-section-header mb-2">{selectedAsset} Price</div>
+                                <div className="report-stat-value text-xl">
+                                    {loadingBtc ? (
+                                        <div className="skeleton h-6 w-24 rounded-md" />
+                                    ) : `$${btcPrice?.toLocaleString()}`}
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-[11px] font-bold font-dmMono" style={{
+                                        color: (btcChange ?? 0) >= 0 ? '#34d399' : '#f87171',
+                                    }}>
+                                        {!loadingBtc && `${btcChange! >= 0 ? '+' : ''}${btcChange?.toFixed(2)}%`}
+                                    </span>
+                                    <span className="text-[9px] uppercase tracking-widest text-dsMuted">24h</span>
                                 </div>
                             </div>
 
-                            {/* MARKET SENTIMENT 
-                            <div className="bg-[#1a2332] rounded-lg p-4 text-center flex flex-col justify-center min-h-[120px]">
-                                <div className="text-3xl">{marketEmoji}</div>
-                                <div className={`${marketColor} font-bold text-sm`}>
+                            {/* Sentiment Score */}
+                            <div className="report-stat-card report-stagger-2">
+                                <div className="report-section-header mb-2">Fear & Greed</div>
+                                <div className="flex items-center gap-3">
+                                    <Gauge value={avgSentiment} min={0} max={5} size={48} />
+                                    <div>
+                                        <div className="report-stat-value text-lg">{avgSentiment.toFixed(2)}</div>
+                                        <div className="text-[9px] uppercase tracking-widest text-dsMuted">/5.00</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Market Sentiment */}
+                            <div className="report-stat-card report-stagger-3" style={{
+                                borderColor: isBullish ? 'rgba(52,211,153,0.15)' : isBearish ? 'rgba(248,113,113,0.15)' : 'rgba(245,158,11,0.15)',
+                            }}>
+                                <div className="report-section-header mb-2">
+                                    {isPastData(data) ? 'Historical' : 'Market'} Sentiment
+                                </div>
+                                <div className={`text-lg font-syne font-extrabold tracking-wider ${marketColor}`}>
                                     {marketLabel}
                                 </div>
-                                <div className="text-xs text-gray-400">
-                                    {isPastData(data) ? 'HISTORICAL SENTIMENT' : 'MARKET SENTIMENT'}
+                                <div className="mt-1.5 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                                    <div className="h-full rounded-full transition-all duration-700" style={{
+                                        width: `${(avgSentiment / 5) * 100}%`,
+                                        background: isBullish ? 'linear-gradient(90deg, #059669, #34d399)' : isBearish ? 'linear-gradient(90deg, #dc2626, #f87171)' : 'linear-gradient(90deg, #d97706, #f59e0b)',
+                                    }} />
                                 </div>
                             </div>
 
-                            {/* SENTIMENT GAUGE 
-                            <div className="col-span-2 bg-[#1a2332] rounded-lg p-2 flex flex-col items-center justify-center">
-                                <Gauge
-                                    value={avgSentiment}
-                                    min={0}
-                                    max={5}
-                                    size={280}
-                                />
+                            {/* Accuracy / Coverage */}
+                            <div className="report-stat-card report-stagger-4">
+                                {isPastData(data) ? (
+                                    <>
+                                        <div className="report-section-header mb-2">Coverage</div>
+                                        <div className="report-stat-value text-lg" style={{ color: '#a78bfa' }}>
+                                            {[...reportData.todaysNews.crypto, ...reportData.todaysNews.macro].length}
+                                        </div>
+                                        <div className="text-[10px] text-dsMuted mt-0.5">articles analyzed</div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="report-section-header mb-2">Accuracy</div>
+                                        <div className="report-stat-value text-lg" style={{ color: '#34d399' }}>
+                                            {formattedAccuracyDisplay || 'N/A'}
+                                        </div>
+                                        <div className="text-[10px] text-dsMuted mt-0.5">prediction rate</div>
+                                    </>
+                                )}
                             </div>
-                        </div> */}
-                    </section>
+                        </div>
+                    </div>
 
-                    {/* Bottom Section: News */}
-                    <section className={`${isMobile ? 'flex-col space-y-4' : 'flex gap-6'}`}>
-                        {/* Left Column - News Impact & Trending News */}
-                        <div className="flex-[2] space-y-6">
-                            {/* News Impact */}
-                            {/* <div>
-                                <div className="flex items-center space-x-2 mb-4">
-                                    <span className="text-lg">📢</span>
-                                    <h3 className="font-bold">
-                                        {isPastData(data) ? 'HISTORICAL NEWS IMPACT' : 'NEWS IMPACT'}
-                                    </h3>
+                    {/* ── Main Content ── */}
+                    <div className="p-5 space-y-5">
+
+                    {/* Chart + Right Panel */}
+                    <section className={`${isMobile ? 'space-y-4' : 'grid grid-cols-3 gap-4'}`} style={{ animation: 'cardStagger 0.5s ease-out 0.15s backwards' }}>
+                        {/* Chart / Hourly */}
+                        <div className="col-span-2 report-section-card">
+                            <div className="flex items-center justify-between px-5 pt-4 pb-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-dsPurple-light" />
+                                    <span className="report-section-header">
+                                        {isPastData(data) ? `${selectedAsset} Hourly Breakdown` : 'Prediction Accuracy'}
+                                    </span>
                                 </div>
-
-                                <div className={`${isMobile ? 'grid grid-cols-1 gap-2 mb-4' : 'grid grid-cols-4 gap-4 mb-4 h-16'}`}>
-                                  
-                                    <div className="col-span-2 bg-[#1a2332] rounded-lg p-4 h-full flex items-center justify-between">
-                                        <TwoLineTitle>
-                                            {reportData.newsImpact[0].title.toUpperCase()}
-                                        </TwoLineTitle>
-                                        <span className={`text-3xl ${reportData.newsImpact[0].sentiment === 'bullish' ? 'text-green-400' : 'text-red-400'}`}>
-                                            {reportData.newsImpact[0].sentiment === 'bullish' ? '↗' : '↘'}
-                                        </span>
-                                    </div>
-
-                    
-                                    <div className="bg-[#1a2332] rounded-lg p-4 text-center">
-                                        <div className="text-gray-300 text-xs mb-2">VOLATILITY</div>
-                                        <div className="text-white font-bold text-lg">{reportData.volatility.toUpperCase()}</div>
-                                    </div>
-
-                                    <div className="bg-[#1a2332] rounded-lg p-4 text-center">
-                                        <div className="text-gray-300 text-xs mb-2">LIQUIDITY</div>
-                                        <div className="text-white font-bold text-lg">{reportData.liquidity.toUpperCase()}</div>
-                                    </div>
-                                </div>
-                            </div> */}
-
-                            {/* Trending News */}
-                            <section className="">
-                                <div className="flex items-center space-x-2 my-4">
-                                    <span className="text-lg">🚀</span>
-                                    <h3 className="font-bold">
-                                        {isPastData(data) ? 'HISTORICAL NEWS' : 'TRENDING NEWS'}
-                                    </h3>
-                                </div>
-
-                                <div className="space-y-3 max-h-96 overflow-y-auto">
-                                    {[
-                                        ...reportData.todaysNews.crypto,
-                                        ...reportData.todaysNews.macro
-                                    ].map(item => (
-                                        <NewsCard key={item.news_id} item={item} />
-                                    ))}
-                                </div>
-                            </section>
+                                {formattedAccuracyDisplay && !isPastData(data) && (
+                                    <span className="report-badge report-badge-bullish">
+                                        {formattedAccuracyDisplay}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="px-5 pb-5">
+                                {!isPastData(data) ? (
+                                    <PriceChart
+                                        priceHistory={reportData.priceHistoryLast7Days || []}
+                                        forecast={reportData.forecastNext3Days || []}
+                                        hourlyForecast={reportData.forecastTodayHourly?.[selectedAsset] || []}
+                                        selectedAsset={selectedAsset}
+                                        onAssetChange={setSelectedAsset}
+                                    />
+                                ) : (
+                                    <HourlyPredictionsTable
+                                        hourlyForecast={reportData.forecastTodayHourly?.[selectedAsset] ?? []}
+                                    />
+                                )}
+                            </div>
                         </div>
 
-                        {/* Right Column - What's New & Recommendations */}
-                        {(reportData.whatsNew.length > 0 || reportData.recommendations.length > 0) && (
-                            <div className="flex-1 space-y-6">
-                                {/* WHAT'S NEW */}
-                                {reportData.whatsNew.length > 0 && (
-                                    <div className="bg-[#1a2332] rounded-lg p-4">
-                                        <div className="flex items-center space-x-2 mb-4">
-                                            <span className="text-lg">⚙️</span>
-                                            <h3 className="font-bold">
-                                                {isPastData(data) ? 'ARCHIVE INFO' : "WHAT'S NEW"}
-                                            </h3>
-                                        </div>
-                                        <ul className="space-y-2 text-sm mb-4">
-                                            {reportData.whatsNew.map((item, i) => (
-                                                <li key={i} className="flex items-start space-x-2">
-                                                    <span className="text-green-400">•</span>
-                                                    <span>{item.text}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <div className="flex justify-end">
-                                            <Image src="/images/tiger.png" alt="" width={40} height={40} />
-                                        </div>
+                        {/* Right column */}
+                        <div className="flex flex-col gap-3">
+                            {/* Past: asset buttons */}
+                            {isPastData(data) && (
+                                <div className="report-section-card p-4">
+                                    <div className="report-section-header mb-3">
+                                        Forecasts by Asset
                                     </div>
-                                )}
+                                    <div className="grid grid-cols-3 gap-2 text-center">
+                                        {(['BTC', 'ETH', 'SOL'] as const).map(asset => {
+                                            const count = reportData.forecastTodayHourly?.[asset]?.length ?? 0;
+                                            const active = selectedAsset === asset;
+                                            return (
+                                                <button key={asset} onClick={() => setSelectedAsset(asset)}
+                                                    className={`report-forecast-btn ${active ? 'active' : ''}`}>
+                                                    <div className="text-lg font-bold font-dmMono" style={{
+                                                        color: active ? '#a78bfa' : '#e2e8f0',
+                                                    }}>{count}</div>
+                                                    <div className="text-[9px] font-semibold tracking-wider" style={{
+                                                        color: active ? '#a78bfa' : '#6b7280',
+                                                    }}>{asset}</div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
 
-                                {/* RECOMMENDATIONS */}
-                                {reportData.recommendations.length > 0 && (
-                                    <div className="space-y-4">
-                                        {reportData.recommendations.map((rec, i) => (
-                                            <div
-                                                key={i}
-                                                className={`bg-[#1a2332] rounded-lg p-4 border-l-4 ${rec.borderClass}`}
-                                            >
-                                                <div className="flex items-center space-x-2 mb-2">
-                                                    <span className={`w-2 h-2 rounded-full ${rec.dotClass}`}></span>
-                                                    <span className={`font-bold ${rec.textClass}`}>{rec.label}</span>
-                                                </div>
-                                                <ul className="text-xs space-y-1">
-                                                    {rec.items.map((item, idx) => (
-                                                        <li key={idx}>
-                                                            {item.symbol} – TARGET: {item.target}
-                                                        </li>
-                                                    ))}
-                                                </ul>
+                            {/* Past: news counts */}
+                            {isPastData(data) && (
+                                <div className="report-section-card p-4">
+                                    <div className="report-section-header mb-3">Summary</div>
+                                    <div className="space-y-0.5">
+                                    {[
+                                        { label: 'Crypto News', val: reportData.todaysNews.crypto.length, color: '#34d399', icon: '●' },
+                                        { label: 'Macro News', val: reportData.todaysNews.macro.length, color: '#f59e0b', icon: '●' },
+                                        { label: 'Sentiment', val: `${avgSentiment.toFixed(1)}/5`, color: isBullish ? '#34d399' : isBearish ? '#f87171' : '#f59e0b', icon: '◆' },
+                                    ].map((r, i) => (
+                                        <div key={r.label} className="flex items-center justify-between py-2 group" style={{
+                                            borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                        }}>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[8px]" style={{ color: r.color }}>{r.icon}</span>
+                                                <span className="text-[11px] text-dsMuted group-hover:text-white transition-colors">{r.label}</span>
                                             </div>
-                                        ))}
+                                            <span className="text-xs font-bold font-dmMono" style={{ color: r.color }}>{r.val}</span>
+                                        </div>
+                                    ))}
                                     </div>
-                                )}
-                            </div>
-                        )}
+                                </div>
+                            )}
+
+                            {/* Live: Gauge + Hourly + Trading */}
+                            {!isPastData(data) && (
+                                <>
+                                    {reportData.forecastTodayHourly && (
+                                        <div className="report-section-card overflow-hidden">
+                                            <HourlyPredictionsTable
+                                                hourlyForecast={reportData.forecastTodayHourly?.[selectedAsset] ?? []}
+                                            />
+                                            <TradingIntegration
+                                                hourlyForecast={reportData.forecastTodayHourly?.[selectedAsset] ?? []}
+                                                onTradesUpdate={setTrades}
+                                            />
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </section>
+
+                    {/* ── News ── */}
+                    <section style={{ animation: 'cardStagger 0.5s ease-out 0.25s backwards' }}>
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className="w-1 h-4 rounded-full bg-gradient-to-b from-dsPurple-light to-dsPurple" />
+                            <h3 className="report-section-header">
+                                {isPastData(data) ? 'Historical News' : 'Trending News'}
+                            </h3>
+                            <span className="ds-badge-number text-[10px] font-bold px-2.5 py-0.5 rounded-full" style={{
+                                background: 'rgba(124,106,247,0.1)',
+                                border: '1px solid rgba(124,106,247,0.15)',
+                                color: '#a78bfa',
+                            }}>
+                                {[...reportData.todaysNews.crypto, ...reportData.todaysNews.macro].length}
+                            </span>
+                        </div>
+
+                        <div className={`${isMobile ? 'space-y-3' : 'grid grid-cols-2 gap-3'} max-h-[400px] overflow-y-auto report-scroll pr-1`}>
+                            {[...reportData.todaysNews.crypto, ...reportData.todaysNews.macro].map((item, idx) => (
+                                <div key={item.news_id} style={{ animation: `cardStagger 0.4s ease-out ${0.05 * Math.min(idx, 8)}s backwards` }}>
+                                    <NewsCard item={item} />
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* What's New / Recommendations */}
+                    {(reportData.whatsNew.length > 0 || reportData.recommendations.length > 0) && (
+                        <section className={`${isMobile ? 'space-y-3' : 'grid grid-cols-2 gap-3'}`} style={{ animation: 'cardStagger 0.5s ease-out 0.35s backwards' }}>
+                            {reportData.whatsNew.length > 0 && (
+                                <div className="report-section-card p-5">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-1 h-4 rounded-full bg-dsGreen" />
+                                        <div className="report-section-header">
+                                            {isPastData(data) ? 'Archive' : "What's New"}
+                                        </div>
+                                    </div>
+                                    <ul className="space-y-2 text-xs">
+                                        {reportData.whatsNew.map((item, i) => (
+                                            <li key={i} className="flex items-start gap-2 group">
+                                                <span className="mt-1 w-1.5 h-1.5 rounded-full bg-dsGreen shrink-0 group-hover:shadow-[0_0_8px_rgba(52,211,153,0.5)] transition-shadow" />
+                                                <span className="text-[#c9d1d9] leading-relaxed">{item.text}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {reportData.recommendations.length > 0 && (
+                                <div className="space-y-2">
+                                    {reportData.recommendations.map((rec, i) => (
+                                        <div key={i} className="report-section-card p-4 transition-all hover:translate-x-1" style={{
+                                            borderLeft: '3px solid',
+                                            borderLeftColor: rec.dotClass?.includes('green') ? '#34d399' : rec.dotClass?.includes('red') ? '#f87171' : '#f59e0b',
+                                        }}>
+                                            <div className="flex items-center gap-2 mb-1.5">
+                                                <span className={`w-2 h-2 rounded-full ${rec.dotClass}`} />
+                                                <span className={`font-bold text-xs ${rec.textClass}`}>{rec.label}</span>
+                                            </div>
+                                            <ul className="text-[11px] space-y-1 text-dsMuted">
+                                                {rec.items.map((item, idx) => (
+                                                    <li key={idx} className="flex items-center gap-1.5">
+                                                        <span className="text-[8px] text-dsMuted">▸</span>
+                                                        {item.symbol} – {item.target}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+                    )}
+
+                    </div>
                 </div>
 
-                {/* Footer with Download PDF */}
-                <footer className="p-4 border-t border-gray-700">
+                {/* ── Footer ── */}
+                <footer className="px-5 py-3" style={{
+                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    background: 'linear-gradient(180deg, rgba(11,14,23,0.8), rgba(11,14,23,1))',
+                }}>
                     <button
-                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors"
+                        className="report-download-btn"
                         onClick={async () => {
                             try {
                                 const html2canvas = (await import('html2canvas')).default;
@@ -1087,7 +1097,7 @@ const payload: PlaceOrderBody = {
 
                                 pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, finalHeight);
 
-                                const dateStr = isPastData(data) 
+                                const dateStr = isPastData(data)
                                     ? new Date(data.fetched_date).toISOString().split('T')[0]
                                     : new Date().toISOString().split('T')[0];
                                 const reportType = isPastData(data) ? 'Historical' : 'Daily';

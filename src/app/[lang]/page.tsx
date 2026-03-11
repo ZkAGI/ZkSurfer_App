@@ -21,26 +21,16 @@
 
 
 import type { NextPage } from 'next';
-import HomeContent, { HomeContentProps } from './home/HomeContent';
-import { getDictionary } from '../i18n/dictionaries';
-import { Locale } from '../i18n/settings';
+import HomeContent from './home/HomeContent';
 
 interface HomePageProps {
-  params: {
-    lang: Locale;
-  };
+  params: Promise<{
+    lang: string;
+  }>;
 }
 
-const Home: NextPage<HomePageProps> = async ({ params }) => {
-  // Get the dictionary for the current locale
-  const dictionary = await getDictionary(params.lang);
-
-  // Cast the dictionary to the expected type
-  // This assumes that the actual structure is compatible
-  const typedDictionary = dictionary as HomeContentProps['dictionary'];
-
-  // Pass the typed dictionary to your HomeContent component
-  return <HomeContent dictionary={typedDictionary} />;
+const Home: NextPage<HomePageProps> = async () => {
+  return <HomeContent />;
 };
 
 export default Home;

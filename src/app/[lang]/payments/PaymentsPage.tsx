@@ -2,19 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, useParams } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { FaCreditCard } from 'react-icons/fa';
-import ButtonV1New from '@/component/ui/buttonV1';
+import { CreditCard, ArrowLeft, Zap, History, Package, X, Loader2 } from 'lucide-react';
 
 interface RechargeOption {
   package: string;
   credits: string;
   price: string;
+  popular?: boolean;
 }
 
 const rechargeOptions: RechargeOption[] = [
   { package: '1', credits: '5,000',   price: '$10' },
-  { package: '2', credits: '10,000',  price: '$15' },
+  { package: '2', credits: '10,000',  price: '$15', popular: true },
   { package: '3', credits: '25,000',  price: '$30' },
   { package: '4', credits: '50,000',  price: '$50' },
   { package: '5', credits: '100,000', price: '$90' },
@@ -26,10 +27,14 @@ const PAYMENT_HISTORY_URL = 'https://zynapse.zkagi.ai/v1/payment-history';
 const API_KEY             = 'zk-123321';
 
 const PaymentsPage: React.FC = () => {
+  const router = useRouter();
+  const params = useParams();
+  const lang = params.lang as string || 'en';
   const { publicKey } = useWallet();
 
   const [activeTab,       setActiveTab]       = useState<'recharge'|'past'>('recharge');
   const [isModalOpen,     setIsModalOpen]     = useState(false);
+  const [selectedPkg,     setSelectedPkg]     = useState<RechargeOption | null>(null);
   const [pastPayments,    setPastPayments]    = useState<any[]>([]);
   const [loadingPast,     setLoadingPast]     = useState(false);
   const [errorPast,       setErrorPast]       = useState<string|null>(null);
@@ -60,13 +65,11 @@ const PaymentsPage: React.FC = () => {
         return res.json();
       })
       .then(data => {
-        // assume the response is an array, or adapt if it's nested
         if (Array.isArray(data)) {
           setPastPayments(data);
         } else if (Array.isArray(data.payments)) {
           setPastPayments(data.payments);
         } else {
-          // fallback: wrap object in array
           setPastPayments([data]);
         }
       })
@@ -77,117 +80,180 @@ const PaymentsPage: React.FC = () => {
       .finally(() => setLoadingPast(false));
   }, [activeTab, publicKey]);
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <header className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-semibold">Payments</h1>
-        {/* Sidebar link example */}
-        <Link href="/payments" className="flex items-center space-x-2 text-blue-600 hover:underline">
-          <FaCreditCard />
-          <span>Payments</span>
-        </Link>
-      </header>
+  const openBuyModal = (pkg: RechargeOption) => {
+    setSelectedPkg(pkg);
+    setIsModalOpen(true);
+  };
 
-      <div className="mb-6 border-b">
-        <button
-          className={`py-2 px-4 -mb-px font-medium ${
-            activeTab === 'recharge'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          }`}
-          onClick={() => setActiveTab('recharge')}
-        >
-          Recharge
-        </button>
-        <button
-          className={`py-2 px-4 -mb-px font-medium ${
-            activeTab === 'past'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          }`}
-          onClick={() => setActiveTab('past')}
-        >
-          Past Payments
-        </button>
+  return (
+    <div className="min-h-screen bg-dsBg">
+      {/* Header */}
+      <div className="ds-topbar sticky top-0 z-10">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push(`/${lang}/home`)}
+            className="w-9 h-9 rounded-lg bg-dsBorder/50 hover:bg-dsBorder flex items-center justify-center transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 text-dsMuted" />
+          </button>
+          <div className="w-10 h-10 rounded-xl bg-dsPurple/15 flex items-center justify-center">
+            <CreditCard className="w-5 h-5 text-dsPurple-light" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold text-white">Payments</h1>
+            <p className="text-xs text-dsMuted">Manage credits & payment history</p>
+          </div>
+        </div>
       </div>
 
-      {activeTab === 'recharge' && (
-        <div className="overflow-x-auto">
-          <table className="w-full bg-white rounded shadow-sm">
-            <thead>
-              <tr className="bg-gray-100 text-left">
-                <th className="px-6 py-3">Package</th>
-                <th className="px-6 py-3">Credits</th>
-                <th className="px-6 py-3">Price</th>
-                <th className="px-6 py-3">Buy</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rechargeOptions.map(opt => (
-                <tr key={opt.package} className="border-t hover:bg-gray-50">
-                  <td className="px-6 py-3">{opt.package}</td>
-                  <td className="px-6 py-3">{opt.credits}</td>
-                  <td className="px-6 py-3 font-medium">{opt.price}</td>
-                  <td className="px-6 py-3">
-                    <ButtonV1New onClick={() => setIsModalOpen(true)}>
-                      Buy
-                    </ButtonV1New>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        {/* Tabs */}
+        <div className="ds-tabs mb-8">
+          <button
+            className={`ds-tab ${activeTab === 'recharge' ? 'active' : ''}`}
+            onClick={() => setActiveTab('recharge')}
+          >
+            <Zap className="w-4 h-4" />
+            Recharge Credits
+          </button>
+          <button
+            className={`ds-tab ${activeTab === 'past' ? 'active' : ''}`}
+            onClick={() => setActiveTab('past')}
+          >
+            <History className="w-4 h-4" />
+            Payment History
+          </button>
         </div>
-      )}
 
-      {activeTab === 'past' && (
-        <div>
-          {loadingPast && <p>Loading payment history…</p>}
-          {errorPast && <p className="text-red-500">Error: {errorPast}</p>}
-          {!loadingPast && !errorPast && pastPayments.length === 0 && (
-            <p className="text-gray-600">No past payments to display.</p>
-          )}
-          {!loadingPast && pastPayments.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full bg-white rounded shadow-sm">
-                <thead>
-                  <tr className="bg-gray-100 text-left">
-                    {/* adjust columns to your API’s fields */}
-                    {Object.keys(pastPayments[0]).map(key => (
-                      <th key={key} className="px-6 py-3">
-                        {key.replace(/_/g, ' ')}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {pastPayments.map((record, i) => (
-                    <tr key={i} className="border-t hover:bg-gray-50">
-                      {Object.values(record).map((val, j) => (
-                        <td key={j} className="px-6 py-3">
-                          {String(val)}
-                        </td>
+        {activeTab === 'recharge' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {rechargeOptions.map(opt => (
+              <div
+                key={opt.package}
+                className={`ds-card relative hover:border-dsPurple/50 transition-all cursor-pointer group ${
+                  opt.popular ? 'border-dsPurple/30' : ''
+                }`}
+                onClick={() => openBuyModal(opt)}
+              >
+                {opt.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="ds-badge-popular text-xs px-3 py-1">Most Popular</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-dsGreen/15 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-dsGreen" />
+                  </div>
+                  <span className="text-dsMuted text-sm">Package {opt.package}</span>
+                </div>
+                <div className="mb-2">
+                  <span className="text-3xl font-bold text-white">{opt.credits}</span>
+                  <span className="text-dsMuted ml-2">credits</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-semibold text-dsPurple-light">{opt.price}</span>
+                  <button className="ds-btn-primary text-sm py-2 px-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Buy Now
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'past' && (
+          <div className="ds-card">
+            {loadingPast && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 text-dsPurple animate-spin" />
+                <span className="ml-3 text-dsMuted">Loading payment history...</span>
+              </div>
+            )}
+            {errorPast && (
+              <div className="ds-alert-error">
+                <p>Error: {errorPast}</p>
+              </div>
+            )}
+            {!loadingPast && !errorPast && pastPayments.length === 0 && (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-2xl bg-dsBorder/50 flex items-center justify-center mx-auto mb-4">
+                  <History className="w-8 h-8 text-dsMuted" />
+                </div>
+                <p className="text-white font-medium mb-2">No Payment History</p>
+                <p className="text-dsMuted text-sm">Your past payments will appear here</p>
+              </div>
+            )}
+            {!loadingPast && pastPayments.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="ds-table">
+                  <thead>
+                    <tr>
+                      {Object.keys(pastPayments[0]).map(key => (
+                        <th key={key}>
+                          {key.replace(/_/g, ' ')}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+                  </thead>
+                  <tbody>
+                    {pastPayments.map((record, i) => (
+                      <tr key={i}>
+                        {Object.values(record).map((val, j) => (
+                          <td key={j}>
+                            {String(val)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-      {/* Empty modal placeholder for "Buy" (unchanged) */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg w-96 p-6 relative">
-            <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
-              onClick={() => setIsModalOpen(false)}
-            >
-              &times;
-            </button>
-            {/* …your existing purchase modal content… */}
+      {/* Purchase Modal */}
+      {isModalOpen && selectedPkg && (
+        <div className="ds-modal-backdrop">
+          <div className="ds-modal w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="ds-heading-md">Confirm Purchase</h2>
+              <button
+                className="w-9 h-9 rounded-lg bg-dsBorder/50 hover:bg-dsBorder flex items-center justify-center transition-colors"
+                onClick={() => setIsModalOpen(false)}
+              >
+                <X className="w-5 h-5 text-dsMuted" />
+              </button>
+            </div>
+
+            <div className="bg-dsBg rounded-xl p-4 mb-6 border border-dsBorder">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-dsMuted">Package</span>
+                <span className="text-white font-medium">Package {selectedPkg.package}</span>
+              </div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-dsMuted">Credits</span>
+                <span className="text-dsGreen font-bold">{selectedPkg.credits}</span>
+              </div>
+              <div className="flex items-center justify-between pt-3 border-t border-dsBorder">
+                <span className="text-dsMuted">Total</span>
+                <span className="text-2xl font-bold text-white">{selectedPkg.price}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                className="ds-btn-ghost flex-1"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button className="ds-btn-primary flex-1">
+                <CreditCard className="w-4 h-4" />
+                Pay {selectedPkg.price}
+              </button>
+            </div>
           </div>
         </div>
       )}

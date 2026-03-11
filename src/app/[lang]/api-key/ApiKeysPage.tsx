@@ -2,10 +2,10 @@
 import { useEffect, useState } from "react";
 import { RiDeleteBin5Fill, RiAddCircleFill } from "react-icons/ri";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useRouter } from "next/navigation";
-import ButtonV1New from "@/component/ui/buttonV1";
+import { useRouter, useParams } from "next/navigation";
 import { toast } from 'sonner';
 import { useModelStore } from "@/stores/useModel-store";
+import { Key, Plus, ArrowLeft, Wallet, Copy, Check, Trash2, Zap, X } from "lucide-react";
 
 const API_KEYS_URL = "https://zynapse.zkagi.ai/get-api-keys-by-wallet";
 const DELETE_API_KEY_URL = "https://zynapse.zkagi.ai/delete-api-key";
@@ -20,19 +20,22 @@ interface ApiKeysPageProps {
 export default function ApiKeysPage({ dictionary }: ApiKeysPageProps) {
     const { publicKey } = useWallet();
     const router = useRouter();
-    
+    const params = useParams();
+    const lang = params.lang as string || 'en';
+
     // Get values from store
     const globalCredits = useModelStore((s) => s.credits);
     const globalApiKey = useModelStore((s) => s.apiKey);
     const setGlobalCredits = useModelStore((s) => s.setCredits);
     const setGlobalApiKey = useModelStore((s) => s.setApiKey);
-    
+
     const [apiKeys, setApiKeys] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [authToken, setAuthToken] = useState<string | null>(null);
     const [showPurchaseModal, setShowPurchaseModal] = useState(false);
     const [purchaseAmount, setPurchaseAmount] = useState<number>(0);
     const [widgetUrl, setWidgetUrl] = useState<string | null>(null);
+    const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
     useEffect(() => {
         if (publicKey) {
@@ -177,6 +180,17 @@ export default function ApiKeysPage({ dictionary }: ApiKeysPageProps) {
         setShowPurchaseModal(true);
     };
 
+    const copyToClipboard = async (key: string) => {
+        try {
+            await navigator.clipboard.writeText(key);
+            setCopiedKey(key);
+            toast.success("API Key copied to clipboard!");
+            setTimeout(() => setCopiedKey(null), 2000);
+        } catch (err) {
+            toast.error("Failed to copy");
+        }
+    };
+
     const handleBuy = async () => {
         if (!publicKey) return;
         try {
@@ -193,9 +207,7 @@ export default function ApiKeysPage({ dictionary }: ApiKeysPageProps) {
                 }),
             });
             const { payment_url } = await res.json();
-            console.log("initiate-payment response:", payment_url);
 
-            // extract iid and build the embed URL
             const url = new URL(payment_url);
             const iid = url.searchParams.get("iid");
             if (iid) {
@@ -210,126 +222,130 @@ export default function ApiKeysPage({ dictionary }: ApiKeysPageProps) {
     };
 
     return (
-        <div className="pt-3 p-6 bg-[#000A19] text-white h-screen">
-            {/* Back and Create Buttons */}
-            <div className="flex justify-between items-center mb-4">
-                <button
-                    onClick={() => router.push("/")}
-                    className="text-lg font-semibold text-white"
-                >
-                    ←
-                </button>
-                <ButtonV1New onClick={createApiKey}>
-                    <div className="flex items-center gap-2">
-                        <div>Create</div>
+        <div className="min-h-screen bg-dsBg">
+            {/* Header */}
+            <div className="ds-topbar sticky top-0 z-10">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => router.push(`/${lang}/home`)}
+                        className="w-9 h-9 rounded-lg bg-dsBorder/50 flex items-center justify-center
+                                   text-dsMuted hover:text-white hover:bg-dsBorder transition-all"
+                    >
+                        <ArrowLeft size={18} />
+                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-dsPurple to-dsPurple-dark
+                                        flex items-center justify-center shadow-lg shadow-dsPurple/20">
+                            <Key size={16} className="text-white" />
+                        </div>
+                        <h1 className="ds-heading-md">API Keys</h1>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    {/* Credits Badge */}
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-dsBgAlt border border-dsBorder">
+                        <Wallet size={14} className="text-dsGreen" />
+                        <span className="font-dmMono text-dsGreen font-medium">
+                            {globalCredits?.toFixed(2) || "0.00"}
+                        </span>
+                        <span className="text-dsMuted text-sm">credits</span>
+                    </div>
+
+                    {/* Purchase Button */}
+                    <button
+                        onClick={purchase}
+                        className="ds-btn-primary"
+                    >
+                        <Zap size={16} />
+                        Buy Credits
+                    </button>
+
+                    {/* Create API Key Button */}
+                    <button
+                        onClick={createApiKey}
+                        className="ds-btn-secondary"
+                    >
+                        <Plus size={16} />
+                        Create Key
+                    </button>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="max-w-5xl mx-auto px-6 py-8">
+                {/* Info Banner */}
+                <div className="ds-card mb-8 border-dsPurple/20 bg-gradient-to-r from-dsPurple/5 to-transparent">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-dsPurple/15 flex items-center justify-center flex-shrink-0">
+                            <Key size={18} className="text-dsPurple-light" />
+                        </div>
                         <div>
-                            <RiAddCircleFill className="text-xl" />
+                            <h3 className="text-white font-semibold mb-1">API Key Security</h3>
+                            <p className="ds-body text-sm leading-relaxed">
+                                Your API keys grant access to ZkAGI services. Keep them secure and never share them publicly.
+                                Treat them like passwords - if compromised, delete and regenerate immediately.
+                            </p>
                         </div>
                     </div>
-                </ButtonV1New>
-            </div>
-
-            {/* Credits & Purchase Button */}
-            <div className="flex justify-between items-start">
-                <div>
-                    <h1 className="text-2xl font-bold">API Keys</h1>
                 </div>
-                <div className="flex gap-2 justify-end items-center mb-4">
-                    <div className="text-lg font-semibold bg-gray-800 text-white px-4 py-1 rounded">
-                        Credits: {globalCredits}
+
+                {/* Active Key Card */}
+                {globalApiKey && (
+                    <div className="ds-card mb-6 border-dsGreen/20">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-dsGreen animate-pulse" />
+                                <span className="text-sm font-medium text-dsGreen">Active API Key</span>
+                            </div>
+                            <button
+                                onClick={() => copyToClipboard(globalApiKey)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dsBorder/50
+                                           text-dsMuted hover:text-white hover:bg-dsBorder transition-all text-sm"
+                            >
+                                {copiedKey === globalApiKey ? <Check size={14} /> : <Copy size={14} />}
+                                {copiedKey === globalApiKey ? 'Copied!' : 'Copy'}
+                            </button>
+                        </div>
+                        <code className="block font-dmMono text-sm text-white/90 bg-dsBg/50 p-3 rounded-lg break-all border border-dsBorder/50">
+                            {globalApiKey}
+                        </code>
                     </div>
-                    <ButtonV1New onClick={purchase}>
-                        Purchase
-                    </ButtonV1New>
+                )}
 
-                    {showPurchaseModal && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                            <div className="bg-[#08131f] p-6 rounded-lg w-80">
-                                <h2 className="text-xl font-bold mb-4 text-white">Buy Credits</h2>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={purchaseAmount}
-                                    onChange={e => setPurchaseAmount(Number(e.target.value))}
-                                    placeholder="Amount in USD"
-                                    className="w-full mb-4 px-3 py-2 border rounded text-white bg-[#1f2937]"
-                                />
-                                <div className="flex justify-end space-x-2">
-                                    <button
-                                        onClick={() => setShowPurchaseModal(false)}
-                                        className="px-4 py-2 rounded bg-red-500 text-white"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleBuy}
-                                        className="px-4 py-2 bg-green-600 text-white rounded"
-                                    >
-                                        Buy
-                                    </button>
-                                </div>
+                {/* API Keys Table */}
+                <div className="ds-card overflow-hidden p-0">
+                    <div className="px-6 py-4 border-b border-dsBorder bg-dsBgAlt/50">
+                        <h3 className="ds-heading-sm">All API Keys</h3>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex items-center justify-center py-16">
+                            <div className="flex items-center gap-3 text-dsMuted">
+                                <div className="w-5 h-5 border-2 border-dsPurple/30 border-t-dsPurple rounded-full animate-spin" />
+                                Loading API keys...
                             </div>
                         </div>
-                    )}
-
-                    {widgetUrl && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                            <div className="relative bg-white rounded-lg overflow-hidden">
-                                <button
-                                    onClick={() => setWidgetUrl(null)}
-                                    className="absolute top-2 right-2 text-gray-600 hover:text-black z-10"
+                    ) : apiKeys.length > 0 ? (
+                        <div className="divide-y divide-dsBorder/50">
+                            {apiKeys.map((api_key, index) => (
+                                <div
+                                    key={api_key}
+                                    className="flex items-center justify-between px-6 py-4 hover:bg-dsBgAlt/30 transition-colors"
                                 >
-                                    ✕
-                                </button>
-                                <iframe
-                                    src={widgetUrl}
-                                    width="410"
-                                    height="696"
-                                    frameBorder="0"
-                                    scrolling="no"
-                                    style={{ display: "block" }}
-                                    title="Payment"
-                                >
-                                    Can&apos;t load widget
-                                </iframe>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
+                                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                                        <div className="w-8 h-8 rounded-lg bg-dsBorder/50 flex items-center justify-center text-dsMuted text-sm font-dmMono">
+                                            {index + 1}
+                                        </div>
+                                        <code className="font-dmMono text-sm text-white/80 truncate flex-1">
+                                            {api_key}
+                                        </code>
+                                    </div>
 
-            {/* Display Current Global API Key */}
-            {globalApiKey && (
-                <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-                    <h3 className="text-sm font-semibold text-gray-300 mb-1">Current Active API Key:</h3>
-                    <p className="text-sm text-white font-mono break-all">{globalApiKey}</p>
-                </div>
-            )}
-
-            <p className="mb-1 text-gray-400">View and Manage your API keys.</p>
-            <p className="mb-5 italic text-gray-500">
-                Do not share your API key with others or expose it in the browser or other client-side code.
-            </p>
-
-            {loading ? (
-                <p>Loading...</p>
-            ) : (
-                <table className="w-full border-collapse">
-                    <thead>
-                        <tr className="bg-gray-900 border-b-2 border-gray-600">
-                            <th className="px-4 py-2 text-start">API Key</th>
-                            <th className="px-4 py-2 text-start">Status</th>
-                            <th className="px-4 py-2 text-start">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {apiKeys.length > 0 ? (
-                            apiKeys.map((api_key) => (
-                                <tr key={api_key} className="">
-                                    <td className="px-4 py-2 font-mono">{api_key}</td>
-                                    <td className="px-4 py-2">
+                                    <div className="flex items-center gap-3 ml-4">
+                                        {/* Status */}
                                         {api_key === globalApiKey ? (
-                                            <span className="text-green-400 text-sm">Active</span>
+                                            <span className="ds-badge-new">Active</span>
                                         ) : (
                                             <button
                                                 onClick={() => {
@@ -337,29 +353,125 @@ export default function ApiKeysPage({ dictionary }: ApiKeysPageProps) {
                                                     fetchCredits(api_key);
                                                     toast.success("API Key activated!");
                                                 }}
-                                                className="text-blue-400 text-sm hover:text-blue-300 underline"
+                                                className="ds-badge-popular cursor-pointer hover:bg-dsPurple/25 transition-colors"
                                             >
                                                 Activate
                                             </button>
                                         )}
-                                    </td>
-                                    <td className="px-4 py-2 text-center">
-                                        <RiDeleteBin5Fill
-                                            className="text-red-500 cursor-pointer hover:text-red-700"
+
+                                        {/* Copy Button */}
+                                        <button
+                                            onClick={() => copyToClipboard(api_key)}
+                                            className="w-8 h-8 rounded-lg bg-dsBorder/30 flex items-center justify-center
+                                                       text-dsMuted hover:text-white hover:bg-dsBorder transition-all"
+                                        >
+                                            {copiedKey === api_key ? <Check size={14} /> : <Copy size={14} />}
+                                        </button>
+
+                                        {/* Delete Button */}
+                                        <button
                                             onClick={() => deleteApiKey(api_key)}
-                                        />
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={3} className="text-center text-gray-500 py-4">
-                                    No API keys found
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                                            className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center
+                                                       text-red-400 hover:bg-red-500/20 transition-all"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="empty-state py-16">
+                            <div className="w-16 h-16 rounded-2xl bg-dsBorder/30 flex items-center justify-center mb-4">
+                                <Key size={28} className="text-dsMuted/50" />
+                            </div>
+                            <h4 className="empty-state-title">No API Keys</h4>
+                            <p className="empty-state-description mb-6">
+                                Create your first API key to start using ZkAGI services
+                            </p>
+                            <button onClick={createApiKey} className="ds-btn-primary">
+                                <Plus size={16} />
+                                Create API Key
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Purchase Modal */}
+            {showPurchaseModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="ds-card w-full max-w-md mx-4 animate-slideUp">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="ds-heading-md">Buy Credits</h2>
+                            <button
+                                onClick={() => setShowPurchaseModal(false)}
+                                className="w-8 h-8 rounded-lg bg-dsBorder/50 flex items-center justify-center
+                                           text-dsMuted hover:text-white hover:bg-dsBorder transition-all"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="label">Amount (USD)</label>
+                            <input
+                                type="number"
+                                min={1}
+                                value={purchaseAmount}
+                                onChange={e => setPurchaseAmount(Number(e.target.value))}
+                                placeholder="Enter amount..."
+                                className="ds-input"
+                            />
+                            <p className="text-xs text-dsMuted mt-2">
+                                1 USD = 1 Credit. Credits are used for AI generations and API calls.
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowPurchaseModal(false)}
+                                className="ds-btn-ghost flex-1"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleBuy}
+                                disabled={purchaseAmount <= 0}
+                                className="ds-btn-primary flex-1"
+                            >
+                                <Zap size={16} />
+                                Purchase ${purchaseAmount || 0}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Payment Widget Modal */}
+            {widgetUrl && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="relative bg-white rounded-2xl overflow-hidden shadow-2xl">
+                        <button
+                            onClick={() => setWidgetUrl(null)}
+                            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center
+                                       text-gray-600 hover:bg-gray-200 hover:text-gray-900 transition-all z-10"
+                        >
+                            <X size={16} />
+                        </button>
+                        <iframe
+                            src={widgetUrl}
+                            width="410"
+                            height="696"
+                            frameBorder="0"
+                            scrolling="no"
+                            style={{ display: "block" }}
+                            title="Payment"
+                        >
+                            Can&apos;t load widget
+                        </iframe>
+                    </div>
+                </div>
             )}
         </div>
     );

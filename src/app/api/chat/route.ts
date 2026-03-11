@@ -1,55 +1,5 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import tools from './tools.json';
-import { useModelStore } from '@/stores/useModel-store';
-
-interface CustomResponse extends Omit<OpenAI.Chat.Completions.ChatCompletionMessage, 'content'> {
-    generateImage?: string;
-    proof?: string;
-    content?: string | null;
-    type?: 'img' | 'text';
-    prompt?: string;
-}
-
-// Create a “default” client (if needed)
-const client = new OpenAI({
-    baseURL: process.env.NEXT_PUBLIC_OPENAI_BASE_URL,
-    apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-});
-
-async function getAIClient() {
-    // Get the selected model from Zustand
-    const { selectedModel } = useModelStore.getState();
-
-    console.log('selectedModel route', selectedModel);
-
-    // Ensure environment variables are defined
-    const deepSeekBaseURL = process.env.NEXT_PUBLIC_DEEPSEEK_BASE_URL;
-    const deepSeekModel = process.env.NEXT_PUBLIC_DEEPSEEK_MODEL;
-    const mistralBaseURL = process.env.NEXT_PUBLIC_OPENAI_BASE_URL;
-    const mistralModel = process.env.NEXT_PUBLIC_MISTRAL_MODEL;
-    const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
-
-    if (!deepSeekBaseURL || !deepSeekModel || !mistralBaseURL || !mistralModel || !apiKey) {
-        throw new Error("Missing required environment variables for AI client.");
-    }
-
-    let baseURL = deepSeekBaseURL;
-    let model = deepSeekModel;
-
-    if (selectedModel === "Mistral") {
-        baseURL = mistralBaseURL;
-        model = mistralModel;
-    }
-
-    console.log(`Using AI Provider: ${selectedModel}`);
-    console.log(`Base URL: ${baseURL}, Model: ${model}`);
-
-    return new OpenAI({
-        baseURL,
-        apiKey,
-    });
-}
 
 // async function generateKeys() {
 //     console.log('Generating keys...');
@@ -350,9 +300,7 @@ export async function POST(request: Request) {
         console.log('Parsed messages:', messages);
         console.log('Received selectedModel from frontend:', selectedModel);
 
-        if (!selectedModel) {
-            throw new Error("No selected model provided in request.");
-        }
+        const resolvedModel = selectedModel || "DeepSeek";
 
         // Generate keys first.
         // await generateKeys();
@@ -413,17 +361,17 @@ export async function POST(request: Request) {
 
         let baseURL = deepSeekBaseURL;
         let model = deepSeekModel;
-        if (selectedModel === "Mistral") {
+        if (resolvedModel === "Mistral") {
             baseURL = mistralBaseURL;
             model = mistralModel;
         }
-        console.log(`Using AI Provider: ${selectedModel}`);
+        console.log(`Using AI Provider: ${resolvedModel}`);
         console.log(`Base URL: ${baseURL}, Model: ${model}`);
 
         // Create a client using the selected provider.
         const aiClient = new OpenAI({ baseURL, apiKey });
 
-        // Request a streaming completion from OpenAI (make sure your OpenAI client supports stream mode).
+        // Request a streaming completion.
         const openAIStream = await aiClient.chat.completions.create({
             model,
             messages: updatedMessages,
@@ -438,7 +386,6 @@ export async function POST(request: Request) {
         const stream = new ReadableStream({
             async start(controller) {
                 try {
-                    // Loop over the stream of tokens.
                     for await (const chunk of openAIStream) {
                         const delta = chunk.choices[0].delta;
                         if (delta && delta.content) {
@@ -446,31 +393,17 @@ export async function POST(request: Request) {
                             accumulatedResponse += token;
                             buffer += token;
 
-                            // Check if the buffer ends with a space or common punctuation,
-                            // which we treat as a word (or sentence) boundary.
                             if (/[ \t\n\r.,!?]$/.test(buffer)) {
-                                // Flush the complete word(s) from the buffer.
                                 const message = `${buffer}`;
                                 controller.enqueue(encoder.encode(message));
-                                buffer = ''; // Reset the buffer after flushing.
+                                buffer = '';
                             }
                         }
                     }
-                    // After the loop, if there is any remaining text in the buffer, flush it.
                     if (buffer.length > 0) {
                         controller.enqueue(encoder.encode(`${buffer}`));
                     }
-                    // Once streaming is complete, generate and verify a proof.
-                    // if (accumulatedResponse.trim()) {
-                    //     const proof = await generateProof(accumulatedResponse);
-                    //     await verifyProof(proof);
-                    //     // Send a final SSE event with the proof.
-                    //     //  const proofMessage = `data: [PROOF] ${proof}\n\n`;
-                    //     const proofMessage = `data: [PROOF] ${JSON.stringify(proof)}\n\n`;
-                    //     controller.enqueue(encoder.encode(proofMessage));
-                    // }
                 } catch (error) {
-                    // If an error occurs during streaming, send an SSE error event.
                     controller.enqueue(encoder.encode(`data: [ERROR] ${error}\n\n`));
                     controller.error(error);
                 }
@@ -478,7 +411,6 @@ export async function POST(request: Request) {
             }
         });
 
-        // Return the streaming response with headers appropriate for SSE.
         return new Response(stream, {
             headers: {
                 "Content-Type": "text/event-stream",
@@ -487,9 +419,10 @@ export async function POST(request: Request) {
         });
 
     } catch (error) {
-        console.error('Error in /api/chat:', error);
+        const errMsg = error instanceof Error ? error.message : String(error);
+        console.error('Error in /api/chat:', errMsg, error);
         return new Response(
-            JSON.stringify({ error: 'An error occurred while processing your request' }),
+            JSON.stringify({ error: errMsg || 'An error occurred while processing your request' }),
             { status: 500, headers: { "Content-Type": "application/json" } }
         );
     }
