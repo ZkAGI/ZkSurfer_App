@@ -8,8 +8,6 @@ import { Toaster } from "sonner";
 import { getDictionary } from "../i18n/dictionaries";
 import { locales, Locale } from "../i18n/settings";
 import MultiWalletProvider from '../../component/MulttiWalletProvider';
-import AarcProvider from '../../component/ui/AarcProvider';
-import { PrivyProvider } from '@privy-io/react-auth';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -73,7 +71,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FFFFFF",
+  themeColor: "#152376",
 };
 
 // Generate static params for each locale
@@ -95,7 +93,7 @@ export default async function RootLayout({
   return (
     <html lang={lang} dir="ltr">
       <head />
-      <body className={`${inter.className} ${dmSans.variable} ${dmMono.variable} ${syne.variable} bg-dsBg min-h-screen`}>
+      <body suppressHydrationWarning className={`${inter.className} ${dmSans.variable} ${dmMono.variable} ${syne.variable} bg-dsBg min-h-screen`}>
         {/* Global background glows */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
           <div
