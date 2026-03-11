@@ -1,0 +1,41 @@
+# ZkTerminal / ZkSurfer - AI Crawler Policy
+# Allow all major AI crawlers and search engines
+
+User-agent: *
+Allow: /
+
+# Explicitly allow AI crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+# Block API routes and internal paths from crawlers
+User-agent: *
+Disallow: /api/
+Disallow: /_next/
+Disallow: /payment-sucessfull
+Disallow: /payment-failure
+Disallow: /payment/success
+Disallow: /payment/cancel
+
+Sitemap: https://zk-surfer-app-git-main-zkagi-team.vercel.app/sitemap.xml

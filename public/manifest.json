@@ -1,7 +1,7 @@
 {
     "name": "ZkSurfer",
     "short_name": "App",
-    "description": "Your app description",
+    "description": "ZkTerminal by ZkAGI: privacy-preserving AI agents, token launchpad, prediction markets, and meme coin marketplace on Solana",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#152376",

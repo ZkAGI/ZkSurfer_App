@@ -348,10 +348,26 @@
 //     );
 // }
 
+import type { Metadata } from 'next';
 import React from 'react';
 import { getDictionary } from '@/app/i18n/dictionaries';
 import { Locale } from '@/app/i18n/settings';
 import EditAgentClient from '@/component/ui/EditAgentClient';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { ticker: string; lang: Locale };
+}): Promise<Metadata> {
+  return {
+    title: `Edit Agent: ${params.ticker}`,
+    description: `Configure and train the ${params.ticker} AI agent on ZkTerminal. Update training data, URLs, PDFs, and images for your agent's knowledge base.`,
+    openGraph: {
+      title: `Edit Agent: ${params.ticker} — ZkTerminal`,
+      description: `Configure the ${params.ticker} AI agent. Update training data and knowledge base.`,
+    },
+  };
+}
 
 interface TrainingData {
     training_urls?: string[];

@@ -13,10 +13,21 @@
 //     );
 // }
 
+import type { Metadata } from 'next';
 import type { NextPage } from 'next';
 import ApiKeysPage from './ApiKeysPage';
 import { getDictionary } from '@/app/i18n/dictionaries';
 import { Locale } from '@/app/i18n/settings';
+
+export const metadata: Metadata = {
+  title: "API Keys",
+  description:
+    "Manage your ZkTerminal API keys. Access the Zynapse API for privacy-preserving AI inference, ZK proof generation, and agent management programmatically.",
+  openGraph: {
+    title: "API Keys — ZkTerminal",
+    description: "Manage API keys for Zynapse AI inference and ZK proof generation.",
+  },
+};
 
 interface ApiKeyPageProps {
     params: {

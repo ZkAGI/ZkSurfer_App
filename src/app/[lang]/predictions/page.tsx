@@ -98,13 +98,40 @@
 
 // export default TradingPage
 
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import TradingPageClient from './TradingPageClient';
 
+export const metadata: Metadata = {
+  title: "Prediction Markets",
+  description:
+    "Trade crypto prediction markets on ZkTerminal. BTC and altcoin price predictions with real-time charts, order books, leaderboards, and leverage trading tools powered by HyperLiquid.",
+  openGraph: {
+    title: "Prediction Markets — ZkTerminal",
+    description: "Crypto prediction markets with real-time charts, order books, and leverage trading.",
+  },
+};
+
 export default function Page() {
   return (
-    <Suspense fallback={null}>
-      <TradingPageClient />
-    </Suspense>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "ZkTerminal Prediction Markets",
+            applicationCategory: "FinanceApplication",
+            operatingSystem: "Web",
+            description: "Crypto prediction markets with real-time charts, order books, and leverage trading on HyperLiquid.",
+            provider: { "@type": "Organization", name: "ZkAGI" },
+          }),
+        }}
+      />
+      <Suspense fallback={null}>
+        <TradingPageClient />
+      </Suspense>
+    </>
   );
 }

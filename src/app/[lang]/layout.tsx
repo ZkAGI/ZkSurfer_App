@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import AppWalletProvider from "@/component/AppWalletProvider";
@@ -8,53 +8,11 @@ import { Toaster } from "sonner";
 import { getDictionary } from "../i18n/dictionaries";
 import { locales, Locale } from "../i18n/settings";
 import MultiWalletProvider from '../../component/MulttiWalletProvider';
-import AarcProvider from '../../component/ui/AarcProvider';
-import { PrivyProvider } from '@privy-io/react-auth';
 
 const inter = Inter({ subsets: ["latin"] });
 
-const APP_NAME = "ZkTerminal";
-const APP_DEFAULT_TITLE = "ZkTerminal - Solana PWA App";
-const APP_TITLE_TEMPLATE = "%s - ZkTerminal";
-const APP_DESCRIPTION = "ZkTerminal - A PWA-enabled Solana dApp";
-
-export const metadata: Metadata = {
-  applicationName: APP_NAME,
-  title: {
-    default: APP_DEFAULT_TITLE,
-    template: APP_TITLE_TEMPLATE,
-  },
-  description: APP_DESCRIPTION,
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: APP_DEFAULT_TITLE,
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  openGraph: {
-    type: "website",
-    siteName: APP_NAME,
-    title: {
-      default: APP_DEFAULT_TITLE,
-      template: APP_TITLE_TEMPLATE,
-    },
-    description: APP_DESCRIPTION,
-  },
-  twitter: {
-    card: "summary",
-    title: {
-      default: APP_DEFAULT_TITLE,
-      template: APP_TITLE_TEMPLATE,
-    },
-    description: APP_DESCRIPTION,
-  },
-  manifest: "/manifest.json",
-};
-
 export const viewport: Viewport = {
-  themeColor: "#FFFFFF",
+  themeColor: "#152376",
 };
 
 // Generate static params for each locale
