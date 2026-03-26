@@ -473,8 +473,6 @@ const hourlyFc = reportData?.forecastTodayHourly?.[selectedAsset] ?? [];
     const isNeutral = avgSentiment > 1.6 && avgSentiment <= 3.2;
     const isBullish = avgSentiment > 3.2;
 
-    // Decide emoji + label
-    const marketEmoji = isBearish ? '😢' : isNeutral ? '😐' : '🤩';
     const marketLabel = isBearish ? 'BEARISH' : isNeutral ? 'NEUTRAL' : 'BULLISH';
     const marketColor = isBearish ? 'text-red-500' : isNeutral ? 'text-yellow-500' : 'text-green-500';
 
@@ -677,9 +675,9 @@ const payload: PlaceOrderBody = {
     {/* Brand + Badge */}
     <div className="flex items-center space-x-3 shrink-0 animate-fadeIn">
       <div className="w-10 h-10 rounded-xl flex items-center justify-center p-1" style={{
-        background: 'linear-gradient(135deg, rgba(124,106,247,0.2), rgba(167,139,250,0.1))',
-        border: '1px solid rgba(124,106,247,0.25)',
-        boxShadow: '0 0 20px -5px rgba(124,106,247,0.2)',
+        background: 'linear-gradient(135deg, rgba(124,106,247,0.25), rgba(167,139,250,0.12))',
+        border: '1px solid rgba(124,106,247,0.3)',
+        boxShadow: '0 0 24px -4px rgba(124,106,247,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
       }}>
         <Image src="images/tiger.svg" alt="logo" width={24} height={24} />
       </div>
@@ -687,7 +685,7 @@ const payload: PlaceOrderBody = {
         <h1 className="text-base font-syne font-bold tracking-tight text-white">
           {isPastData(data) ? 'Historical Report' : 'ZkAGI Newsroom'}
         </h1>
-        <p className="text-xs font-dmMono text-dsMuted">{getCurrentDate()}</p>
+        <p className="text-[11px] font-dmMono text-dsMuted tracking-wider">{getCurrentDate()}</p>
       </div>
     </div>
 
@@ -761,19 +759,20 @@ const payload: PlaceOrderBody = {
                 <div className="flex-1 overflow-y-auto report-scroll" data-pdf-content>
 
                     {/* ── Stats Grid ── */}
-                    <div className="px-5 py-4 report-content-glow" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <div className="px-5 py-5 report-content-glow" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                         <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-3`}>
                             {/* Price */}
-                            <div className="report-stat-card report-stagger-1">
-                                <div className="report-section-header mb-2">{selectedAsset} Price</div>
-                                <div className="report-stat-value text-xl">
+                            <div className="report-stat-card report-stat-card-price report-stagger-1">
+                                <div className="report-section-header mb-2.5">{selectedAsset} Price</div>
+                                <div className="report-stat-value text-2xl font-bold text-white">
                                     {loadingBtc ? (
-                                        <div className="skeleton h-6 w-24 rounded-md" />
+                                        <div className="skeleton h-7 w-28 rounded-md" />
                                     ) : `$${btcPrice?.toLocaleString()}`}
                                 </div>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-[11px] font-bold font-dmMono" style={{
+                                <div className="flex items-center gap-2 mt-2">
+                                    <span className="text-[11px] font-bold font-dmMono px-2 py-0.5 rounded-md" style={{
                                         color: (btcChange ?? 0) >= 0 ? '#34d399' : '#f87171',
+                                        background: (btcChange ?? 0) >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
                                     }}>
                                         {!loadingBtc && `${btcChange! >= 0 ? '+' : ''}${btcChange?.toFixed(2)}%`}
                                     </span>
@@ -782,28 +781,39 @@ const payload: PlaceOrderBody = {
                             </div>
 
                             {/* Sentiment Score */}
-                            <div className="report-stat-card report-stagger-2">
+                            <div className="report-stat-card report-stat-card-fear report-stagger-2">
                                 <div className="report-section-header mb-2">Fear & Greed</div>
                                 <div className="flex items-center gap-3">
-                                    <Gauge value={avgSentiment} min={0} max={5} size={48} />
+                                    <Gauge value={avgSentiment} min={0} max={5} size={72} compact />
                                     <div>
-                                        <div className="report-stat-value text-lg">{avgSentiment.toFixed(2)}</div>
-                                        <div className="text-[9px] uppercase tracking-widest text-dsMuted">/5.00</div>
+                                        <div className="report-stat-value text-2xl font-bold text-white">{avgSentiment.toFixed(2)}</div>
+                                        <div className="text-[9px] uppercase tracking-widest text-dsMuted mt-0.5">/5.00</div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Market Sentiment */}
-                            <div className="report-stat-card report-stagger-3" style={{
+                            <div className="report-stat-card report-stat-card-sentiment report-stagger-3" style={{
                                 borderColor: isBullish ? 'rgba(52,211,153,0.15)' : isBearish ? 'rgba(248,113,113,0.15)' : 'rgba(245,158,11,0.15)',
                             }}>
-                                <div className="report-section-header mb-2">
+                                <div className="report-section-header mb-2.5">
                                     {isPastData(data) ? 'Historical' : 'Market'} Sentiment
                                 </div>
-                                <div className={`text-lg font-syne font-extrabold tracking-wider ${marketColor}`}>
-                                    {marketLabel}
+                                <div className="flex items-center gap-2 mb-2">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isBullish ? '#34d399' : isBearish ? '#f87171' : '#f59e0b'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        {isBullish ? (
+                                            <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>
+                                        ) : isBearish ? (
+                                            <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></>
+                                        ) : (
+                                            <><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></>
+                                        )}
+                                    </svg>
+                                    <span className={`text-lg font-syne font-extrabold tracking-wider ${marketColor}`}>
+                                        {marketLabel}
+                                    </span>
                                 </div>
-                                <div className="mt-1.5 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
                                     <div className="h-full rounded-full transition-all duration-700" style={{
                                         width: `${(avgSentiment / 5) * 100}%`,
                                         background: isBullish ? 'linear-gradient(90deg, #059669, #34d399)' : isBearish ? 'linear-gradient(90deg, #dc2626, #f87171)' : 'linear-gradient(90deg, #d97706, #f59e0b)',
@@ -812,22 +822,22 @@ const payload: PlaceOrderBody = {
                             </div>
 
                             {/* Accuracy / Coverage */}
-                            <div className="report-stat-card report-stagger-4">
+                            <div className="report-stat-card report-stat-card-accuracy report-stagger-4">
                                 {isPastData(data) ? (
                                     <>
-                                        <div className="report-section-header mb-2">Coverage</div>
-                                        <div className="report-stat-value text-lg" style={{ color: '#a78bfa' }}>
+                                        <div className="report-section-header mb-2.5">Coverage</div>
+                                        <div className="report-stat-value text-2xl font-bold report-stat-value-purple">
                                             {[...reportData.todaysNews.crypto, ...reportData.todaysNews.macro].length}
                                         </div>
-                                        <div className="text-[10px] text-dsMuted mt-0.5">articles analyzed</div>
+                                        <div className="text-[10px] text-dsMuted mt-1">articles analyzed</div>
                                     </>
                                 ) : (
                                     <>
-                                        <div className="report-section-header mb-2">Accuracy</div>
-                                        <div className="report-stat-value text-lg" style={{ color: '#34d399' }}>
+                                        <div className="report-section-header mb-2.5">Accuracy</div>
+                                        <div className="report-stat-value text-2xl font-bold report-stat-value-green">
                                             {formattedAccuracyDisplay || 'N/A'}
                                         </div>
-                                        <div className="text-[10px] text-dsMuted mt-0.5">prediction rate</div>
+                                        <div className="text-[10px] text-dsMuted mt-1">prediction rate</div>
                                     </>
                                 )}
                             </div>
@@ -835,12 +845,12 @@ const payload: PlaceOrderBody = {
                     </div>
 
                     {/* ── Main Content ── */}
-                    <div className="p-5 space-y-5">
+                    <div className="p-5 space-y-5" style={{ paddingTop: '20px' }}>
 
                     {/* Chart + Right Panel */}
-                    <section className={`${isMobile ? 'space-y-4' : 'grid grid-cols-3 gap-4'}`} style={{ animation: 'cardStagger 0.5s ease-out 0.15s backwards' }}>
+                    <section className={`${isMobile ? 'space-y-4' : 'grid gap-4'}`} style={{ animation: 'cardStagger 0.5s ease-out 0.15s backwards', gridTemplateColumns: isMobile ? '1fr' : '3fr 2fr' }}>
                         {/* Chart / Hourly */}
-                        <div className="col-span-2 report-section-card">
+                        <div className="report-section-card min-w-0">
                             <div className="flex items-center justify-between px-5 pt-4 pb-2">
                                 <div className="flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-dsPurple-light" />
@@ -872,7 +882,7 @@ const payload: PlaceOrderBody = {
                         </div>
 
                         {/* Right column */}
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-3 min-w-0 overflow-hidden">
                             {/* Past: asset buttons */}
                             {isPastData(data) && (
                                 <div className="report-section-card p-4">
@@ -943,22 +953,24 @@ const payload: PlaceOrderBody = {
                     </section>
 
                     {/* ── News ── */}
-                    <section style={{ animation: 'cardStagger 0.5s ease-out 0.25s backwards' }}>
-                        <div className="flex items-center gap-2.5 mb-4">
-                            <div className="w-1 h-4 rounded-full bg-gradient-to-b from-dsPurple-light to-dsPurple" />
-                            <h3 className="report-section-header">
-                                {isPastData(data) ? 'Historical News' : 'Trending News'}
-                            </h3>
-                            <span className="ds-badge-number text-[10px] font-bold px-2.5 py-0.5 rounded-full" style={{
+                    <section className="report-section-card" style={{ animation: 'cardStagger 0.5s ease-out 0.25s backwards' }}>
+                        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-1 h-4 rounded-full bg-gradient-to-b from-dsPurple-light to-dsPurple" />
+                                <h3 className="report-section-header">
+                                    {isPastData(data) ? 'Historical News' : 'Trending News'}
+                                </h3>
+                            </div>
+                            <span className="text-[10px] font-bold font-dmMono px-2.5 py-1 rounded-full" style={{
                                 background: 'rgba(124,106,247,0.1)',
                                 border: '1px solid rgba(124,106,247,0.15)',
                                 color: '#a78bfa',
                             }}>
-                                {[...reportData.todaysNews.crypto, ...reportData.todaysNews.macro].length}
+                                {[...reportData.todaysNews.crypto, ...reportData.todaysNews.macro].length} articles
                             </span>
                         </div>
 
-                        <div className={`${isMobile ? 'space-y-3' : 'grid grid-cols-2 gap-3'} max-h-[400px] overflow-y-auto report-scroll pr-1`}>
+                        <div className={`${isMobile ? 'space-y-3 px-5 pb-5' : 'grid grid-cols-2 gap-3 px-5 pb-5'} max-h-[420px] overflow-y-auto report-scroll`}>
                             {[...reportData.todaysNews.crypto, ...reportData.todaysNews.macro].map((item, idx) => (
                                 <div key={item.news_id} style={{ animation: `cardStagger 0.4s ease-out ${0.05 * Math.min(idx, 8)}s backwards` }}>
                                     <NewsCard item={item} />
@@ -972,16 +984,16 @@ const payload: PlaceOrderBody = {
                         <section className={`${isMobile ? 'space-y-3' : 'grid grid-cols-2 gap-3'}`} style={{ animation: 'cardStagger 0.5s ease-out 0.35s backwards' }}>
                             {reportData.whatsNew.length > 0 && (
                                 <div className="report-section-card p-5">
-                                    <div className="flex items-center gap-2 mb-3">
+                                    <div className="flex items-center gap-2 mb-4">
                                         <div className="w-1 h-4 rounded-full bg-dsGreen" />
                                         <div className="report-section-header">
                                             {isPastData(data) ? 'Archive' : "What's New"}
                                         </div>
                                     </div>
-                                    <ul className="space-y-2 text-xs">
+                                    <ul className="space-y-3 text-xs">
                                         {reportData.whatsNew.map((item, i) => (
-                                            <li key={i} className="flex items-start gap-2 group">
-                                                <span className="mt-1 w-1.5 h-1.5 rounded-full bg-dsGreen shrink-0 group-hover:shadow-[0_0_8px_rgba(52,211,153,0.5)] transition-shadow" />
+                                            <li key={i} className="flex items-start gap-2.5 group">
+                                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-dsGreen shrink-0 group-hover:shadow-[0_0_8px_rgba(52,211,153,0.5)] transition-shadow" />
                                                 <span className="text-[#c9d1d9] leading-relaxed">{item.text}</span>
                                             </li>
                                         ))}
@@ -989,19 +1001,19 @@ const payload: PlaceOrderBody = {
                                 </div>
                             )}
                             {reportData.recommendations.length > 0 && (
-                                <div className="space-y-2">
+                                <div className="space-y-2.5">
                                     {reportData.recommendations.map((rec, i) => (
                                         <div key={i} className="report-section-card p-4 transition-all hover:translate-x-1" style={{
                                             borderLeft: '3px solid',
                                             borderLeftColor: rec.dotClass?.includes('green') ? '#34d399' : rec.dotClass?.includes('red') ? '#f87171' : '#f59e0b',
                                         }}>
-                                            <div className="flex items-center gap-2 mb-1.5">
+                                            <div className="flex items-center gap-2 mb-2">
                                                 <span className={`w-2 h-2 rounded-full ${rec.dotClass}`} />
                                                 <span className={`font-bold text-xs ${rec.textClass}`}>{rec.label}</span>
                                             </div>
-                                            <ul className="text-[11px] space-y-1 text-dsMuted">
+                                            <ul className="text-[11px] space-y-1.5 text-dsMuted">
                                                 {rec.items.map((item, idx) => (
-                                                    <li key={idx} className="flex items-center gap-1.5">
+                                                    <li key={idx} className="flex items-center gap-1.5 hover:text-white transition-colors">
                                                         <span className="text-[8px] text-dsMuted">▸</span>
                                                         {item.symbol} – {item.target}
                                                     </li>
@@ -1018,10 +1030,7 @@ const payload: PlaceOrderBody = {
                 </div>
 
                 {/* ── Footer ── */}
-                <footer className="px-5 py-3" style={{
-                    borderTop: '1px solid rgba(255,255,255,0.06)',
-                    background: 'linear-gradient(180deg, rgba(11,14,23,0.8), rgba(11,14,23,1))',
-                }}>
+                <footer className="px-5 py-4 report-footer">
                     <button
                         className="report-download-btn"
                         onClick={async () => {
@@ -1108,7 +1117,10 @@ const payload: PlaceOrderBody = {
                             }
                         }}
                     >
-                        Download PDF
+                        <span className="relative z-10 flex items-center justify-center gap-2">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download Report
+                        </span>
                     </button>
                 </footer>
             </div>

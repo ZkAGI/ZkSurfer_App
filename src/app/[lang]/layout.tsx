@@ -119,7 +119,27 @@ export default async function RootLayout({
                 <AppWalletProvider>
                   {/* <AarcProvider> */}
                   {children}
-                  <Toaster position="top-right" richColors />
+                  <Toaster
+                    position="top-right"
+                    theme="dark"
+                    toastOptions={{
+                      style: {
+                        background: '#0d1120',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: '#e2e8f0',
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontSize: '13px',
+                        borderRadius: '12px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03)',
+                        backdropFilter: 'blur(12px)',
+                      },
+                      classNames: {
+                        error: 'toast-error',
+                        success: 'toast-success',
+                        info: 'toast-info',
+                      },
+                    }}
+                  />
                   {/* </AarcProvider> */}
                 </AppWalletProvider>
               {/* </AarcProvider> */}

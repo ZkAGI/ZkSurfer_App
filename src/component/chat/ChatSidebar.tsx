@@ -47,8 +47,6 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
   const navItems = [
     { href: `/${lang}`, icon: <LuHome className="w-4 h-4" />, label: dictionary?.sidebar.home || 'Home' },
-    { href: `/${lang}/marketplace`, icon: <LuStore className="w-4 h-4" />, label: dictionary?.sidebar.marketplace || 'Marketplace' },
-    { href: `/${lang}/explore`, icon: <LuCompass className="w-4 h-4" />, label: dictionary?.sidebar.explore || 'Explore' },
     { href: `/${lang}/api-key`, icon: <LuKey className="w-4 h-4" />, label: dictionary?.sidebar.apiKeys || 'API Keys' },
   ];
 

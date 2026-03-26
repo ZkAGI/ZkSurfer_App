@@ -248,8 +248,6 @@ import { CustomWalletModalProvider } from "./ui/CustomWalletModalProvider";
 import { MagicWalletAdapter, MagicWalletName } from "./MagicWalletAdapter";
 import { CivicAuthProvider } from "@civic/auth-web3/react";
 import type { WalletName } from "@solana/wallet-adapter-base";
-import PrivyBridge from "./privy/PrivyBridge";
-import { PrivyWalletAdapter, PrivyWalletName } from "./privy/PrivyWalletAdapter";
 
 /** ---------- constants ---------- */
 const CIVIC_WALLET_NAME = "Civic";
@@ -265,6 +263,22 @@ export const MagicAdapterContext =
 
 if (typeof window !== "undefined") {
   (window as any).MagicWalletName = MagicWalletName;
+
+  // Fix: wallet-adapter expects JSON-encoded wallet name in localStorage.
+  // Old code or extensions may have stored a plain string like "Phantom"
+  // which causes JSON.parse to crash on hard refresh.
+  try {
+    const raw = localStorage.getItem("walletName");
+    if (raw) {
+      JSON.parse(raw); // test if valid JSON
+    }
+  } catch {
+    // Not valid JSON — wrap it as a JSON string
+    const raw = localStorage.getItem("walletName");
+    if (raw) {
+      localStorage.setItem("walletName", JSON.stringify(raw));
+    }
+  }
 }
 
 /** ---------- helpers ---------- */
@@ -308,10 +322,9 @@ const WalletInitializer = () => {
     if (!desired) return;
 
     // CRITICAL FIX: NEVER auto-select email-based wallets
-    const isEmailWallet = desired === MagicWalletName || desired === PrivyWalletName;
+    const isEmailWallet = desired === MagicWalletName;
     if (isEmailWallet) {
       console.log(`[WalletInitializer] Skipping auto-select for email wallet: ${desired}`);
-      // Clear it from storage so it doesn't keep trying
       localStorage.removeItem("walletName");
       try {
         const zkLastData = localStorage.getItem(ZK_LAST_KEY);
@@ -387,14 +400,11 @@ const PersistentConnectionManager = () => {
       const name = ((wallet as any)?.adapter?.name ?? "") as string;
 
       // CRITICAL: NEVER persist email-based wallets
-      const isEmailWallet = 
-        name === MagicWalletName || 
-        name === PrivyWalletName || 
-        name === "Privy (Email)";
-      
+      const isEmailWallet = name === MagicWalletName;
+
       if (isEmailWallet) {
         console.log('[PersistentConnectionManager] Skipping persistence for email wallet:', name);
-        return; // Don't save anything
+        return;
       }
       
       if (pk) {
@@ -453,28 +463,17 @@ export default function AppWalletProvider({
     })();
   }, [endpoint, adapterInitialized]);
 
-    const [privyAdapter, setPrivyAdapter] = useState<PrivyWalletAdapter | null>(null); 
-
-
-    useEffect(() => {
-    const adapter = new PrivyWalletAdapter();
-    setPrivyAdapter(adapter);
-  }, []);
-
   // Wallet list (Civic is discovered via CivicAuthProvider + Wallet Standard)
   const wallets = useMemo(() => {
     const arr: any[] = [new PhantomWalletAdapter()];
     if (magicAdapter) arr.push(magicAdapter);
-    if (privyAdapter) arr.push(privyAdapter);
     return arr;
-  }, [magicAdapter,privyAdapter]);
+  }, [magicAdapter]);
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      {/* <PrivyBridge onReady={setPrivyAdapter} /> */}
       <MagicAdapterContext.Provider value={magicAdapter}>
         <WalletProvider wallets={wallets} autoConnect>
-           <PrivyBridge />
           <WalletInitializer />
           <PersistentConnectionManager />
           <CustomWalletModalProvider>

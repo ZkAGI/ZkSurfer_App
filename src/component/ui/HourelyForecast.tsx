@@ -2101,7 +2101,7 @@
 
 // export default HourlyPredictionsTable;
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 interface HourlyForecast {
   time: string;
@@ -2144,7 +2144,8 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [crossDayPrices, setCrossDayPrices] = useState<Map<string, number>>(new Map());
-  const [fetchingPrices, setFetchingPrices] = useState<Set<string>>(new Set());
+  const [fetchingCount, setFetchingCount] = useState(0);
+  const fetchingPricesRef = useRef<Set<string>>(new Set());
 
   // Function to extract time from UTC timestamp with seconds
   const formatTimeWithSeconds = (utcTime: string) => {
@@ -2225,12 +2226,14 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
     }
 
     // Check if we're already fetching this price
-    if (fetchingPrices.has(cacheKey)) {
+    if (fetchingPricesRef.current.has(cacheKey)) {
       return null;
     }
 
-    // Mark as fetching
-    setFetchingPrices(prev => new Set([...prev, cacheKey]));
+    // Mark as fetching (using ref to avoid setState during render)
+    fetchingPricesRef.current.add(cacheKey);
+    // Defer state update to next tick
+    setTimeout(() => setFetchingCount(fetchingPricesRef.current.size), 0);
 
     try {
       const price = await fetchBinancePriceAtTime(nextMidnightMs);
@@ -2244,11 +2247,8 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
       console.error('Error handling cross-day price:', error);
     } finally {
       // Remove from fetching set
-      setFetchingPrices(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(cacheKey);
-        return newSet;
-      });
+      fetchingPricesRef.current.delete(cacheKey);
+      setTimeout(() => setFetchingCount(fetchingPricesRef.current.size), 0);
     }
 
     return null;
@@ -2595,8 +2595,8 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
 
   // Compact table for the sidebar
   const CompactTable = () => (
-    <div className="max-h-[500px] overflow-y-scroll">
-      <div className="space-y-2">
+    <div className="max-h-[500px] overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(124,106,247,0.15) transparent' }}>
+      <div className="space-y-1.5">
         {[...hourlyForecast].reverse().map((forecast, reverseIndex) => {
           // Calculate original index for PnL calculation
           const originalIndex = hourlyForecast.length - 1 - reverseIndex;
@@ -2605,49 +2605,65 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
           const exitDisplay = getExitReasonDisplay(tradePnL.exitReason);
 
           return (
-            <div key={forecast.time} className="flex items-center justify-between p-2 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors">
-              <div className="flex items-center space-x-3">
-                <div className="font-mono text-sm text-white font-medium min-w-[45px]">
+            <div key={forecast.time} className="flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200" style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.04)',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(124,106,247,0.12)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.04)';
+            }}
+            >
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div className="font-mono text-xs text-white/70 font-medium min-w-[40px]" style={{ fontFamily: "'DM Mono', monospace" }}>
                   {formatTime(forecast.time)}
                 </div>
-                <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${signalDisplay.bgColor} ${signalDisplay.color} min-w-[55px] justify-center`}>
+                <div className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${signalDisplay.color}`} style={{
+                  background: forecast.signal === 'LONG' ? 'rgba(52,211,153,0.1)' : forecast.signal === 'SHORT' ? 'rgba(248,113,113,0.1)' : 'rgba(245,158,11,0.1)',
+                  border: `1px solid ${forecast.signal === 'LONG' ? 'rgba(52,211,153,0.2)' : forecast.signal === 'SHORT' ? 'rgba(248,113,113,0.2)' : 'rgba(245,158,11,0.2)'}`,
+                }}>
                   <span>{signalDisplay.icon}</span>
                   <span>{signalDisplay.text}</span>
                 </div>
               </div>
 
-              <div className="text-right">
-                <div className="font-mono text-sm text-white">
-                  Entry: ${forecast.entry_price?.toLocaleString() || 'N/A'}
+              <div className="text-right min-w-0 flex-shrink-0">
+                <div className="font-mono text-[11px] text-white/80" style={{ fontFamily: "'DM Mono', monospace" }}>
+                  ${forecast.entry_price?.toLocaleString() || 'N/A'}
                 </div>
-                {/* Show trading PnL with exit info */}
                 {forecast.signal !== 'HOLD' && (
                   <>
                     {tradePnL.status === 'calculated' ? (
-                      <div className="flex items-center justify-end space-x-2">
-                        <div className={`font-mono text-xs font-medium ${getPnLColor(tradePnL.pnlPercentage)}`}>
+                      <div className="flex items-center justify-end space-x-1.5 mt-0.5">
+                        <div className={`font-mono text-[10px] font-bold ${getPnLColor(tradePnL.pnlPercentage)}`} style={{ fontFamily: "'DM Mono', monospace" }}>
                           {tradePnL.pnlPercentage >= 0 ? '+' : ''}
                           {tradePnL.pnlPercentage.toFixed(2)}%
                         </div>
-                        <div className={`text-xs px-1 rounded ${exitDisplay.color}`}>
+                        <div className={`text-[9px] font-semibold px-1 rounded ${exitDisplay.color}`} style={{
+                          background: exitDisplay.text === 'TP' ? 'rgba(52,211,153,0.1)' : exitDisplay.text === 'SL' ? 'rgba(248,113,113,0.1)' : 'rgba(96,165,250,0.1)',
+                        }}>
                           {exitDisplay.text}
                         </div>
-                        <div className={`text-xs ${getTimeInForceColor(tradePnL.timeInForce)}`}>
+                        <div className={`text-[9px] ${getTimeInForceColor(tradePnL.timeInForce)}`}>
                           {tradePnL.timeInForce}
                         </div>
                       </div>
                     ) : tradePnL.status === 'fetching' ? (
-                      <div className="text-orange-400 text-xs flex items-center space-x-1">
-                        <div className="animate-spin h-3 w-3 border border-orange-400 border-t-transparent rounded-full"></div>
+                      <div className="text-[10px] flex items-center space-x-1 mt-0.5" style={{ color: '#f59e0b' }}>
+                        <div className="animate-spin h-2.5 w-2.5 rounded-full" style={{ border: '1.5px solid rgba(245,158,11,0.3)', borderTopColor: '#f59e0b' }} />
                         <span>Fetching...</span>
                       </div>
                     ) : (
-                      <div className="text-gray-400 text-xs">Pending</div>
+                      <div className="text-[10px] mt-0.5" style={{ color: '#64748b' }}>Pending</div>
                     )}
                   </>
                 )}
                 {forecast.signal === 'HOLD' && (
-                  <div className="text-gray-400 text-xs">-</div>
+                  <div className="text-[10px] mt-0.5" style={{ color: '#64748b' }}>-</div>
                 )}
               </div>
             </div>
@@ -2659,21 +2675,21 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
 
   // Full table for the popup
   const FullTable = () => (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(124,106,247,0.15) transparent' }}>
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-600">
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">ENTRY TIME</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">EXIT TIME</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">SIGNAL</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">ENTRY PRICE</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">EXIT PRICE</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">EXACT HIT TIME</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">EXIT REASON</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">TIME IN FORCE</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">PnL $</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">PnL %</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">R:R</th>
+          <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <th className="text-left py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Entry Time</th>
+            <th className="text-left py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Exit Time</th>
+            <th className="text-left py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Signal</th>
+            <th className="text-right py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Entry Price</th>
+            <th className="text-right py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Exit Price</th>
+            <th className="text-left py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Hit Time</th>
+            <th className="text-right py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Exit</th>
+            <th className="text-right py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>TIF</th>
+            <th className="text-right py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>PnL $</th>
+            <th className="text-right py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>PnL %</th>
+            <th className="text-right py-3 px-4 font-bold text-[10px] uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>R:R</th>
           </tr>
         </thead>
         <tbody>
@@ -2685,7 +2701,10 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
             const exitDisplay = getExitReasonDisplay(tradePnL.exitReason);
 
             return (
-              <tr key={forecast.time} className="border-b border-gray-700/50 hover:bg-gray-800/30">
+              <tr key={forecast.time} className="transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
                 <td className="py-3 px-4">
                   <div className="font-mono text-white font-medium">
                     {formatTime(forecast.time)}
@@ -2904,14 +2923,14 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
 
   if (hourlyForecast.length === 0) {
     return (
-      <div className={`bg-[#1a2332] rounded-lg p-4 ${className}`}>
+      <div className={`rounded-xl p-4 ${className}`} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
         <h3 className="font-bold mb-4 flex items-center space-x-2">
-          <span className="text-lg">⏰</span>
-          <span>HOURLY PREDICTIONS</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span className="text-xs uppercase tracking-wider" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Hourly Predictions</span>
         </h3>
-        <div className="text-center text-gray-400 py-8">
-          <div className="text-4xl mb-2">📊</div>
-          <p>No hourly predictions available</p>
+        <div className="text-center py-8" style={{ color: '#64748b' }}>
+          <svg className="mx-auto mb-3" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <p className="text-xs">No hourly predictions available</p>
         </div>
       </div>
     );
@@ -2919,15 +2938,15 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
 
   return (
     <>
-      <div className={`bg-[#1a2332] rounded-lg p-4 relative ${className}`}>
-        <div className="flex items-center justify-between mb-4">
+      <div className={`rounded-xl p-4 relative ${className}`} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold flex items-center space-x-2">
-            <span className="text-lg">📈</span>
-            <span>TRADING PERFORMANCE</span>
-            {fetchingPrices.size > 0 && (
-              <span className="text-xs text-orange-400 ml-2 flex items-center space-x-1">
-                <div className="animate-spin h-3 w-3 border border-orange-400 border-t-transparent rounded-full"></div>
-                <span>Fetching {fetchingPrices.size}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            <span className="text-[10px] uppercase tracking-wider font-bold" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Trading Performance</span>
+            {fetchingCount > 0 && (
+              <span className="text-[10px] ml-2 flex items-center space-x-1" style={{ color: '#f59e0b' }}>
+                <div className="animate-spin h-2.5 w-2.5 rounded-full" style={{ border: '1.5px solid rgba(245,158,11,0.3)', borderTopColor: '#f59e0b' }} />
+                <span>Fetching {fetchingCount}</span>
               </span>
             )}
           </h3>
@@ -2935,10 +2954,13 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
           {/* Expand Button */}
           <button
             onClick={() => setIsExpanded(true)}
-            className="text-gray-400 hover:text-white transition-colors p-1 rounded"
+            className="transition-colors p-1.5 rounded-lg"
             title="Expand table"
+            style={{ color: '#64748b', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(124,106,247,0.2)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#64748b'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M1 1h6v2H3v4H1V1zm8 0h6v6h-2V3h-4V1zM3 9v4h4v2H1V9h2zm12 0v6H9v-2h4V9h2z" />
             </svg>
           </button>
@@ -2946,18 +2968,18 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
 
         <CompactTable />
 
-        {/* Enhanced Summary Stats with Trading Metrics */}
-        <div className="mt-1 pt-3 border-t border-gray-600">
-          <div className="grid grid-cols-3 gap-4 text-xs">
+        {/* Summary Stats */}
+        <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="grid grid-cols-3 gap-3 text-xs">
             <div className="text-center">
-              <div className="text-gray-400">Total Trades</div>
-              <div className="text-white font-bold text-lg">
+              <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Trades</div>
+              <div className="text-white font-bold text-sm" style={{ fontFamily: "'DM Mono', monospace" }}>
                 {hourlyForecast.filter(h => h.signal !== 'HOLD').length}
               </div>
             </div>
             <div className="text-center">
-              <div className="text-gray-400">Win Rate</div>
-              <div className="text-green-400 font-bold text-lg">
+              <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Win Rate</div>
+              <div className="font-bold text-sm" style={{ color: '#34d399', fontFamily: "'DM Mono', monospace" }}>
                 {(() => {
                   const trades = tradeResults.filter(t => t.status === 'calculated');
                   if (trades.length === 0) return 'N/A';
@@ -2967,8 +2989,8 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
               </div>
             </div>
             <div className="text-center">
-              <div className="text-gray-400">Avg PnL</div>
-              <div className="text-blue-400 font-bold text-lg">
+              <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Avg PnL</div>
+              <div className="font-bold text-sm" style={{ color: '#60a5fa', fontFamily: "'DM Mono', monospace" }}>
                 {(() => {
                   const trades = tradeResults.filter(t => t.status === 'calculated');
                   if (trades.length === 0) return 'N/A';
@@ -2983,17 +3005,21 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
 
       {/* Expanded Modal */}
       {isExpanded && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a1628] rounded-lg w-full max-w-7xl max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}>
+          <div className="rounded-2xl w-full max-w-7xl max-h-[90vh] overflow-hidden" style={{ background: 'linear-gradient(180deg, #0c1019, #080b12)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 32px 64px rgba(0,0,0,0.5)' }}>
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-              <h2 className="text-xl font-bold flex items-center space-x-2">
-                <span className="text-lg">📈</span>
-                <span>TRADING PERFORMANCE - DETAILED VIEW</span>
+            <div className="flex items-center justify-between p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <h2 className="text-lg font-bold flex items-center space-x-2.5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                <span className="text-white">Trading Performance</span>
+                <span style={{ color: '#64748b' }}> - Detailed View</span>
               </h2>
               <button
                 onClick={() => setIsExpanded(false)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="transition-all p-2 rounded-lg"
+                style={{ color: '#64748b', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#f87171'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(248,113,113,0.2)'; (e.currentTarget as HTMLElement).style.transform = 'rotate(90deg)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#64748b'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.transform = 'rotate(0)'; }}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />

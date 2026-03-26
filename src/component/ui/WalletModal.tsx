@@ -358,8 +358,6 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { MagicWalletName } from "../MagicWalletAdapter";
 import { MagicAdapterContext } from "../AppWalletProvider";
-import { useLogin, usePrivy } from "@privy-io/react-auth";
-import { useWallets } from "@privy-io/react-auth/solana";
 import { WalletName } from "@solana/wallet-adapter-base";
 
 interface WalletModalProps {
@@ -370,147 +368,24 @@ interface WalletModalProps {
 }
 
 type EmailFlowMode = "picker" | "magic-email" | null;
-const PRIVY_WALLET_NAME = "Privy (Email)";
 
 export const WalletModal = ({ isVisible, onClose, onWalletSelect, isConnecting = false }: WalletModalProps) => {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<EmailFlowMode>(null);
   const [email, setEmail] = useState("");
-  const [privyConnecting, setPrivyConnecting] = useState(false);
 
   const { wallets: solanaAdapters, select, publicKey, connecting } = useWallet();
   const magicAdapter = useContext(MagicAdapterContext);
-
-  const { ready: privyReady, authenticated, user: privyUser } = usePrivy();
-  const { login } = useLogin({
-    onComplete: ({ user, isNewUser, wasAlreadyAuthenticated, loginMethod, loginAccount }) => {
-      console.log("Privy login complete:", { 
-        user, 
-        isNewUser, 
-        wasAlreadyAuthenticated,
-        loginMethod,
-        loginAccount 
-      });
-      setPrivyConnecting(true);
-    },
-    onError: (error) => {
-      console.error("Privy login error:", error);
-      toast.error("Login failed. Please try again.");
-      setLoading(false);
-      setPrivyConnecting(false);
-    }
-  });
-  
-  const { wallets: privySolanaWallets, ready: walletsReady } = useWallets();
 
   useEffect(() => {
     if (!isVisible) {
       setMode(null);
       setEmail("");
       setLoading(false);
-      setPrivyConnecting(false);
     }
   }, [isVisible]);
 
-  useEffect(() => {
-    const handlePrivyWallet = async () => {
-      if (!privyConnecting || !authenticated || !privyUser || !walletsReady) return;
-      
-      console.log("Privy authenticated, checking Solana wallets...");
-      
-      let privyWallet = privySolanaWallets?.find(w => 
-        w.standardWallet.name === 'Privy' || 
-        (w as any).walletClientType === 'privy' ||
-        (w as any).imported === false
-      );
-      
-      if (!privyWallet && privySolanaWallets.length > 0) {
-        privyWallet = privySolanaWallets[0];
-      }
-      
-      if (privyWallet) {
-        console.log("Found Privy Solana wallet:", privyWallet.address);
-        
-        const privyAdapter = solanaAdapters.find((w) => (w as any)?.adapter?.name === PRIVY_WALLET_NAME);
-        
-        if (privyAdapter) {
-          const adapter = (privyAdapter as any).adapter;
-          if (adapter) {
-            if (typeof adapter.setPublicKey === 'function') {
-              adapter.setPublicKey(privyWallet.address);
-            }
-            adapter._embeddedWallet = privyWallet;
-            adapter._privyWallet = privyWallet;
-          }
-          
-          setTimeout(() => {
-            if (onWalletSelect) {
-              onWalletSelect(PRIVY_WALLET_NAME as WalletName);
-            } else {
-              select(PRIVY_WALLET_NAME as any);
-            }
-            
-            toast.success(`Connected: ${privyWallet.address.slice(0, 4)}...${privyWallet.address.slice(-4)}`);
-            setPrivyConnecting(false);
-            setLoading(false);
-            
-            localStorage.setItem('walletName', PRIVY_WALLET_NAME);
-            localStorage.setItem('connectedWalletAddress', privyWallet.address);
-            
-            if (typeof window !== 'undefined') {
-              (window as any).__privySolanaAddress = privyWallet.address;
-              (window as any).__privySolanaWallet = privyWallet;
-            }
-            
-            if (!onWalletSelect) {
-              onClose();
-            }
-          }, 500);
-        } else {
-          console.error("Privy adapter not found in wallet list");
-          toast.error("Privy adapter not configured");
-          setPrivyConnecting(false);
-          setLoading(false);
-        }
-      } else {
-        setTimeout(() => {
-          setPrivyConnecting(false);
-          setLoading(false);
-          toast.error("Solana wallet creation pending. Please try again.");
-        }, 3000);
-      }
-    };
-    
-    handlePrivyWallet();
-  }, [privyConnecting, authenticated, privyUser, privySolanaWallets, walletsReady, solanaAdapters, select, onClose, onWalletSelect]);
-
-  const startEmailConnect = () => setMode("picker");
-
-  const handlePrivyEmail = async () => {
-  try {
-    if (!privyReady) {
-      toast.message("Privy is still initializing... please wait.");
-      return;
-    }
-    
-    setLoading(true);
-    
-    // CRITICAL FIX: Check if already authenticated
-    if (authenticated && privyUser) {
-      console.log('[Privy] User already authenticated, checking for wallet...');
-      setPrivyConnecting(true); // This will trigger the wallet handler
-      return;
-    }
-    
-    console.log("Opening Privy login modal...");
-    await login();
-  } catch (err) {
-    console.error("Privy email login error:", err);
-    toast.error("Failed to open Privy login. Please try again.");
-    setLoading(false);
-    setPrivyConnecting(false);
-  }
-};
+  const startEmailConnect = () => setMode("magic-email");
 
   const chooseMagicEmail = () => setMode("magic-email");
 
@@ -609,7 +484,7 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect, isConnecting =
   };
 
   const handleBackdropClick = () => {
-    if (isConnecting || loading || privyConnecting) {
+    if (isConnecting || loading) {
       console.log('[Modal] Cannot close during connection');
       toast.info('Please wait for connection to complete');
       return;
@@ -620,7 +495,7 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect, isConnecting =
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isConnecting || loading || privyConnecting) {
+        if (isConnecting || loading) {
           console.log('[Modal] Cannot close during connection (Escape pressed)');
           toast.info('Please wait for connection to complete');
           return;
@@ -633,7 +508,7 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect, isConnecting =
       document.addEventListener('keydown', handleEscape);
       return () => document.removeEventListener('keydown', handleEscape);
     }
-  }, [isVisible, isConnecting, loading, privyConnecting, onClose]);
+  }, [isVisible, isConnecting, loading, onClose]);
 
   const [portalTarget, setPortalTarget] = useState<Element | null>(null);
 
@@ -643,18 +518,15 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect, isConnecting =
 
   if (!isVisible || !portalTarget) return null;
 
-  const isBusy = isConnecting || loading || privyConnecting;
+  const isBusy = isConnecting || loading;
 
   // Separate installed vs loadable wallets, filter email wallets
   const filteredWallets = solanaAdapters.filter(w => {
     const walletName = (w as any)?.adapter?.name || (w as any)?.name || '';
     const isEmailWallet =
       walletName === MagicWalletName ||
-      walletName === PRIVY_WALLET_NAME ||
       walletName === "Magic" ||
-      walletName === "Privy (Email)" ||
-      walletName.toLowerCase().includes('magic') ||
-      walletName.toLowerCase().includes('privy');
+      walletName.toLowerCase().includes('magic');
     if (isEmailWallet) return false;
     return w.readyState === WalletReadyState.Installed || w.readyState === WalletReadyState.Loadable;
   });
@@ -876,60 +748,6 @@ export const WalletModal = ({ isVisible, onClose, onWalletSelect, isConnecting =
                 </svg>
                 <span className="text-[#9ca3af]">Continue with Email</span>
               </button>
-            )}
-
-            {mode === "picker" && (
-              <div className="space-y-2">
-                <button
-                  className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.01]"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(52,211,153,0.08) 0%, rgba(52,211,153,0.03) 100%)',
-                    border: '1px solid rgba(52,211,153,0.15)',
-                  }}
-                  onClick={handlePrivyEmail}
-                  disabled={loading || !privyReady}
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[rgba(52,211,153,0.12)] flex items-center justify-center flex-shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round">
-                      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                      <path d="M2 17l10 5 10-5" />
-                      <path d="M2 12l10 5 10-5" />
-                    </svg>
-                  </div>
-                  <span className="text-[#d1d5db]">
-                    {loading && privyConnecting
-                      ? "Connecting..."
-                      : !privyReady
-                      ? "Initializing..."
-                      : "Privy (Solana)"}
-                  </span>
-                </button>
-
-                <button
-                  className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.01]"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(124,106,247,0.08) 0%, rgba(124,106,247,0.03) 100%)',
-                    border: '1px solid rgba(124,106,247,0.15)',
-                  }}
-                  onClick={chooseMagicEmail}
-                  disabled={loading}
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[rgba(124,106,247,0.12)] flex items-center justify-center flex-shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  </div>
-                  <span className="text-[#d1d5db]">Magic (Solana)</span>
-                </button>
-
-                <button
-                  className="w-full text-center py-2 text-[12px] text-[#6b7280] hover:text-[#9ca3af] transition-colors"
-                  onClick={() => setMode(null)}
-                  disabled={loading}
-                >
-                  Back
-                </button>
-              </div>
             )}
 
             {mode === "magic-email" && (

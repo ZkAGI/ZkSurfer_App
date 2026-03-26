@@ -1,5 +1,6 @@
 'use client';
 import { FC, useState, useEffect, useRef, ReactNode } from 'react';
+import { toast } from 'sonner';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useModelStore } from '@/stores/useModel-store';
@@ -797,6 +798,9 @@ const HomeContent: FC = () => {
     } catch (error) {
       console.error('Error sending message:', error);
       const errMsg = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Failed to get response', {
+        description: errMsg,
+      });
       setDisplayMessages(prev => [...prev, {
         role: 'assistant',
         content: `Sorry, there was an error processing your request: ${errMsg}`,

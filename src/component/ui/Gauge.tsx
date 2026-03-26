@@ -12,6 +12,8 @@ export interface GaugeProps {
   size?: number;
   /** override color (optional) */
   color?: string;
+  /** hide center labels for compact use */
+  compact?: boolean;
 }
 
 const Gauge: React.FC<GaugeProps> = ({
@@ -20,6 +22,7 @@ const Gauge: React.FC<GaugeProps> = ({
   max = 5,
   size = 200,
   color,
+  compact = false,
 }) => {
   console.log('Raw value received:', value, typeof value);
   // Define segments with their ranges and colors
@@ -57,6 +60,59 @@ const Gauge: React.FC<GaugeProps> = ({
   // Calculate needle position
   const needleX = centerX + needleLength * Math.cos((needleAngle * Math.PI) / 180);
   const needleY = centerY - needleLength * Math.sin((needleAngle * Math.PI) / 180);
+
+  if (compact) {
+    return (
+      <div className="flex flex-col items-center" style={{ width: size, height: size / 2 + 4 }}>
+        <div className="relative overflow-hidden" style={{ width: size, height: size / 2 }}>
+          <PieChart
+            width={size}
+            height={size}
+            margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+          >
+            <Pie
+              data={segments}
+              cx={size / 2}
+              cy={size / 2}
+              startAngle={180}
+              endAngle={0}
+              innerRadius={size * 0.25}
+              outerRadius={size * 0.45}
+              dataKey="value"
+              stroke="none"
+            >
+              {segments.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.color}
+                  opacity={currentSegment?.name === entry.name ? 1 : 0.6}
+                />
+              ))}
+            </Pie>
+          </PieChart>
+
+          {/* Needle */}
+          <svg
+            className="absolute top-0 left-0 pointer-events-none"
+            width={size}
+            height={size / 2}
+            style={{ overflow: 'visible' }}
+          >
+            <line
+              x1={centerX}
+              y1={centerY}
+              x2={needleX}
+              y2={needleY}
+              stroke="#374151"
+              strokeWidth={2}
+            />
+            <circle cx={centerX} cy={centerY} r={4} fill="#374151" />
+            <circle cx={centerX} cy={centerY} r={2} fill="#ffffff" />
+          </svg>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center" style={{ width: size, height: size * 0.75 }}>

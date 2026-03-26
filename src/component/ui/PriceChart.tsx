@@ -46,7 +46,7 @@
 //   className?: string;
 // }) => {
 //   return (
-//     <div className={`inline-flex bg-[#1a2332] rounded-lg p-1 ${className}`}>
+//     <div className={`inline-flex bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-1 ${className}`}>
 //       {options.map((option) => (
 //         <button
 //           key={option.value}
@@ -506,7 +506,7 @@
 //     : '+1.50%';
 
 //   return (
-//     <div className={`bg-[#0a1628] rounded-lg p-4 ${className}`}>
+//     <div className={`bg-[#080b12] rounded-lg p-4 ${className}`}>
 //       {/* Header with Accuracy Prominently Displayed */}
 //       <div className="flex justify-between items-center mb-4">
 //         {/* <div className="flex items-center gap-3">
@@ -529,7 +529,7 @@
 //         <select
 //           value={selectedAsset}
 //           onChange={(e) => setSelectedAsset(e.target.value as 'BTC' | 'SOL' | 'ETH')}
-//           className="bg-[#1a2332] text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+//           className="bg-[#0d1120]/60 backdrop-blur-sm text-white px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.08)] focus:border-blue-500 focus:outline-none text-sm"
 //         >
 //           <option value="BTC">BTC</option>
 //           <option value="SOL" disabled>SOL (Soon)</option>
@@ -551,7 +551,7 @@
 //       {displayForecast.length > 0 && (
 //         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4 mb-4`}>
 //           {/* Primary Signal Card */}
-//           <div className="bg-[#1a2332] rounded-lg p-4 border-l-4 border-green-500">
+//           <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 border-l-4 border-green-500">
 //             <div className="flex justify-between items-start mb-2">
 //               <span className="text-gray-400 text-sm">Next Signal</span>
 //               <span className="text-green-400 font-bold text-lg">LONG</span>
@@ -573,7 +573,7 @@
 //           </div>
 
 //           {/* Risk Metrics */}
-//           <div className="bg-[#1a2332] rounded-lg p-4">
+//           <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4">
 //             <div className="text-gray-400 text-sm mb-2">Risk Analysis</div>
 //             <div className="space-y-2">
 //               <div className="flex justify-between text-sm">
@@ -594,7 +594,7 @@
 //           </div>
 
 //           {/* Performance Metrics */}
-//           <div className="bg-[#1a2332] rounded-lg p-4">
+//           <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4">
 //             <div className="text-gray-400 text-sm mb-2">Performance</div>
 //             <div className="space-y-2">
 //               <div className="flex justify-between text-sm">
@@ -615,13 +615,13 @@
 //       )}
 
 //       {/* Chart Container */}
-//       <div className="w-full bg-[#1a2332] rounded-lg p-2 mb-4 relative" style={{ height: isMobile ? '180px' : '220px' }}>
+//       <div className="w-full bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-2 mb-4 relative" style={{ height: isMobile ? '180px' : '220px' }}>
 //         {createSVGChart()}
 
 //         {/* Enhanced Tooltip */}
 //         {tooltip.visible && tooltip.data && (
 //           <div
-//             className={`absolute bg-gray-900 border border-gray-600 rounded-lg p-3 text-white shadow-xl z-10 ${isMobile ? 'text-xs min-w-48' : 'text-sm min-w-56'}`}
+//             className={`absolute bg-[#080b12] border border-[rgba(255,255,255,0.08)] rounded-lg p-3 text-white shadow-xl z-10 ${isMobile ? 'text-xs min-w-48' : 'text-sm min-w-56'}`}
 //             style={{
 //               left: tooltip.x + 10,
 //               top: tooltip.y - 10,
@@ -694,7 +694,7 @@
 //       {/* All Predictions Summary */}
 //       <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-3`}>
 //         {displayForecast.map((item, i) => (
-//           <div key={i} className="bg-[#1a2332] rounded-lg p-3 border border-gray-700">
+//           <div key={i} className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-3 border border-gray-700">
 //             <div className="flex justify-between items-center mb-2">
 //               <span className={`font-bold text-sm ${item.signal === 'LONG' ? 'text-green-400' : 'text-red-400'}`}>
 //                 {item.signal}
@@ -725,7 +725,7 @@
 //           <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
 //             Set Alert
 //           </button>
-//           <button className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+//           <button className="bg-gray-600 hover:bg-[rgba(255,255,255,0.06)] text-white px-4 py-2 rounded-lg text-sm transition-colors">
 //             Download Report
 //           </button>
 //           <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
@@ -799,7 +799,7 @@
 //   className?: string;
 // }) => {
 //   return (
-//     <div className={`inline-flex bg-[#1a2332] rounded-lg p-1 ${className}`}>
+//     <div className={`inline-flex bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-1 ${className}`}>
 //       {options.map((option) => (
 //         <button
 //           key={option.value}
@@ -1060,7 +1060,7 @@
 //       {lastHourly && (
 //         <div className="grid grid-cols-3 gap-4 mb-4">
 //           {/* Signal & Entry/Stop/Target */}
-//           <div className="bg-[#1a2332] p-4 rounded-lg border-l-4 border-blue-400">
+//           <div className="bg-[#0d1120]/60 backdrop-blur-sm p-4 rounded-lg border-l-4 border-blue-400">
 //             <div className="font-bold text-sm">Signal</div>
 //             <div className="text-xl">{lastHourly.signal}</div>
 //             <div className="text-xs mt-2">Entry: {lastHourly.entry_price ?? '–'}</div>
@@ -1068,12 +1068,12 @@
 //             <div className="text-xs">Stop: {lastHourly.stop_loss ?? '–'}</div>
 //           </div>
 //           {/* Deviation */}
-//           <div className="bg-[#1a2332] p-4 rounded-lg">
+//           <div className="bg-[#0d1120]/60 backdrop-blur-sm p-4 rounded-lg">
 //             <div className="text-gray-400 text-xs">Deviation</div>
 //             <div className="text-lg">{lastHourly.deviation_percent}%</div>
 //           </div>
 //           {/* Accuracy */}
-//           <div className="bg-[#1a2332] p-4 rounded-lg">
+//           <div className="bg-[#0d1120]/60 backdrop-blur-sm p-4 rounded-lg">
 //             <div className="text-gray-400 text-xs">Accuracy</div>
 //             <div className="text-lg">{lastHourly.accuracy_percent}%</div>
 //           </div>
@@ -1854,13 +1854,13 @@
 //     : '+1.50%';
 
 //   return (
-//     <div className={`bg-[#0a1628] rounded-lg p-4 ${className}`}>
+//     <div className={`bg-[#080b12] rounded-lg p-4 ${className}`}>
 //       {/* Controls Section */}
 //       <div className="flex justify-between items-center mb-4">
 //         <select
 //           value={selectedAsset}
 //           onChange={(e) => setSelectedAsset(e.target.value as 'BTC' | 'SOL' | 'ETH')}
-//           className="bg-[#1a2332] text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+//           className="bg-[#0d1120]/60 backdrop-blur-sm text-white px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.08)] focus:border-blue-500 focus:outline-none text-sm"
 //         >
 //           <option value="BTC">BTC</option>
 //           <option value="SOL" disabled>SOL (Soon)</option>
@@ -1881,7 +1881,7 @@
 //       {/* Key Metrics */}
 //       {(displayForecast.length > 0 || selectedTimeframe === 'TODAY') && firstForecasts && (
 //         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4 mb-4`}>
-//           <div className="bg-[#1a2332] rounded-lg p-4 border-l-4 border-green-500">
+//           <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 border-l-4 border-green-500">
 //             <div className="flex justify-between items-start mb-2">
 //               <span className="text-gray-400 text-sm">Live Signal</span>
 //               <span className="text-green-400 font-bold text-lg">LONG</span>
@@ -1902,7 +1902,7 @@
 //             </div>
 //           </div>
 
-//           <div className="bg-[#1a2332] rounded-lg p-4">
+//           <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4">
 //             <div className="text-gray-400 text-sm mb-2">Risk Analysis</div>
 //             <div className="space-y-2">
 //               <div className="flex justify-between text-sm">
@@ -1924,7 +1924,7 @@
 //             </div>
 //           </div>
 
-//           <div className="bg-[#1a2332] rounded-lg p-4">
+//           <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4">
 //             <div className="text-gray-400 text-sm mb-2">Performance</div>
 //             <div className="space-y-2">
 //               <div className="flex justify-between text-sm">
@@ -1945,7 +1945,7 @@
 //       )}
 
 //       {/* Chart Container */}
-//       <div className="w-full bg-[#1a2332] rounded-lg p-2 mb-4 relative"
+//       <div className="w-full bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-2 mb-4 relative"
 //         style={{ height: selectedTimeframe === 'TODAY' ? (isMobile ? '320px' : '420px') : (isMobile ? '180px' : '220px') }}>
 //          {createSVGChart()} 
 //         {/* {isToday
@@ -1956,7 +1956,7 @@
 //         {/* Tooltip */}
 //         {tooltip.visible && tooltip.data && (
 //           <div
-//             className={`absolute bg-gray-900 border border-gray-600 rounded-lg p-3 text-white shadow-xl z-10 ${isMobile ? 'text-xs min-w-48' : 'text-sm min-w-56'}`}
+//             className={`absolute bg-[#080b12] border border-[rgba(255,255,255,0.08)] rounded-lg p-3 text-white shadow-xl z-10 ${isMobile ? 'text-xs min-w-48' : 'text-sm min-w-56'}`}
 //             style={{
 //               left: tooltip.x + 10,
 //               top: tooltip.y - 10,
@@ -2156,7 +2156,7 @@
 //   className?: string;
 // }) => {
 //   return (
-//     <div className={`inline-flex bg-[#1a2332] rounded-lg p-1 ${className}`}>
+//     <div className={`inline-flex bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-1 ${className}`}>
 //       {options.map((option) => (
 //         <button
 //           key={option.value}
@@ -3362,13 +3362,13 @@
 //   const positionSize = calculatePositionSize(displaySignal, riskRewardValue, volatility);
 
 //   return (
-//     <div className={`bg-[#0a1628] rounded-lg p-4 ${className}`}>
+//     <div className={`bg-[#080b12] rounded-lg p-4 ${className}`}>
 //       {/* Controls Section */}
 //       <div className="flex justify-between items-center mb-4">
 //         <select
 //           value={selectedAsset}
 //           onChange={(e) => setSelectedAsset(e.target.value as 'BTC' | 'SOL' | 'ETH')}
-//           className="bg-[#1a2332] text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+//           className="bg-[#0d1120]/60 backdrop-blur-sm text-white px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.08)] focus:border-blue-500 focus:outline-none text-sm"
 //         >
 //           <option value="BTC">BTC</option>
 //           <option value="SOL" disabled>SOL (Soon)</option>
@@ -3405,7 +3405,7 @@
 //       {/* Enhanced Key Metrics */}
 //       <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4 mb-4`}>
 //         {/* Trading Signal Panel */}
-//         <div className={`bg-[#1a2332] rounded-lg p-4 border-l-4 ${displaySignal === 'LONG' ? 'border-green-500' :
+//         <div className={`bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 border-l-4 ${displaySignal === 'LONG' ? 'border-green-500' :
 //           displaySignal === 'SHORT' ? 'border-red-500' :
 //             'border-yellow-500'
 //           }`}>
@@ -3440,14 +3440,14 @@
 //             </div>
 //           </div>
 
-//           <div className="mb-1 mt-5 p-2 bg-gray-800/50 rounded text-[9px] text-gray-500">
+//           <div className="mb-1 mt-5 p-2 bg-[#0d1120]/50 rounded text-[9px] text-gray-500">
 //             <strong>Note:</strong> Position parameters display as N/A during HOLD signals.
 //             Specific entry zones, profit targets, and stop levels are provided for actionable LONG/SHORT signals.
 //           </div>
 //         </div>
 
 //         {/* Enhanced Risk Analysis */}
-//         <div className="bg-[#1a2332] rounded-lg p-4">
+//         <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4">
 //           <div
 //             className="text-gray-400 text-sm mb-2 hover:text-blue-400 cursor-help transition-colors flex items-center space-x-1"
 //             onMouseEnter={(e) => showTooltip(e, tooltipContent.riskManagement, 'info')}
@@ -3484,7 +3484,7 @@
 //         </div>
 
 //         {/* Enhanced Performance Panel */}
-//         <div className="bg-[#1a2332] rounded-lg p-4">
+//         <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4">
 //           <div
 //             className="text-gray-400 text-sm mb-2 hover:text-blue-400 cursor-help transition-colors flex items-center space-x-1"
 //             onMouseEnter={(e) => showTooltip(e, tooltipContent.performanceMetrics, 'info')}
@@ -3517,7 +3517,7 @@
 //       </div>
 
 //       {/* Market Structure Panel */}
-//       <div className="bg-[#1a2332] rounded-lg p-4 mb-4">
+//       <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 mb-4">
 //         <div
 //           className="text-gray-400 text-sm mb-3 hover:text-blue-400 cursor-help transition-colors flex items-center space-x-1"
 //           onMouseEnter={(e) => showTooltip(e, tooltipContent.marketStructure, 'info')}
@@ -3552,7 +3552,7 @@
 //       </div>
 
 //       {/* Chart Container */}
-//       <div className="w-full bg-[#1a2332] rounded-lg p-2 mb-4 relative"
+//       <div className="w-full bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-2 mb-4 relative"
 //         style={{ height: selectedTimeframe === 'TODAY' ? (isMobile ? '320px' : '420px') : (isMobile ? '180px' : '220px') }}
 //         onMouseLeave={hideTooltip}
 //       >
@@ -3561,7 +3561,7 @@
 //         {/* Enhanced Tooltip */}
 //         {tooltip.visible && tooltip.data && (
 //           <div
-//             className={`absolute ${tooltip.type === 'info' ? 'bg-gray-800' : 'bg-gray-900'} border border-gray-600 rounded-lg p-3 text-white shadow-xl z-50 ${isMobile ? 'text-xs' : 'text-sm'
+//             className={`absolute ${tooltip.type === 'info' ? 'bg-[#0d1120]' : 'bg-[#080b12]'} border border-[rgba(255,255,255,0.08)] rounded-lg p-3 text-white shadow-xl z-50 ${isMobile ? 'text-xs' : 'text-sm'
 //               } ${tooltip.type === 'info' ? 'max-w-md' : 'min-w-48'}`}
 //             style={{
 //               left: tooltip.x + 10,
@@ -3722,7 +3722,7 @@
 //       </div>
 
 //       {/* Market Context Panel */}
-//       <div className="bg-[#1a2332] rounded-lg p-4">
+//       <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4">
 //         <div className="text-gray-400 text-sm mb-3">Market Context & Catalysts</div>
 //         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-4'} gap-4 text-sm`}>
 //           <div>
@@ -3830,7 +3830,7 @@
 //   className?: string;
 // }) => {
 //   return (
-//     <div className={`inline-flex bg-[#1a2332] rounded-lg p-1 ${className}`}>
+//     <div className={`inline-flex bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-1 ${className}`}>
 //       {options.map((option) => (
 //         <button
 //           key={option.value}
@@ -5086,18 +5086,18 @@
 
 //       {/* Full Screen Chart */}
 //       <div className="fixed inset-0 z-50 flex flex-col p-4">
-//         <div className="bg-[#0a1628] h-full rounded-lg flex flex-col relative border border-gray-600">
+//         <div className="bg-[#080b12] h-full rounded-lg flex flex-col relative border border-[rgba(255,255,255,0.08)]">
 //           {/* Close button */}
 //           <button
 //             onClick={() => setIsChartMaximized(false)}
-//             className="absolute top-4 right-4 z-10 bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-lg transition-colors duration-200"
+//             className="absolute top-4 right-4 z-10 bg-[#0d1120] hover:bg-[rgba(255,255,255,0.06)] text-white p-2 rounded-lg transition-colors duration-200"
 //             title="Close (Esc)"
 //           >
 //             <X size={20} />
 //           </button>
 
 //           {/* Chart header */}
-//           <div className="p-4 border-b border-gray-700">
+//           <div className="p-4 border-b border-[rgba(255,255,255,0.06)]">
 //             <h3 className="text-white text-lg font-bold">
 //               {selectedAsset} Price Chart - Full Screen
 //             </h3>
@@ -5113,7 +5113,7 @@
 //             {/* Enhanced Tooltip for full screen */}
 //             {tooltip.visible && tooltip.data && (
 //               <div
-//                 className={`absolute ${tooltip.type === 'info' ? 'bg-gray-800' : 'bg-gray-900'} border border-gray-600 rounded-lg p-3 text-white shadow-xl z-50 text-sm ${tooltip.type === 'info' ? 'max-w-md' : 'min-w-48'} break-words`}
+//                 className={`absolute ${tooltip.type === 'info' ? 'bg-[#0d1120]' : 'bg-[#080b12]'} border border-[rgba(255,255,255,0.08)] rounded-lg p-3 text-white shadow-xl z-50 text-sm ${tooltip.type === 'info' ? 'max-w-md' : 'min-w-48'} break-words`}
 //                 style={{
 //                   left: tooltip.x + 10,
 //                   top: tooltip.y - 10,
@@ -5277,13 +5277,13 @@
 //   );
 
 //   return (
-//     <div className={`bg-[#0a1628] rounded-lg p-4 ${className}`}>
+//     <div className={`bg-[#080b12] rounded-lg p-4 ${className}`}>
 //       {/* Controls Section */}
 //       <div className="flex justify-between items-center mb-4 gap-2">
 //         <select
 //           value={selectedAsset}
 //           onChange={(e) => setSelectedAsset(e.target.value as 'BTC' | 'SOL' | 'ETH')}
-//           className="bg-[#1a2332] text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm min-w-0 flex-shrink-0"
+//           className="bg-[#0d1120]/60 backdrop-blur-sm text-white px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.08)] focus:border-blue-500 focus:outline-none text-sm min-w-0 flex-shrink-0"
 //         >
 //           <option value="BTC">BTC</option>
 //           <option value="SOL" disabled>SOL (Soon)</option>
@@ -5318,7 +5318,7 @@
 //       {/* Enhanced Key Metrics */}
 //       <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4 mb-4`}>
 //         {/* Trading Signal Panel */}
-//         <div className={`bg-[#1a2332] rounded-lg p-4 border-l-4 overflow-hidden ${displaySignal === 'LONG' ? 'border-green-500' :
+//         <div className={`bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 border-l-4 overflow-hidden ${displaySignal === 'LONG' ? 'border-green-500' :
 //           displaySignal === 'SHORT' ? 'border-red-500' :
 //             'border-yellow-500'
 //           }`}>
@@ -5353,14 +5353,14 @@
 //             </div>
 //           </div>
 
-//           <div className="mb-1 mt-5 p-2 bg-gray-800/50 rounded text-[9px] text-gray-500 break-words">
+//           <div className="mb-1 mt-5 p-2 bg-[#0d1120]/50 rounded text-[9px] text-gray-500 break-words">
 //             <strong>Note:</strong> Position parameters display as N/A during HOLD signals.
 //             Specific entry zones, profit targets, and stop levels are provided for actionable LONG/SHORT signals.
 //           </div>
 //         </div>
 
 //         {/* Enhanced Risk Analysis */}
-//         <div className="bg-[#1a2332] rounded-lg p-4 overflow-hidden">
+//         <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 overflow-hidden">
 //           <div
 //             className="text-gray-400 text-sm mb-2 hover:text-blue-400 cursor-help transition-colors flex items-center space-x-1"
 //             onMouseEnter={(e) => showTooltip(e, tooltipContent.riskManagement, 'info')}
@@ -5397,7 +5397,7 @@
 //         </div>
 
 //         {/* Enhanced Performance Panel */}
-//         <div className="bg-[#1a2332] rounded-lg p-4 overflow-hidden">
+//         <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 overflow-hidden">
 //           <div
 //             className="text-gray-400 text-sm mb-2 hover:text-blue-400 cursor-help transition-colors flex items-center space-x-1"
 //             onMouseEnter={(e) => showTooltip(e, tooltipContent.performanceMetrics, 'info')}
@@ -5430,7 +5430,7 @@
 //       </div>
 
 //       {/* Market Structure Panel */}
-//       <div className="bg-[#1a2332] rounded-lg p-4 mb-4 overflow-visible">
+//       <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 mb-4 overflow-visible">
 //         <div
 //           className="text-gray-400 text-sm mb-3 hover:text-blue-400 cursor-help transition-colors flex items-center space-x-1"
 //           onMouseEnter={(e) => showTooltip(e, tooltipContent.marketStructure, 'info')}
@@ -5465,14 +5465,14 @@
 //       </div>
 
 //       {/* Chart Container with maximize button */}
-//       <div className="w-full bg-[#1a2332] rounded-lg p-2 mb-4 relative overflow-visible"
+//       <div className="w-full bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-2 mb-4 relative overflow-visible"
 //         style={{ height: selectedTimeframe === 'TODAY' ? (isMobile ? '240px' : '420px') : (isMobile ? '180px' : '220px') }}
 //         onMouseLeave={hideTooltip}
 //       >
 //         {/* Chart maximize button */}
 //         <button
 //           onClick={() => setIsChartMaximized(true)}
-//           className="absolute top-3 right-3 z-10 bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white p-2 rounded-lg transition-colors duration-200 backdrop-blur-sm"
+//           className="absolute top-3 right-3 z-10 bg-[#0d1120]/80 hover:bg-[rgba(255,255,255,0.06)] text-gray-300 hover:text-white p-2 rounded-lg transition-colors duration-200 backdrop-blur-sm"
 //           title="Maximize Chart"
 //         >
 //           <Maximize2 size={16} />
@@ -5483,7 +5483,7 @@
 //         {/* Enhanced Tooltip */}
 //         {tooltip.visible && tooltip.data && (
 //           <div
-//             className={`absolute ${tooltip.type === 'info' ? 'bg-gray-800' : 'bg-gray-900'} border border-gray-600 rounded-lg p-3 text-white shadow-xl z-50 ${isMobile ? 'text-xs' : 'text-sm'
+//             className={`absolute ${tooltip.type === 'info' ? 'bg-[#0d1120]' : 'bg-[#080b12]'} border border-[rgba(255,255,255,0.08)] rounded-lg p-3 text-white shadow-xl z-50 ${isMobile ? 'text-xs' : 'text-sm'
 //               } ${tooltip.type === 'info' ? 'max-w-md' : 'min-w-48'} break-words`}
 //             style={{
 //               left: tooltip.x + 10,
@@ -5644,7 +5644,7 @@
 //       </div>
 
 //       {/* Market Context Panel */}
-//       <div className="bg-[#1a2332] rounded-lg p-4 overflow-hidden">
+//       <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 overflow-hidden">
 //         <div className="text-gray-400 text-sm mb-3 break-words">Market Context & Catalysts</div>
 //         <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-4 text-sm`}>
 //           <div className="min-w-0">
@@ -5860,15 +5860,22 @@ const SegmentedControl = ({
   className?: string;
 }) => {
   return (
-    <div className={`inline-flex bg-[#1a2332] rounded-lg p-1 ${className}`}>
+    <div className={`inline-flex rounded-xl p-0.5 ${className}`} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
       {options.map((option) => (
         <button
           key={option.value}
           onClick={() => onChange(option.value)}
-          className={`px-2 md:px-3 py-1 text-xs md:text-sm rounded-md transition-all duration-200 whitespace-nowrap ${selected === option.value
-            ? 'bg-blue-600 text-white shadow-md'
-            : 'text-gray-400 hover:text-white hover:bg-[#2a3441]'
+          className={`px-3 py-1 text-xs rounded-lg transition-all duration-200 whitespace-nowrap font-semibold ${selected === option.value
+            ? 'text-white'
+            : 'hover:text-white'
             }`}
+          style={selected === option.value ? {
+            background: 'linear-gradient(135deg, rgba(124,106,247,0.35), rgba(167,139,250,0.2))',
+            boxShadow: '0 2px 8px rgba(124,106,247,0.15)',
+            color: '#fff',
+          } : {
+            color: '#64748b',
+          }}
         >
           {option.label}
         </button>
@@ -7294,18 +7301,18 @@ useEffect(() => {
 
       {/* Full Screen Chart */}
       <div className="fixed inset-0 z-50 flex flex-col p-4">
-        <div className="bg-[#0a1628] h-full rounded-lg flex flex-col relative border border-gray-600">
+        <div className="bg-[#080b12] h-full rounded-lg flex flex-col relative border border-[rgba(255,255,255,0.08)]">
           {/* Close button */}
           <button
             onClick={() => setIsChartMaximized(false)}
-            className="absolute top-4 right-4 z-10 bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-lg transition-colors duration-200"
+            className="absolute top-4 right-4 z-10 bg-[#0d1120] hover:bg-[rgba(255,255,255,0.06)] text-white p-2 rounded-lg transition-colors duration-200"
             title="Close (Esc)"
           >
             <X size={20} />
           </button>
 
           {/* Chart header */}
-          <div className="p-4 border-b border-gray-700">
+          <div className="p-4 border-b border-[rgba(255,255,255,0.06)]">
             <h3 className="text-white text-lg font-bold">
               {selectedAsset} Price Chart - Full Screen
             </h3>
@@ -7321,7 +7328,7 @@ useEffect(() => {
             {/* Enhanced Tooltip for full screen */}
             {tooltip.visible && tooltip.data && (
               <div
-                className={`absolute ${tooltip.type === 'info' ? 'bg-gray-800' : 'bg-gray-900'} border border-gray-600 rounded-lg p-3 text-white shadow-xl z-50 text-sm ${tooltip.type === 'info' ? 'max-w-md' : 'min-w-48'} break-words`}
+                className={`absolute ${tooltip.type === 'info' ? 'bg-[#0d1120]' : 'bg-[#080b12]'} border border-[rgba(255,255,255,0.08)] rounded-lg p-3 text-white shadow-xl z-50 text-sm ${tooltip.type === 'info' ? 'max-w-md' : 'min-w-48'} break-words`}
                 style={{
                   left: tooltip.x + 10,
                   top: tooltip.y - 10,
@@ -7543,13 +7550,13 @@ useEffect(() => {
   );
 
   return (
-    <div className={`bg-[#0a1628] rounded-lg p-4 ${className}`}>
+    <div className={`bg-[#080b12] rounded-lg p-4 ${className}`}>
       {/* Controls Section */}
       <div className="flex justify-between items-center mb-4 gap-2">
         {/* <select
           value={selectedAsset}
           onChange={(e) => setSelectedAsset(e.target.value as 'BTC' | 'SOL' | 'ETH')}
-          className="bg-[#1a2332] text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm min-w-0 flex-shrink-0"
+          className="bg-[#0d1120]/60 backdrop-blur-sm text-white px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.08)] focus:border-blue-500 focus:outline-none text-sm min-w-0 flex-shrink-0"
         >
           <option value="BTC">BTC</option>
           <option value="SOL" disabled>SOL (Soon)</option>
@@ -7558,7 +7565,7 @@ useEffect(() => {
          <select
     value={selectedAsset}
     onChange={(e) => handleAssetChange(e.target.value as 'BTC' | 'SOL' | 'ETH')}
-    className="bg-[#1a2332] text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm min-w-0 flex-shrink-0"
+    className="bg-[#0d1120]/60 backdrop-blur-sm text-white px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.08)] focus:border-blue-500 focus:outline-none text-sm min-w-0 flex-shrink-0"
   >
     <option value="BTC">BTC</option>
     <option value="SOL">SOL</option>
@@ -7575,10 +7582,13 @@ useEffect(() => {
         />
       </div>
 
-      <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg p-4 mb-4 border border-blue-500/30">
+      <div className="rounded-xl p-4 mb-4" style={{ background: 'linear-gradient(135deg, rgba(124,106,247,0.08), rgba(52,211,153,0.04))', border: '1px solid rgba(124,106,247,0.15)' }}>
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <div className="text-blue-400 text-sm font-medium mb-1">🎯 NEXT HOUR OUTLOOK</div>
+            <div className="text-sm font-bold mb-1 flex items-center gap-1.5" style={{ color: '#a78bfa', fontFamily: "'DM Mono', monospace", fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Next Hour Outlook
+            </div>
             <div className="text-white text-base md:text-lg font-bold break-words">
               ZkAGI anticipates price to hit ${nextHourTarget?.toLocaleString()} over next hour
             </div>
@@ -7602,7 +7612,6 @@ useEffect(() => {
       shadow-sm           /* tiny drop shadow */
     `}
           >
-            <span className="mr-1">🎯</span>
             <strong className="text-yellow-200">Play:</strong>{" "}
             {action} around{" "}
             <span className="font-medium text-white">
@@ -7629,12 +7638,12 @@ useEffect(() => {
       {/* Enhanced Key Metrics */}
       <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4 mb-4`}>
         {/* Trading Signal Panel */}
-        <div className={`bg-[#1a2332] rounded-lg p-4 border-l-4 overflow-hidden ${displaySignal === 'LONG' ? 'border-green-500' :
+        <div className={`bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 border-l-4 overflow-hidden ${displaySignal === 'LONG' ? 'border-green-500' :
           displaySignal === 'SHORT' ? 'border-red-500' :
             'border-yellow-500'
           }`}>
           <div className="flex justify-between items-start mb-2 gap-2">
-            <span className="text-gray-400 text-sm flex-shrink-0">TRADING SIGNAL</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold flex-shrink-0" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>Trading Signal</span>
             <span className={`font-bold text-lg flex-shrink-0 ${displaySignal === 'LONG' ? 'text-green-400' :
               displaySignal === 'SHORT' ? 'text-red-400' :
                 'text-yellow-400'
@@ -7664,14 +7673,14 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className="mb-1 mt-5 p-2 bg-gray-800/50 rounded text-[9px] text-gray-500 break-words">
+          <div className="mb-1 mt-5 p-2 bg-[#0d1120]/50 rounded text-[9px] text-gray-500 break-words">
             <strong>Note:</strong> Position parameters display as N/A during HOLD signals.
             Specific entry zones, profit targets, and stop levels are provided for actionable LONG/SHORT signals.
           </div>
         </div>
 
         {/* Enhanced Risk Analysis */}
-        <div className="bg-[#1a2332] rounded-lg p-4 overflow-hidden">
+        <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 overflow-hidden">
           <div
             className="text-gray-400 text-sm mb-2 hover:text-blue-400 cursor-help transition-colors flex items-center space-x-1"
             onMouseEnter={(e) => showTooltip(e, tooltipContent.riskManagement, 'info')}
@@ -7708,7 +7717,7 @@ useEffect(() => {
         </div>
 
         {/* Enhanced Performance Panel */}
-        <div className="bg-[#1a2332] rounded-lg p-4 overflow-hidden">
+        <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 overflow-hidden">
           <div
             className="text-gray-400 text-sm mb-2 hover:text-blue-400 cursor-help transition-colors flex items-center space-x-1"
             onMouseEnter={(e) => showTooltip(e, tooltipContent.performanceMetrics, 'info')}
@@ -7741,7 +7750,7 @@ useEffect(() => {
       </div>
 
       {/* Market Structure Panel */}
-      <div className="bg-[#1a2332] rounded-lg p-4 mb-4 overflow-visible">
+      <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 mb-4 overflow-visible">
         <div
           className="text-gray-400 text-sm mb-3 hover:text-blue-400 cursor-help transition-colors flex items-center space-x-1"
           onMouseEnter={(e) => showTooltip(e, tooltipContent.marketStructure, 'info')}
@@ -7776,14 +7785,14 @@ useEffect(() => {
       </div>
 
       {/* Chart Container with maximize button */}
-      <div className="w-full bg-[#1a2332] rounded-lg p-2 mb-4 relative overflow-visible"
+      <div className="w-full bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-2 mb-4 relative overflow-visible"
         style={{ height: selectedTimeframe === 'TODAY' ? (isMobile ? '240px' : '420px') : (isMobile ? '180px' : '220px') }}
         onMouseLeave={hideTooltip}
       >
         {/* Chart maximize button */}
         <button
           onClick={() => setIsChartMaximized(true)}
-          className="absolute top-3 right-3 z-10 bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white p-2 rounded-lg transition-colors duration-200 backdrop-blur-sm"
+          className="absolute top-3 right-3 z-10 bg-[#0d1120]/80 hover:bg-[rgba(255,255,255,0.06)] text-gray-300 hover:text-white p-2 rounded-lg transition-colors duration-200 backdrop-blur-sm"
           title="Maximize Chart"
         >
           <Maximize2 size={16} />
@@ -7794,7 +7803,7 @@ useEffect(() => {
         {/* Enhanced Tooltip */}
         {tooltip.visible && tooltip.data && (
           <div
-            className={`absolute ${tooltip.type === 'info' ? 'bg-gray-800' : 'bg-gray-900'} border border-gray-600 rounded-lg p-3 text-white shadow-xl z-50 ${isMobile ? 'text-xs' : 'text-sm'
+            className={`absolute ${tooltip.type === 'info' ? 'bg-[#0d1120]' : 'bg-[#080b12]'} border border-[rgba(255,255,255,0.08)] rounded-lg p-3 text-white shadow-xl z-50 ${isMobile ? 'text-xs' : 'text-sm'
               } ${tooltip.type === 'info' ? 'max-w-md' : 'min-w-48'} break-words`}
             style={{
               left: tooltip.x + 10,
@@ -8013,7 +8022,7 @@ useEffect(() => {
       </div>
 
       {/* Market Context Panel */}
-      <div className="bg-[#1a2332] rounded-lg p-4 overflow-hidden">
+      <div className="bg-[#0d1120]/60 backdrop-blur-sm rounded-lg p-4 overflow-hidden">
         <div className="text-gray-400 text-sm mb-3 break-words">Market Context & Catalysts</div>
         <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-4 text-sm`}>
           <div className="min-w-0">

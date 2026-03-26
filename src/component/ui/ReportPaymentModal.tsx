@@ -25,28 +25,28 @@ interface PaymentPlan {
 const PAYMENT_PLANS: PaymentPlan[] = [
   {
     id: 'monthly',
-    name: 'Monthly Subscription',
+    name: 'Monthly',
     usdPrice: 6.9,
     duration: '1 month',
     features: [
-      '📊 All premium prediction reports',
-      '📈 Advanced market analysis',
-      '🎯 Trading signals',
-      '📱 Unlimited access',
+      'All premium prediction reports',
+      'Advanced market analysis',
+      'Trading signals',
+      'Unlimited access',
     ],
     color: 'blue',
   },
   {
     id: 'yearly',
-    name: 'Yearly Subscription',
+    name: 'Yearly',
     usdPrice: 500,
     duration: '12 months',
     features: [
-      '📊 All premium prediction reports',
-      '📈 Advanced market analysis',
-      '🎯 Trading signals',
-      '⭐ Priority support',
-      '💎 VIP community access',
+      'All premium prediction reports',
+      'Advanced market analysis',
+      'Trading signals',
+      'Priority support',
+      'VIP community access',
     ],
     popular: true,
     badge: 'BEST VALUE',
@@ -566,44 +566,104 @@ const handleStripePayment = async (planId: string) => {
     switch (currentStep) {
       case PaymentStep.PLAN_SELECTION:
         return (
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
             {PAYMENT_PLANS.map((plan) => (
               <div
                 key={plan.id}
-                className={`relative p-6 rounded-xl border-2 transform hover:scale-105 transition cursor-pointer ${plan.color === 'orange' ? 'border-orange-500' :
-                  plan.color === 'green' ? 'border-green-500' : 'border-blue-500'
-                  }`}
+                className="relative rounded-xl cursor-pointer transition-all duration-200 p-[1px]"
+                style={{
+                  background: plan.popular
+                    ? 'linear-gradient(135deg, rgba(124,106,247,0.4), rgba(52,211,153,0.3))'
+                    : 'rgba(255,255,255,0.06)',
+                }}
                 onClick={() => handlePlanSelection(plan.id)}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.background = plan.popular
+                    ? 'linear-gradient(135deg, rgba(124,106,247,0.6), rgba(52,211,153,0.4))'
+                    : 'linear-gradient(135deg, rgba(124,106,247,0.3), rgba(124,106,247,0.1))';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.background = plan.popular
+                    ? 'linear-gradient(135deg, rgba(124,106,247,0.4), rgba(52,211,153,0.3))'
+                    : 'rgba(255,255,255,0.06)';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                }}
               >
-                {plan.popular && (
-                  <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                    🔥 MOST POPULAR
-                  </span>
-                )}
-                {plan.badge && (
-                  <span className="absolute -top-3 right-3 bg-orange-600 text-white px-2 py-1 rounded-full text-xs">
-                    {plan.badge}
-                  </span>
-                )}
+                <div className="rounded-xl p-6" style={{ background: '#0d1120' }}>
+                  {plan.popular && (
+                    <span
+                      className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider"
+                      style={{
+                        background: 'linear-gradient(135deg, #7c6af7, #34d399)',
+                        color: '#fff',
+                        letterSpacing: '0.08em',
+                        fontFamily: "'DM Mono', monospace",
+                      }}
+                    >
+                      MOST POPULAR
+                    </span>
+                  )}
+                  {plan.badge && (
+                    <span
+                      className="absolute -top-3 right-4 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider"
+                      style={{
+                        background: 'rgba(124,106,247,0.15)',
+                        border: '1px solid rgba(124,106,247,0.3)',
+                        color: '#a78bfa',
+                        fontFamily: "'DM Mono', monospace",
+                      }}
+                    >
+                      {plan.badge}
+                    </span>
+                  )}
 
-                <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-                <div className="text-4xl font-extrabold mb-1 text-white">${plan.usdPrice}</div>
-                <p className="text-sm text-gray-400 mb-4">{plan.duration}</p>
+                  <p className="text-[10px] uppercase tracking-wider font-bold mb-3" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>
+                    {plan.name}
+                  </p>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="text-3xl font-bold text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>${plan.usdPrice}</span>
+                    <span className="text-xs" style={{ color: '#64748b' }}>/ {plan.duration}</span>
+                  </div>
 
-                <ul className="text-gray-300 mb-4 space-y-1">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span className="text-sm">{f}</span>
-                    </li>
-                  ))}
-                </ul>
+                  <div className="mt-5 space-y-2.5">
+                    {plan.features.map((f, i) => (
+                      <div key={i} className="flex items-center gap-2.5">
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span className="text-[12px]" style={{ color: '#94a3b8', fontFamily: "'DM Sans', sans-serif" }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
 
-                <div className={`w-full py-2 rounded-lg font-semibold text-center ${plan.color === 'orange' ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white' :
-                  plan.color === 'green' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' :
-                    'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
-                  }`}>
-                  Select Plan
+                  <button
+                    className="w-full mt-6 py-2.5 rounded-lg text-[12px] font-semibold transition-all duration-200"
+                    style={{
+                      background: plan.popular
+                        ? 'linear-gradient(135deg, #7c6af7, #6d5ce7)'
+                        : 'rgba(255,255,255,0.04)',
+                      border: plan.popular ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                      color: plan.popular ? '#fff' : '#94a3b8',
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                    onMouseEnter={e => {
+                      if (!plan.popular) {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(124,106,247,0.12)';
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(124,106,247,0.3)';
+                        (e.currentTarget as HTMLElement).style.color = '#a78bfa';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (!plan.popular) {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                        (e.currentTarget as HTMLElement).style.color = '#94a3b8';
+                      }
+                    }}
+                  >
+                    Select Plan
+                  </button>
                 </div>
               </div>
             ))}
@@ -612,32 +672,52 @@ const handleStripePayment = async (planId: string) => {
 
       case PaymentStep.EMAIL_INPUT:
         return (
-          <div className="p-6 max-w-md mx-auto space-y-4">
-            <h3 className="text-xl font-bold text-white">Enter your Email</h3>
-            <p className="text-gray-400 text-sm">
-              We’ll send you a one-time link to confirm your address before you pay.
-            </p>
+          <div className="p-6 max-w-md mx-auto space-y-5">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: ‘#64748b’, fontFamily: "’DM Mono’, monospace" }}>
+                Email Verification
+              </p>
+              <p className="text-[12px]" style={{ color: ‘#94a3b8’ }}>
+                We&apos;ll send you a one-time code to confirm your address before payment.
+              </p>
+            </div>
             <input
               type="email"
               placeholder="you@example.com"
               value={userInputEmail}
               onChange={e => setUserInputEmail(e.target.value)}
-              className="w-full p-3 rounded-lg bg-gray-800 text-white"
+              className="w-full px-4 py-3 rounded-lg text-[13px] text-white outline-none transition-all duration-200"
+              style={{
+                background: ‘rgba(255,255,255,0.03)’,
+                border: ‘1px solid rgba(255,255,255,0.08)’,
+                fontFamily: "’DM Sans’, sans-serif",
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = ‘rgba(124,106,247,0.4)’; }}
+              onBlur={e => { e.currentTarget.style.borderColor = ‘rgba(255,255,255,0.08)’; }}
             />
-            <div className="flex space-x-3">
+            <div className="flex gap-3">
               <button
                 onClick={() => setCurrentStep(PaymentStep.PLAN_SELECTION)}
-                className="flex-1 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
+                className="flex-1 py-2.5 rounded-lg text-[12px] font-semibold transition-all duration-200"
+                style={{
+                  background: ‘rgba(255,255,255,0.04)’,
+                  border: ‘1px solid rgba(255,255,255,0.08)’,
+                  color: ‘#94a3b8’,
+                }}
                 disabled={isVerifyingEmail}
               >
                 Back
               </button>
               <button
                 onClick={handleEmailVerification}
-                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg text-[12px] font-semibold transition-all duration-200 disabled:opacity-40"
+                style={{
+                  background: ‘linear-gradient(135deg, #7c6af7, #6d5ce7)’,
+                  color: ‘#fff’,
+                }}
                 disabled={isVerifyingEmail}
               >
-                {isVerifyingEmail ? 'Sending…' : 'Send Magic Link'}
+                {isVerifyingEmail ? ‘Sending...’ : ‘Send Magic Link’}
               </button>
             </div>
           </div>
@@ -647,31 +727,25 @@ const handleStripePayment = async (planId: string) => {
         const selectedPlanData = PAYMENT_PLANS.find(p => p.id === selectedPlan);
         return (
           <div className="p-6 max-w-lg mx-auto">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-white mb-2">Terms & Conditions</h3>
-              <p className="text-gray-400">
-                {userEmail ? `Welcome back, ${userEmail}!` : 'Please accept our terms to continue'}
+            <div className="text-center mb-5">
+              <p className="text-[10px] uppercase tracking-wider font-bold mb-3" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>
+                Terms & Conditions
+              </p>
+              <p className="text-[12px]" style={{ color: '#94a3b8' }}>
+                {userEmail ? `Welcome back, ${userEmail}` : 'Please accept our terms to continue'}
               </p>
               {selectedPlanData && (
-                <div className="mt-4 p-4 bg-gray-800 rounded-lg">
-                  <p className="text-white font-semibold">{selectedPlanData.name}</p>
-                  <p className="text-2xl font-bold text-green-400">${selectedPlanData.usdPrice}</p>
+                <div className="mt-4 p-4 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>{selectedPlanData.name}</p>
+                  <p className="text-xl font-bold mt-1" style={{ color: '#34d399', fontFamily: "'DM Sans', sans-serif" }}>${selectedPlanData.usdPrice}</p>
                 </div>
               )}
             </div>
 
             <div className="space-y-4">
-              {/* <div className="bg-gray-800 p-4 rounded-lg max-h-40 overflow-y-auto">
-                <p className="text-gray-300 text-sm">
-                  By proceeding with this purchase, you agree to our Terms of Service and Privacy Policy.
-                  Your subscription will auto-renew unless cancelled. You can cancel anytime from your account settings.
-                  All payments are processed securely through our payment partners.
-                </p>
-              </div> */}
-
               <div
-                className="bg-gray-800 p-4 rounded-lg max-h-96 overflow-y-auto whitespace-pre-line text-gray-300 text-sm"
-                style={{ lineHeight: 1.5 }}
+                className="p-4 rounded-lg max-h-96 overflow-y-auto whitespace-pre-line text-[11px]"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', color: '#94a3b8', lineHeight: 1.6 }}
               >
                 {`
 Terms and Conditions
@@ -734,29 +808,46 @@ These Terms are governed by the laws of Singapore, without regard to its conflic
               </div>
 
 
-              <label className="flex items-start space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-1 w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
-                />
-                <span className="text-gray-300 text-sm">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div
+                  className="mt-0.5 w-4 h-4 rounded flex-shrink-0 flex items-center justify-center transition-all duration-200"
+                  style={{
+                    background: termsAccepted ? '#7c6af7' : 'rgba(255,255,255,0.04)',
+                    border: termsAccepted ? '1px solid #7c6af7' : '1px solid rgba(255,255,255,0.12)',
+                  }}
+                >
+                  {termsAccepted && (
+                    <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
+                <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="sr-only" />
+                <span className="text-[12px]" style={{ color: '#94a3b8' }}>
                   I agree to the Terms & Conditions and Privacy Policy
                 </span>
               </label>
 
-              <div className="flex space-x-3">
+              <div className="flex gap-3">
                 <button
                   onClick={handleGoBack}
-                  className="flex-1 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold"
+                  className="flex-1 py-2.5 rounded-lg text-[12px] font-semibold transition-all duration-200"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#94a3b8',
+                  }}
                 >
                   Back
                 </button>
                 <button
                   onClick={handleTermsAcceptance}
                   disabled={!termsAccepted}
-                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-lg text-[12px] font-semibold transition-all duration-200 disabled:opacity-30"
+                  style={{
+                    background: 'linear-gradient(135deg, #7c6af7, #6d5ce7)',
+                    color: '#fff',
+                  }}
                 >
                   Continue
                 </button>
@@ -768,39 +859,77 @@ These Terms are governed by the laws of Singapore, without regard to its conflic
       case PaymentStep.PAYMENT_METHOD_SELECTION:
         return (
           <div className="p-6 max-w-lg mx-auto">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-white mb-2">Choose Payment Method</h3>
-              <p className="text-gray-400">Select how you&apos;d like to pay</p>
+            <div className="text-center mb-5">
+              <p className="text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>
+                Payment Method
+              </p>
+              <p className="text-[12px]" style={{ color: '#94a3b8' }}>Select how you&apos;d like to pay</p>
             </div>
 
-            <div className="space-y-4">
-              {/* <button
-                onClick={() => handlePaymentMethodSelection('aarc')}
-                className="w-full p-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg border-2 border-transparent hover:border-purple-400 transition-all"
-              >
-                <div className="text-lg font-bold mb-2">💳 AARC (Ethereum)</div>
-                <div className="text-sm opacity-90">Pay with any Ethereum wallet or card</div>
-              </button> */}
-
+            <div className="space-y-3">
               <button
                 onClick={() => handlePaymentMethodSelection('solana')}
-                className="w-full p-6 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white rounded-lg border-2 border-transparent hover:border-green-400 transition-all"
+                className="w-full p-5 rounded-xl text-left transition-all duration-200 flex items-center gap-4"
+                style={{
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(52,211,153,0.25)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                }}
               >
-                <div className="text-lg font-bold mb-2">⚡ Solana Pay</div>
-                <div className="text-sm opacity-90">Pay with USDC on Solana</div>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(52,211,153,0.1)' }}>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[13px] font-semibold text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>Solana Pay</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: '#64748b' }}>Pay with USDC on Solana</p>
+                </div>
               </button>
 
               <button
                 onClick={() => handlePaymentMethodSelection('stripe')}
-                className="w-full p-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg border-2 border-transparent hover:border-indigo-400 transition-all"
+                className="w-full p-5 rounded-xl text-left transition-all duration-200 flex items-center gap-4"
+                style={{
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(124,106,247,0.25)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                }}
               >
-                <div className="text-lg font-bold mb-2">💳 Stripe (Credit Card)</div>
-                <div className="text-sm opacity-90">Pay with credit card, Apple Pay, Google Pay</div>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,106,247,0.1)' }}>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                    <line x1="1" y1="10" x2="23" y2="10" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[13px] font-semibold text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>Credit Card</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: '#64748b' }}>Stripe — card, Apple Pay, Google Pay</p>
+                </div>
               </button>
 
               <button
                 onClick={handleGoBack}
-                className="w-full py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold"
+                className="w-full py-2.5 mt-2 rounded-lg text-[12px] font-semibold transition-all duration-200"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#94a3b8',
+                }}
               >
                 Back
               </button>
@@ -810,24 +939,35 @@ These Terms are governed by the laws of Singapore, without regard to its conflic
 
       case PaymentStep.SOLANA_PAY_QR:
         return (
-          <div className="flex flex-col items-center justify-center p-6 space-y-6">
-            <h3 className="text-white text-lg font-medium">Scan with your Solana wallet</h3>
-            <div className="bg-white p-4 rounded-lg">
-              <QRCode value={solanaPayURL} size={200} />
+          <div className="flex flex-col items-center justify-center p-6 space-y-5">
+            <p className="text-[10px] uppercase tracking-wider font-bold" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>
+              Scan with Solana Wallet
+            </p>
+            <div className="p-4 rounded-xl" style={{ background: '#fff' }}>
+              <QRCode value={solanaPayURL} size={180} />
             </div>
-            <div className="flex space-x-4">
+            <div className="flex gap-3">
               <button
                 onClick={handleGoBack}
-                className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-full"
+                className="px-5 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#94a3b8',
+                }}
               >
                 Back
               </button>
               <button
                 onClick={handleCheckPayment}
                 disabled={isChecking}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full disabled:opacity-50"
+                className="px-5 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 disabled:opacity-40"
+                style={{
+                  background: 'linear-gradient(135deg, #34d399, #059669)',
+                  color: '#fff',
+                }}
               >
-                {isChecking ? 'Checking...' : 'Done'}
+                {isChecking ? 'Checking...' : 'Verify Payment'}
               </button>
             </div>
           </div>
@@ -835,15 +975,20 @@ These Terms are governed by the laws of Singapore, without regard to its conflic
 
         case PaymentStep.STRIPE_PROCESSING:
         return (
-          <div className="flex flex-col items-center justify-center p-6 space-y-6">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-            <h3 className="text-white text-lg font-medium">Redirecting to Stripe...</h3>
-            <p className="text-gray-400 text-center">
+          <div className="flex flex-col items-center justify-center p-8 space-y-5">
+            <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(124,106,247,0.3)', borderTopColor: 'transparent', borderRightColor: '#7c6af7' }} />
+            <p className="text-[13px] font-semibold text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>Redirecting to Stripe</p>
+            <p className="text-[11px] text-center" style={{ color: '#64748b' }}>
               You&apos;ll be redirected to our secure payment processor to complete your subscription.
             </p>
             <button
               onClick={handleGoBack}
-              className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-full"
+              className="px-5 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: '#94a3b8',
+              }}
               disabled={isProcessing}
             >
               Cancel
@@ -852,27 +997,92 @@ These Terms are governed by the laws of Singapore, without regard to its conflic
         );
 
       default:
-        return <div className="p-6 text-white text-center">Loading...</div>;
+        return (
+          <div className="p-8 flex flex-col items-center justify-center">
+            <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(124,106,247,0.3)', borderTopColor: 'transparent', borderRightColor: '#7c6af7' }} />
+          </div>
+        );
     }
   };
 
+  const stepTitles: Record<string, string> = {
+    [PaymentStep.PLAN_SELECTION]: 'Choose Your Plan',
+    [PaymentStep.EMAIL_INPUT]: 'Email Verification',
+    [PaymentStep.TERMS_ACCEPTANCE]: 'Terms & Conditions',
+    [PaymentStep.PAYMENT_METHOD_SELECTION]: 'Payment Method',
+    [PaymentStep.SOLANA_PAY_QR]: 'Solana Pay',
+    [PaymentStep.STRIPE_PROCESSING]: 'Stripe Payment',
+    [PaymentStep.AARC_PROCESSING]: 'Processing Payment',
+  };
+
+  // Step progress indicator
+  const stepOrder = [
+    PaymentStep.PLAN_SELECTION,
+    PaymentStep.EMAIL_INPUT,
+    PaymentStep.TERMS_ACCEPTANCE,
+    PaymentStep.PAYMENT_METHOD_SELECTION,
+  ];
+  const currentStepIndex = stepOrder.indexOf(currentStep);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-      <div className="bg-gray-900 rounded-2xl shadow-xl w-full max-w-4xl mx-4 overflow-y-auto max-h-[90vh]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+    >
+      <div
+        className="rounded-2xl w-full max-w-2xl mx-4 overflow-y-auto max-h-[90vh]"
+        style={{
+          background: '#0c1019',
+          border: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)',
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-2xl font-bold text-white">
-            {currentStep === PaymentStep.PLAN_SELECTION ? '🚀 Choose Your Plan' :
-              currentStep === PaymentStep.TERMS_ACCEPTANCE ? '📋 Terms & Conditions' :
-                currentStep === PaymentStep.PAYMENT_METHOD_SELECTION ? '💳 Payment Method' :
-                  currentStep === PaymentStep.SOLANA_PAY_QR ? '⚡ Solana Pay' :
-                  currentStep === PaymentStep.STRIPE_PROCESSING ? '💳 Stripe Payment':
-                    '💳 Processing Payment'}
-          </h2>
-          <button onClick={onClose} disabled={isProcessing}>
-            <X className="w-6 h-6 text-gray-400 hover:text-white" />
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(124,106,247,0.1)' }}>
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#7c6af7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <h2 className="text-[14px] font-semibold text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              {stepTitles[currentStep] || 'Payment'}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={isProcessing}
+            className="w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.1)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(248,113,113,0.2)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+            }}
+          >
+            <X className="w-3.5 h-3.5" style={{ color: '#64748b' }} />
           </button>
         </div>
+
+        {/* Step progress */}
+        {currentStepIndex >= 0 && (
+          <div className="px-6 pt-4 flex gap-1.5">
+            {stepOrder.map((_, i) => (
+              <div
+                key={i}
+                className="h-[2px] flex-1 rounded-full transition-all duration-300"
+                style={{
+                  background: i <= currentStepIndex ? '#7c6af7' : 'rgba(255,255,255,0.06)',
+                }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Dynamic Content */}
         {renderCurrentStep()}

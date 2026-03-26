@@ -12,9 +12,6 @@ export const serverConfig = {
   hyperliquid: {
     privateKey: process.env.HL_PRIVATE_KEY || '',
   },
-  privy: {
-    appSecret: process.env.PRIVY_APP_SECRET || '',
-  },
   database: {
     apiUrl: process.env.DATABASE_API_URL || 'https://zynapse.zkagi.ai/daily-cumulative',
     getApiUrl: process.env.DATABASE_GET_API_URL || 'https://zynapse.zkagi.ai/daily-cumulative/get',
@@ -73,7 +70,6 @@ export const clientConfig = {
     pastApi: process.env.NEXT_PUBLIC_PAST_PREDICTION_API || '',
   },
   services: {
-    privyAppId: process.env.NEXT_PUBLIC_PRIVY_APP_ID || '',
     civicClientId: process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID || '',
     chainGptApiKey: process.env.NEXT_PUBLIC_CHAINGPT_API_KEY || '',
     magicPublishableKey: process.env.NEXT_PUBLIC_MAGIC_PUBLISHABLE_KEY || '',

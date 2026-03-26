@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import bs58 from 'bs58';
 
-const API_BASE = 'https://content_agent_video.zkagi.ai';
+// Proxy through Next.js API to avoid CORS issues
+const API_BASE = '/api/video-agent';
 
 type VideoStatus = 'QUEUED' | 'PROCESSING' | 'RENDERING' | 'COMPLETED' | 'FAILED';
 type View = 'landing' | 'wizard' | 'create-video' | 'generating' | 'results' | 'history';
@@ -139,6 +140,10 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
   const [isSavingAgent, setIsSavingAgent] = useState(false);
   const [productId, setProductId] = useState<string | null>(null);
 
+  // Payment state
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const paymentPollRef = useRef<NodeJS.Timeout | null>(null);
+
   // Load saved agent on open
   useEffect(() => {
     if (isOpen && walletAddr) {
@@ -166,7 +171,10 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
   }, [isOpen]);
 
   useEffect(() => {
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (paymentPollRef.current) clearInterval(paymentPollRef.current);
+    };
   }, []);
 
   // ─── Auth ───
@@ -182,7 +190,7 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
       const messageBytes = new TextEncoder().encode(message);
       const signatureBytes = await signMessage(messageBytes);
       const signature = bs58.encode(signatureBytes);
-      const res = await fetch(`${API_BASE}/api/v1/auth/wallet-verify`, {
+      const res = await fetch(`${API_BASE}/auth/wallet-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress: publicKey.toString(), message, signature }),
@@ -253,7 +261,7 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/products/${pId}/${type}`, {
+      const res = await fetch(`${API_BASE}/products/${pId}/${type}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -283,7 +291,7 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
         // Create product if we don't have one yet
         let pId = productId || savedAgent?.productId;
         if (!pId) {
-          const res = await fetch(`${API_BASE}/api/v1/products`, {
+          const res = await fetch(`${API_BASE}/products`, {
             method: 'POST',
             headers: authHeaders(token),
             body: JSON.stringify({
@@ -398,7 +406,7 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
       if (config.product) body.product = config.product;
       if (config.customInstructions?.trim()) body.customInstructions = config.customInstructions.trim();
 
-      const res = await fetch(`${API_BASE}/api/v1/videos`, {
+      const res = await fetch(`${API_BASE}/videos`, {
         method: 'POST',
         headers: authHeaders(token),
         body: JSON.stringify(body),
@@ -425,7 +433,7 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
     if (pollRef.current) clearInterval(pollRef.current);
     const poll = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/videos/${videoId}`, { headers: authHeaders(token) });
+        const res = await fetch(`${API_BASE}/videos/${videoId}`, { headers: authHeaders(token) });
         if (!res.ok) return;
         const job: VideoJob = await res.json();
         setCurrentJob(job);
@@ -450,7 +458,7 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
     if (!token) return;
     setIsLoadingHistory(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/videos?limit=20`, { headers: authHeaders(token) });
+      const res = await fetch(`${API_BASE}/videos?limit=20`, { headers: authHeaders(token) });
       if (!res.ok) throw new Error('Failed to load');
       const data = await res.json();
       setHistory(data.videos || []);
@@ -460,6 +468,92 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
       setIsLoadingHistory(false);
     }
   }, [ensureAuth, authHeaders]);
+
+  // ─── Purchase Video ───
+  const handlePurchaseVideo = useCallback(async (videoId: string) => {
+    const token = await ensureAuth();
+    if (!token) return;
+
+    setIsPurchasing(true);
+    try {
+      const res = await fetch(`${API_BASE}/payments/checkout`, {
+        method: 'POST',
+        headers: authHeaders(token),
+        body: JSON.stringify({
+          videoId,
+          successUrl: `${window.location.origin}${window.location.pathname}?video_paid=${videoId}`,
+          cancelUrl: `${window.location.origin}${window.location.pathname}?video_cancelled=${videoId}`,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to create checkout session');
+      }
+
+      const data = await res.json();
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.sessionId) {
+        // Fallback: use Stripe.js redirect
+        const { loadStripe } = await import('@stripe/stripe-js');
+        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+        if (stripe) {
+          await stripe.redirectToCheckout({ sessionId: data.sessionId });
+        }
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Payment failed');
+    } finally {
+      setIsPurchasing(false);
+    }
+  }, [ensureAuth, authHeaders]);
+
+  // ─── Check for payment return (URL params) ───
+  useEffect(() => {
+    if (!isOpen || !walletAddr) return;
+    const params = new URLSearchParams(window.location.search);
+    const paidVideoId = params.get('video_paid');
+    if (paidVideoId) {
+      // Clean URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('video_paid');
+      window.history.replaceState({}, '', url.toString());
+
+      // Poll for updated payment status
+      const checkPaid = async () => {
+        const token = await ensureAuth();
+        if (!token) return;
+        let attempts = 0;
+        paymentPollRef.current = setInterval(async () => {
+          attempts++;
+          try {
+            const res = await fetch(`${API_BASE}/videos/${paidVideoId}`, { headers: authHeaders(token) });
+            if (!res.ok) return;
+            const job: VideoJob = await res.json();
+            if (job.isPaid) {
+              if (paymentPollRef.current) clearInterval(paymentPollRef.current);
+              setCurrentJob(job);
+              setView('results');
+              toast.success('Payment confirmed! Full video is ready to download.');
+            } else if (attempts >= 12) {
+              // Stop after ~1 minute
+              if (paymentPollRef.current) clearInterval(paymentPollRef.current);
+              setCurrentJob(job);
+              setView('results');
+              toast.info('Payment is being processed. Refresh in a moment to check.');
+            }
+          } catch { /* ignore */ }
+        }, 5000);
+      };
+      checkPaid();
+    }
+
+    return () => {
+      if (paymentPollRef.current) clearInterval(paymentPollRef.current);
+    };
+  }, [isOpen, walletAddr]);
 
   // ─── Status helpers ───
   const statusColor: Record<VideoStatus, string> = {
@@ -1275,12 +1369,26 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
                   <Download className="w-4 h-4" /> Download Full Video
                 </a>
               ) : (
-                <div className="p-4 rounded-xl bg-[rgba(245,158,11,0.06)] border border-[rgba(245,158,11,0.15)]">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Eye className="w-4 h-4 text-[#f59e0b]" />
-                    <span className="text-[13px] font-medium text-[#f59e0b]">Preview Only</span>
+                <div className="space-y-3">
+                  <div className="p-4 rounded-xl bg-[rgba(245,158,11,0.06)] border border-[rgba(245,158,11,0.15)]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Eye className="w-4 h-4 text-[#f59e0b]" />
+                      <span className="text-[13px] font-medium text-[#f59e0b]">Preview Only</span>
+                    </div>
+                    <p className="text-[11px] text-[#9ca3af]">5-second watermarked preview. Purchase the full video to download.</p>
                   </div>
-                  <p className="text-[11px] text-[#9ca3af]">5-second watermarked preview. Purchase full video to download.</p>
+                  <button
+                    onClick={() => handlePurchaseVideo(currentJob.id)}
+                    disabled={isPurchasing}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-[14px] font-semibold text-white transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ background: 'linear-gradient(135deg, #7c6af7 0%, #a78bfa 100%)', boxShadow: '0 4px 16px rgba(124,106,247,0.3)' }}
+                  >
+                    {isPurchasing ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                    ) : (
+                      <><Zap className="w-4 h-4" /> Buy Full Video — $5.00</>
+                    )}
+                  </button>
                 </div>
               )}
 
@@ -1340,6 +1448,11 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
                           {statusLabel[job.status]}
                         </span>
                         <span className="text-[10px] text-[#4b5563]">{new Date(job.createdAt).toLocaleDateString()}</span>
+                        {job.status === 'COMPLETED' && (
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${job.isPaid ? 'text-[#34d399] bg-[rgba(52,211,153,0.1)]' : 'text-[#f59e0b] bg-[rgba(245,158,11,0.1)]'}`}>
+                            {job.isPaid ? 'Paid' : '$5'}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-[#4b5563] flex-shrink-0" />

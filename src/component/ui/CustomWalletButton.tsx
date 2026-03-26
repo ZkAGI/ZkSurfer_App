@@ -1616,7 +1616,6 @@ declare global {
   }
 }
 
-const PRIVY_WALLET_NAME = "Privy (Email)";
 
 const safeLocalStorage = {
   getItem: (key: string): string | null => {
@@ -1928,8 +1927,7 @@ export const CustomWalletButton = () => {
     }
 
     // CRITICAL: Email wallets should NEVER be auto-reconnected
-    const isEmailWallet = storedWalletName === MagicWalletName || 
-                          storedWalletName === PRIVY_WALLET_NAME;
+    const isEmailWallet = storedWalletName === MagicWalletName;
     
     if (isEmailWallet) {
       console.log('[Auto-reconnect] Clearing email wallet from storage');
@@ -1980,8 +1978,7 @@ export const CustomWalletButton = () => {
       const currentWalletName = (wallet as any)?.adapter?.name;
       
       const isMagic = currentWalletName === MagicWalletName;
-      const isPrivy = currentWalletName === PRIVY_WALLET_NAME;
-      const isEmailWallet = isMagic || isPrivy;
+      const isEmailWallet = isMagic;
       
       // CRITICAL: NEVER store email wallets in localStorage
       if (!isEmailWallet) {

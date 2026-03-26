@@ -327,15 +327,52 @@
 
 /* Toast/notification styling improvements */
 .toast-success {
-  @apply bg-[#0A1426] border border-zkNeonGreen/30 text-white;
+  border-left: 3px solid #34d399 !important;
+  background: #0d1120 !important;
+  border-color: rgba(52,211,153,0.2) !important;
 }
 
 .toast-error {
-  @apply bg-[#0A1426] border border-red-500/30 text-white;
+  border-left: 3px solid #ef4444 !important;
+  background: #0d1120 !important;
+  border-color: rgba(239,68,68,0.2) !important;
 }
 
 .toast-info {
-  @apply bg-[#0A1426] border border-zkIndigo/30 text-white;
+  border-left: 3px solid #a78bfa !important;
+  background: #0d1120 !important;
+  border-color: rgba(124,106,247,0.2) !important;
+}
+
+/* Sonner toast overrides */
+[data-sonner-toaster] [data-sonner-toast] {
+  --normal-bg: #0d1120;
+  --normal-border: rgba(255,255,255,0.08);
+  --normal-text: #e2e8f0;
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
+  font-weight: 600 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  color: #6b7280 !important;
+  font-size: 12px !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-close-button] {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: #6b7280 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-icon] svg {
+  color: #ef4444 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] [data-icon] svg {
+  color: #34d399 !important;
 }
 
 /* Improved scrollbar for dark theme */
@@ -1172,8 +1209,8 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
 
 /* Report panel base */
 .report-panel {
-  background: linear-gradient(180deg, #0b0e17 0%, #07090f 100%);
-  box-shadow: -8px 0 60px rgba(0,0,0,0.7), -2px 0 30px rgba(124,106,247,0.08);
+  background: linear-gradient(180deg, #0c1019 0%, #080b12 100%);
+  box-shadow: -8px 0 60px rgba(0,0,0,0.8), -2px 0 40px rgba(124,106,247,0.06), inset 1px 0 0 rgba(255,255,255,0.03);
 }
 
 .report-panel-open {
@@ -1193,8 +1230,8 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
 
 /* Report header */
 .report-header {
-  background: linear-gradient(135deg, rgba(124,106,247,0.06) 0%, rgba(52,211,153,0.03) 50%, transparent 100%);
-  border-bottom: 1px solid rgba(124,106,247,0.12);
+  background: linear-gradient(135deg, rgba(124,106,247,0.08) 0%, rgba(52,211,153,0.03) 40%, transparent 100%);
+  border-bottom: 1px solid rgba(124,106,247,0.1);
   position: relative;
   overflow: hidden;
 }
@@ -1210,27 +1247,55 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
   animation: shimmerLine 4s ease-in-out infinite;
 }
 
+.report-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(124,106,247,0.2), rgba(52,211,153,0.1), transparent);
+}
+
 .report-header-past {
   background: linear-gradient(135deg, rgba(96,165,250,0.08) 0%, rgba(124,106,247,0.04) 50%, transparent 100%);
 }
 
 /* Stats grid card */
 .report-stat-card {
-  background: rgba(255, 255, 255, 0.02);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01));
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 16px 20px;
+  border-radius: 16px;
+  padding: 18px 20px;
   position: relative;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   animation: statsReveal 0.5s ease-out backwards;
+  backdrop-filter: blur(8px);
+}
+
+.report-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, transparent, rgba(124,106,247,0.4), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .report-stat-card:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
   border-color: rgba(124, 106, 247, 0.2);
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px -8px rgba(124, 106, 247, 0.15);
+  box-shadow: 0 12px 40px -8px rgba(124, 106, 247, 0.12), 0 0 0 1px rgba(124,106,247,0.05);
+}
+
+.report-stat-card:hover::before {
+  opacity: 1;
 }
 
 .report-stat-card::after {
@@ -1240,7 +1305,7 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
   opacity: 0;
   transition: opacity 0.3s;
   background: radial-gradient(300px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-              rgba(124, 106, 247, 0.08), transparent 50%);
+              rgba(124, 106, 247, 0.06), transparent 50%);
   pointer-events: none;
 }
 
@@ -1256,17 +1321,18 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
 
 /* Report section card */
 .report-section-card {
-  background: rgba(255, 255, 255, 0.02);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.008));
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 16px;
   overflow: hidden;
   transition: all 0.3s ease;
   animation: cardStagger 0.5s ease-out backwards;
+  backdrop-filter: blur(4px);
 }
 
 .report-section-card:hover {
-  border-color: rgba(124, 106, 247, 0.15);
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.3);
+  border-color: rgba(124, 106, 247, 0.18);
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(124,106,247,0.04);
 }
 
 /* Report badge */
@@ -1339,7 +1405,8 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
 
 .report-asset-tab.active {
   color: #fff;
-  background: linear-gradient(135deg, rgba(124,106,247,0.3), rgba(167,139,250,0.2));
+  background: linear-gradient(135deg, rgba(124,106,247,0.35), rgba(167,139,250,0.2));
+  box-shadow: 0 2px 8px rgba(124,106,247,0.15);
 }
 
 .report-asset-tab.active::after {
@@ -1360,35 +1427,37 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
 
 /* Report section header */
 .report-section-header {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #6b7280;
+  letter-spacing: 0.1em;
+  color: #64748b;
+  font-family: 'DM Mono', monospace;
 }
 
 /* Report close button */
 .report-close-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 8px;
-  color: #6b7280;
+  color: #64748b;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(4px);
 }
 
 .report-close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.2);
   transform: rotate(90deg);
 }
 
 /* News card in report */
 .report-news-card {
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   padding: 14px 16px;
   transition: all 0.25s ease;
@@ -1398,31 +1467,34 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
 .report-news-card:hover {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(124, 106, 247, 0.15);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 }
 
 /* Report download button */
 .report-download-btn {
   width: 100%;
-  padding: 10px 0;
+  padding: 12px 0;
   border-radius: 12px;
   font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   color: white;
-  background: linear-gradient(135deg, rgba(124,106,247,0.2), rgba(124,106,247,0.1));
-  border: 1px solid rgba(124,106,247,0.25);
+  background: linear-gradient(135deg, #7c6af7, #6d5ce7);
+  border: none;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  text-transform: uppercase;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .report-download-btn::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(124,106,247,0.3), rgba(124,106,247,0.15));
+  background: linear-gradient(135deg, #8b7bf8, #7c6af7);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -1433,11 +1505,11 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
 
 .report-download-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px -8px rgba(124, 106, 247, 0.3);
+  box-shadow: 0 8px 32px -4px rgba(124, 106, 247, 0.4);
 }
 
 .report-download-btn:active {
-  transform: translateY(0) scale(0.99);
+  transform: translateY(0) scale(0.98);
 }
 
 /* Place trade button */
@@ -1445,18 +1517,20 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 18px;
+  padding: 8px 20px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0.03em;
   color: white;
   background: linear-gradient(135deg, #059669, #10b981);
   border: none;
   cursor: pointer;
   transition: all 0.25s ease;
-  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 2px 16px rgba(16, 185, 129, 0.3);
   position: relative;
   overflow: hidden;
+  text-decoration: none;
 }
 
 .report-trade-btn::after {
@@ -1551,4 +1625,55 @@ body .wallet-adapter-modal .wallet-adapter-modal-middle svg {
   width: 80%;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(124,106,247,0.2), transparent);
+}
+
+/* Report stat card accent variants */
+.report-stat-card-price::before {
+  background: linear-gradient(90deg, transparent, rgba(167,139,250,0.5), transparent) !important;
+  opacity: 1 !important;
+}
+
+.report-stat-card-fear::before {
+  background: linear-gradient(90deg, transparent, rgba(245,158,11,0.5), transparent) !important;
+  opacity: 1 !important;
+}
+
+.report-stat-card-sentiment::before {
+  background: linear-gradient(90deg, transparent, rgba(52,211,153,0.5), transparent) !important;
+  opacity: 1 !important;
+}
+
+.report-stat-card-accuracy::before {
+  background: linear-gradient(90deg, transparent, rgba(96,165,250,0.5), transparent) !important;
+  opacity: 1 !important;
+}
+
+/* News section divider */
+.report-news-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  margin: 4px 0;
+}
+
+/* Report footer gradient */
+.report-footer {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(12,16,25,0.6), rgba(12,16,25,1));
+  backdrop-filter: blur(12px);
+}
+
+/* Stat value highlight */
+.report-stat-value-green {
+  color: #34d399;
+  text-shadow: 0 0 20px rgba(52,211,153,0.15);
+}
+
+.report-stat-value-purple {
+  color: #a78bfa;
+  text-shadow: 0 0 20px rgba(167,139,250,0.15);
+}
+
+.report-stat-value-blue {
+  color: #60a5fa;
+  text-shadow: 0 0 20px rgba(96,165,250,0.15);
 }

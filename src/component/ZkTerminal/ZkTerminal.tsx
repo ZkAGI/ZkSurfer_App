@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef, FC, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   Zap, Image as ImageIcon, Lock, BarChart2, Plus, ChevronDown, ChevronRight,
   LayoutGrid, Store, Users, Key, Send, Paperclip, Terminal,
@@ -57,8 +58,6 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { icon: LayoutGrid, label: "ZkTerminal", active: true, href: "/home" },
-  { icon: Store, label: "AI Coin Marketplace", badge: "New", href: "/marketplace" },
-  { icon: Users, label: "Explore AI Agents", href: "/explore" },
   { icon: Key, label: "API Keys", href: "/api-key" },
 ];
 
@@ -275,7 +274,8 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
 
   const handleInputChange = (val: string) => {
     setInputVal(val);
-    if (val.startsWith('/')) {
+    // Only show command palette while typing the command itself (before any space)
+    if (val.startsWith('/') && !val.includes(' ')) {
       setShowCmdPalette(true);
       setCmdFilter(val.slice(1));
     } else {
@@ -819,8 +819,8 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                       </div>
                     )}
 
-                    {/* Plugins Modal - Full Overlay */}
-                    {showPlugins && (
+                    {/* Plugins Modal - Full Overlay (portaled to body) */}
+                    {showPlugins && typeof document !== 'undefined' && createPortal(
                       <div
                         className="plug-modal"
                         onClick={(e) => { if (e.target === e.currentTarget) setShowPlugins(false); }}
@@ -988,7 +988,8 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </div>,
+                      document.body
                     )}
 
                     {/* INPUT BOX */}
