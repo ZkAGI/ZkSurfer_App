@@ -357,14 +357,15 @@ import EditAgentClient from '@/component/ui/EditAgentClient';
 export async function generateMetadata({
   params,
 }: {
-  params: { ticker: string; lang: Locale };
+  params: Promise<{ ticker: string; lang: Locale }>;
 }): Promise<Metadata> {
+  const { ticker } = await params;
   return {
-    title: `Edit Agent: ${params.ticker}`,
-    description: `Configure and train the ${params.ticker} AI agent on ZkTerminal. Update training data, URLs, PDFs, and images for your agent's knowledge base.`,
+    title: `Edit Agent: ${ticker}`,
+    description: `Configure and train the ${ticker} AI agent on ZkTerminal. Update training data, URLs, PDFs, and images for your agent's knowledge base.`,
     openGraph: {
-      title: `Edit Agent: ${params.ticker} — ZkTerminal`,
-      description: `Configure the ${params.ticker} AI agent. Update training data and knowledge base.`,
+      title: `Edit Agent: ${ticker} — ZkTerminal`,
+      description: `Configure the ${ticker} AI agent. Update training data and knowledge base.`,
     },
   };
 }

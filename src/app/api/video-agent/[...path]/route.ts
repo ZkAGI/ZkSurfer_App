@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const VIDEO_API_BASE = 'https://content-agent-video.zkagi.ai';
 
-export async function handler(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+async function handler(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   const targetPath = path.join('/');
   const targetUrl = `${VIDEO_API_BASE}/api/v1/${targetPath}`;
