@@ -1705,10 +1705,10 @@ import { useState } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { toast } from 'sonner';
-import { X } from 'lucide-react';
+import { X, CreditCard, Coins, Check, Shield, Clock, Zap, ChevronRight, AlertTriangle, Loader2 } from 'lucide-react';
 import { useCoinGecko } from '@/hooks/useCoinGecko';
 
-// 🔧 FIXED SDK Loading with better error handling
+// SDK Loading with error handling
 async function loadTransakSDK(): Promise<void> {
   if (window.TransakSDK) {
     console.log('Transak SDK already loaded');
@@ -1824,10 +1824,10 @@ const SUBSCRIPTION_PLANS = [
     usdPrice: 5,
     duration: '24 hours access',
     features: [
-      '📊 One premium prediction report',
-      '📈 Current market analysis',
-      '⏰ 24-hour access',
-      '🎯 No commitment required'
+      'One premium prediction report',
+      'Current market analysis',
+      '24-hour access',
+      'No commitment required'
     ],
     popular: false,
     badge: 'TRY NOW',
@@ -1839,10 +1839,10 @@ const SUBSCRIPTION_PLANS = [
     usdPrice: 100,
     duration: '3 months',
     features: [
-      '📊 Premium prediction reports',
-      '📈 Advanced market analysis',
-      '🎯 Trading signals',
-      '📱 Unlimited access'
+      'Premium prediction reports',
+      'Advanced market analysis',
+      'Trading signals',
+      'Unlimited access'
     ],
     popular: false,
     type: 'subscription' as const,
@@ -1853,11 +1853,11 @@ const SUBSCRIPTION_PLANS = [
     usdPrice: 300,
     duration: '12 months',
     features: [
-      '📊 Premium prediction reports',
-      '📈 Advanced market analysis',
-      '🎯 Trading signals',
-      '⭐ Priority support',
-      '💎 VIP community access'
+      'Premium prediction reports',
+      'Advanced market analysis',
+      'Trading signals',
+      'Priority support',
+      'VIP community access'
     ],
     popular: true,
     type: 'subscription' as const,
@@ -2177,156 +2177,238 @@ export default function SubscriptionModal({
   const isSingleReport = currentPlan.id === 'single-report';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
-      <div className="relative bg-gray-900 rounded-2xl shadow-2xl max-w-5xl w-full mx-4 max-h-[95vh] overflow-y-auto border border-gray-700">
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 50,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)",
+    }}>
+      <div style={{
+        position: "relative",
+        background: "#0b0d16",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 20,
+        maxWidth: 860, width: "100%", margin: "0 16px",
+        maxHeight: "92vh", overflowY: "auto",
+        boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+        fontFamily: "'DM Sans', sans-serif",
+        color: "#e2e8f0",
+      }}>
         {/* Header */}
-        <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-6 rounded-t-2xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-white mb-2">
-                💰 {isSingleReport ? 'Single Report Access' : 'Subscription Plans'}
-              </h2>
-              <p className="text-gray-400">
-                {isSingleReport
-                  ? 'Try our premium reports for just $5 • 24-hour access • KYC Issues Fixed'
-                  : 'Pay with any currency/crypto • All payment methods available • KYC Issues Resolved'
-                }
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6 text-gray-400" />
-            </button>
+        <div style={{
+          position: "sticky", top: 0, zIndex: 10,
+          background: "rgba(11,13,22,0.95)", backdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          padding: "20px 24px",
+          borderRadius: "20px 20px 0 0",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div>
+            <h2 style={{
+              fontSize: 22, fontWeight: 700, color: "#f1f5f9",
+              fontFamily: "'Syne', sans-serif", marginBottom: 4,
+            }}>
+              {isSingleReport ? 'Single Report Access' : 'Subscription Plans'}
+            </h2>
+            <p style={{ fontSize: 13, color: "#6b7280" }}>
+              {isSingleReport
+                ? 'Try our premium reports for just $5 with 24-hour access'
+                : 'Pay with any currency or crypto to unlock full access'}
+            </p>
           </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#6b7280", cursor: "pointer", flexShrink: 0,
+            }}
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div style={{ padding: "24px" }}>
           {/* Plan Selection */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-white mb-6">Choose Your Plan</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div style={{ marginBottom: 28 }}>
+            <div style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: "#4b5563", marginBottom: 14,
+            }}>Choose Your Plan</div>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 14,
+            }}>
               {SUBSCRIPTION_PLANS.map((plan) => (
                 <div
                   key={plan.id}
                   onClick={() => setSelectedPlan(plan.id)}
-                  className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all transform hover:scale-105 ${selectedPlan === plan.id
-                    ? 'border-indigo-500 bg-indigo-900/30 shadow-lg shadow-indigo-500/20'
-                    : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-                    }`}
+                  style={{
+                    position: "relative",
+                    padding: "20px 18px",
+                    borderRadius: 14,
+                    border: selectedPlan === plan.id
+                      ? "1.5px solid rgba(124,106,247,0.5)"
+                      : "1px solid rgba(255,255,255,0.06)",
+                    background: selectedPlan === plan.id
+                      ? "rgba(124,106,247,0.06)"
+                      : "rgba(255,255,255,0.02)",
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
                 >
                   {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-bold">
-                        MOST POPULAR
-                      </span>
-                    </div>
+                    <div style={{
+                      position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)",
+                      background: "linear-gradient(135deg, #7c6af7, #4338ca)",
+                      color: "#fff", fontSize: 10, fontWeight: 700,
+                      padding: "3px 12px", borderRadius: 99,
+                      letterSpacing: "0.05em",
+                    }}>BEST VALUE</div>
                   )}
-
-                  {plan.badge && (
-                    <div className="absolute -top-3 right-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${plan.id === 'single-report'
-                        ? 'bg-orange-600 text-white'
-                        : 'bg-green-600 text-white'
-                        }`}>
-                        {plan.badge}
-                      </span>
-                    </div>
+                  {plan.badge && !plan.popular && (
+                    <div style={{
+                      position: "absolute", top: -10, right: 14,
+                      background: "rgba(52,211,153,0.15)",
+                      border: "1px solid rgba(52,211,153,0.3)",
+                      color: "#34d399", fontSize: 10, fontWeight: 700,
+                      padding: "3px 10px", borderRadius: 99,
+                    }}>{plan.badge}</div>
                   )}
-
-                  <div className="text-center mb-6">
-                    <h4 className="text-xl font-bold text-white mb-2">{plan.name}</h4>
-                    <div className={`text-3xl font-bold mb-1 ${plan.id === 'single-report' ? 'text-orange-400' : 'text-green-400'
-                      }`}>
-                      ${plan.usdPrice} USD
-                    </div>
-                    <div className="text-sm text-gray-400 mb-2">{plan.duration}</div>
-                    {plan.id === 'single-report' && (
-                      <div className="text-xs text-orange-300 bg-orange-900/20 px-3 py-1 rounded-full">
-                        Perfect for trying our service
-                      </div>
-                    )}
+                  <div style={{ textAlign: "center", marginBottom: 16 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", marginBottom: 6 }}>{plan.name}</div>
+                    <div style={{
+                      fontSize: 28, fontWeight: 700,
+                      fontFamily: "'DM Mono', monospace",
+                      color: selectedPlan === plan.id ? "#a78bfa" : "#34d399",
+                      marginBottom: 2,
+                    }}>${plan.usdPrice}</div>
+                    <div style={{ fontSize: 12, color: "#6b7280" }}>{plan.duration}</div>
                   </div>
-
-                  <ul className="space-y-3 text-sm">
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-gray-300">
-                        <span className={`mr-2 ${plan.id === 'single-report' ? 'text-orange-400' : 'text-green-400'
-                          }`}>✓</span>
+                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#9ca3af" }}>
+                        <Check size={12} color={selectedPlan === plan.id ? "#a78bfa" : "#34d399"} style={{ flexShrink: 0 }} />
                         {feature}
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Payment Method Selection */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-white mb-4">How would you like to pay?</h3>
-            <div className="flex bg-gray-800/50 rounded-xl p-1 border border-gray-600">
+          {/* Payment Method Toggle */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: "#4b5563", marginBottom: 10,
+            }}>Payment Method</div>
+            <div style={{
+              display: "flex",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 12, padding: 3,
+            }}>
               <button
                 onClick={() => setPaymentMethod('fiat')}
-                className={`flex-1 py-4 px-6 rounded-lg font-semibold transition-all ${paymentMethod === 'fiat'
-                  ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-                  }`}
+                style={{
+                  flex: 1, padding: "10px 16px", borderRadius: 10,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer",
+                  background: paymentMethod === 'fiat' ? "rgba(124,106,247,0.15)" : "transparent",
+                  color: paymentMethod === 'fiat' ? "#a78bfa" : "#6b7280",
+                  transition: "all 0.15s",
+                }}
               >
-                💳 Fiat Currency (Fixed KYC)
+                <CreditCard size={15} />
+                Fiat Currency
               </button>
               <button
                 onClick={() => setPaymentMethod('crypto')}
-                className={`flex-1 py-4 px-6 rounded-lg font-semibold transition-all ${paymentMethod === 'crypto'
-                  ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-                  }`}
+                style={{
+                  flex: 1, padding: "10px 16px", borderRadius: 10,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer",
+                  background: paymentMethod === 'crypto' ? "rgba(124,106,247,0.15)" : "transparent",
+                  color: paymentMethod === 'crypto' ? "#a78bfa" : "#6b7280",
+                  transition: "all 0.15s",
+                }}
               >
-                🪙 Cryptocurrency
+                <Coins size={15} />
+                Cryptocurrency
               </button>
             </div>
           </div>
 
           {/* Currency Selection */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              {paymentMethod === 'fiat' ? 'Select Your Currency' : 'Select Cryptocurrency to Pay With'}
-            </h3>
+          <div style={{ marginBottom: 24 }}>
+            <div style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: "#4b5563", marginBottom: 10,
+            }}>
+              {paymentMethod === 'fiat' ? 'Select Currency' : 'Select Cryptocurrency'}
+            </div>
 
             {paymentMethod === 'fiat' ? (
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
+                gap: 8,
+              }}>
                 {FIAT_CURRENCIES.map((currency) => (
                   <button
                     key={currency.code}
                     onClick={() => setSelectedFiatCurrency(currency.code)}
-                    className={`p-3 rounded-lg border-2 transition-all ${selectedFiatCurrency === currency.code
-                      ? 'border-indigo-500 bg-indigo-900/30 text-white'
-                      : 'border-gray-600 bg-gray-800/30 text-gray-300 hover:border-gray-500'
-                      }`}
+                    style={{
+                      padding: "10px 8px", borderRadius: 10,
+                      border: selectedFiatCurrency === currency.code
+                        ? "1.5px solid rgba(124,106,247,0.5)"
+                        : "1px solid rgba(255,255,255,0.06)",
+                      background: selectedFiatCurrency === currency.code
+                        ? "rgba(124,106,247,0.08)"
+                        : "rgba(255,255,255,0.02)",
+                      color: selectedFiatCurrency === currency.code ? "#a78bfa" : "#9ca3af",
+                      cursor: "pointer", textAlign: "center",
+                      transition: "all 0.12s",
+                    }}
                   >
-                    <div className="text-lg font-bold">{currency.symbol}</div>
-                    <div className="text-xs">{currency.code}</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{currency.symbol}</div>
+                    <div style={{ fontSize: 10, fontWeight: 600, marginTop: 2 }}>{currency.code}</div>
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                gap: 8,
+              }}>
                 {CRYPTOCURRENCIES.map((crypto) => (
                   <button
                     key={crypto.code}
                     onClick={() => setSelectedCrypto(crypto.code)}
-                    className={`p-4 rounded-lg border-2 transition-all ${selectedCrypto === crypto.code
-                      ? 'border-indigo-500 bg-indigo-900/30 text-white'
-                      : 'border-gray-600 bg-gray-800/30 text-gray-300 hover:border-gray-500'
-                      }`}
+                    style={{
+                      padding: "12px 10px", borderRadius: 10,
+                      border: selectedCrypto === crypto.code
+                        ? "1.5px solid rgba(124,106,247,0.5)"
+                        : "1px solid rgba(255,255,255,0.06)",
+                      background: selectedCrypto === crypto.code
+                        ? "rgba(124,106,247,0.08)"
+                        : "rgba(255,255,255,0.02)",
+                      color: selectedCrypto === crypto.code ? "#e2e8f0" : "#9ca3af",
+                      cursor: "pointer", textAlign: "center",
+                      transition: "all 0.12s",
+                    }}
                   >
-                    <div className="text-xl font-bold mb-1">{crypto.symbol}</div>
-                    <div className="text-sm font-medium">{crypto.code}</div>
-                    <div className="text-xs text-gray-400">{crypto.name}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{crypto.symbol}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2 }}>{crypto.code}</div>
+                    <div style={{ fontSize: 10, color: "#6b7280" }}>{crypto.name}</div>
                     {!isPriceLoading && safeRates.has(crypto.code) && (
-                      <div className="text-xs text-green-400 mt-1">
+                      <div style={{ fontSize: 10, color: "#34d399", marginTop: 3, fontFamily: "'DM Mono', monospace" }}>
                         ${getCryptoPrice(crypto.code).toFixed(2)}
                       </div>
                     )}
@@ -2337,300 +2419,136 @@ export default function SubscriptionModal({
           </div>
 
           {/* Payment Summary */}
-          <div className="mb-8 p-6 bg-gray-800/30 rounded-xl border border-gray-600">
-            <h3 className="text-lg font-semibold text-white mb-4">Payment Summary</h3>
+          <div style={{
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 14, padding: "18px 20px",
+            marginBottom: 20,
+          }}>
+            <div style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: "#4b5563", marginBottom: 14,
+            }}>Payment Summary</div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Selected Plan:</span>
-                <span className="text-white font-medium">{currentPlan.name}</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#6b7280" }}>Plan</span>
+                <span style={{ color: "#e2e8f0", fontWeight: 500 }}>{currentPlan.name}</span>
               </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-400">
-                  {isSingleReport ? 'Access Duration:' : 'Duration:'}
-                </span>
-                <span className="text-white">{currentPlan.duration}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#6b7280" }}>Duration</span>
+                <span style={{ color: "#e2e8f0" }}>{currentPlan.duration}</span>
               </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-400">Payment Method:</span>
-                <span className="text-white">
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#6b7280" }}>Payment</span>
+                <span style={{ color: "#e2e8f0" }}>
                   {paymentMethod === 'fiat'
-                    ? `${selectedFiatCurrencyData?.name} (KYC Fixed)`
-                    : `${selectedCryptoData?.name} (${selectedCrypto})`
-                  }
+                    ? selectedFiatCurrencyData?.name
+                    : `${selectedCryptoData?.name} (${selectedCrypto})`}
                 </span>
               </div>
 
-              <div className="border-t border-gray-600 pt-3">
-                <div className="flex justify-between text-lg">
-                  <span className="text-gray-400">You Pay:</span>
-                  <div className="text-right">
-                    <div className="text-white font-bold">
-                      {paymentMethod === 'fiat'
-                        ? `${selectedFiatCurrencyData?.symbol}${Math.round(amounts.userPays)}`
-                        : `${amounts.userPays.toFixed(selectedCrypto === 'SOL' || selectedCrypto === 'BTC' ? 6 : 2)} ${selectedCrypto}`
-                      }
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      (Pre-filled in Transak)
-                    </div>
-                  </div>
-                </div>
+              <div style={{
+                borderTop: "1px solid rgba(255,255,255,0.06)",
+                paddingTop: 12, marginTop: 4,
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+              }}>
+                <span style={{ fontSize: 13, color: "#6b7280" }}>You Pay</span>
+                <span style={{
+                  fontSize: 20, fontWeight: 700,
+                  fontFamily: "'DM Mono', monospace",
+                  color: "#a78bfa",
+                }}>
+                  {paymentMethod === 'fiat'
+                    ? `${selectedFiatCurrencyData?.symbol}${Math.round(amounts.userPays)}`
+                    : `${amounts.userPays.toFixed(selectedCrypto === 'SOL' || selectedCrypto === 'BTC' ? 6 : 2)} ${selectedCrypto}`}
+                </span>
               </div>
-
-              <div className="border-t border-gray-600 pt-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">We Receive:</span>
-                  <div className="text-right">
-                    <div className={`font-bold text-lg ${isSingleReport ? 'text-orange-400' : 'text-green-400'
-                      }`}>
-                      {amounts.businessReceives} USDC
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      (≈ ${amounts.businessReceives} USD)
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* KYC Attempts Tracker */}
-              {kycAttempts > 0 && (
-                <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
-                  <div className="flex items-start text-yellow-300 text-sm">
-                    <span className="mr-2 text-lg">⚠️</span>
-                    <div>
-                      <div className="font-semibold mb-1">KYC Attempts: {kycAttempts}</div>
-                      <div className="text-xs space-y-1">
-                        <div>• Ensure documents are clear and readable</div>
-                        <div>• Use valid government-issued ID</div>
-                        <div>• Complete selfie verification properly</div>
-                        <div>• Try using a different device/browser if issues persist</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* KYC Fixed Notice */}
-              <div className="mt-4 p-4 bg-green-900/20 border border-green-600/30 rounded-lg">
-                <div className="flex items-start text-green-300 text-sm">
-                  <span className="mr-2 text-lg">✅</span>
-                  <div>
-                    <div className="font-semibold mb-1">KYC Issues Fixed (2025 Update)</div>
-                    <div className="text-xs space-y-1">
-                      <div>• Fixed empty cards endpoint response issue</div>
-                      <div>• Resolved KYC redirect loops</div>
-                      <div>• Unique customer IDs prevent conflicts</div>
-                      <div>• Proper webhook configuration</div>
-                      <div>• Enhanced error handling for KYC failures</div>
-                      <div>• Auto-retry mechanism for failed verifications</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {isSingleReport && (
-                <div className="mt-4 p-3 bg-orange-900/20 border border-orange-600/30 rounded-lg">
-                  <div className="flex items-center text-orange-300 text-sm">
-                    <span className="mr-2">💡</span>
-                    <span>
-                      After payment, you&apos;ll get immediate access to view one premium report.
-                      Access expires after 24 hours. KYC issues have been resolved.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Connection Status Indicator */}
-              {sdkLoadAttempts > 0 && (
-                <div className="mt-4 p-3 bg-blue-900/20 border border-blue-600/30 rounded-lg">
-                  <div className="flex items-center text-blue-300 text-sm">
-                    <span className="mr-2">🔄</span>
-                    <span>
-                      SDK Load Attempts: {sdkLoadAttempts} - Using enhanced connection methods with KYC fixes
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Single Payment Button */}
-          <div className="space-y-4">
-            <button
-              onClick={handlePayment}
-              disabled={isProcessing || isPriceLoading}
-              className={`
-                w-full py-4 px-6 rounded-xl font-bold text-lg
-                transition-all duration-200 shadow-lg
-                ${!isProcessing && !isPriceLoading
-                  ? `bg-gradient-to-r ${isSingleReport
-                    ? 'from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700'
-                    : 'from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700'
-                  } text-white hover:shadow-xl transform hover:scale-105`
-                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                }
-              `}
-            >
-              {isProcessing ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                  {sdkLoadAttempts <= 1 ? 'Opening Transak (KYC Fixed)...' : 'Trying Backup Method...'}
+          {/* KYC Warning */}
+          {kycAttempts > 0 && (
+            <div style={{
+              display: "flex", alignItems: "flex-start", gap: 12,
+              background: "rgba(245,158,11,0.06)",
+              border: "1px solid rgba(245,158,11,0.15)",
+              borderRadius: 12, padding: "14px 16px",
+              marginBottom: 16,
+            }}>
+              <AlertTriangle size={16} color="#f59e0b" style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#f59e0b", marginBottom: 4 }}>
+                  Verification attempt {kycAttempts}
                 </div>
-              ) : isPriceLoading ? (
-                'Loading current prices...'
-              ) : isSingleReport ? (
-                `💳 Pay ${paymentMethod === 'fiat'
-                  ? `${selectedFiatCurrencyData?.symbol}${Math.round(amounts.userPays)}`
-                  : `${amounts.userPays.toFixed(6)} ${selectedCrypto}`
-                } → Get 24hr Access (KYC Fixed)`
-              ) : (
-                `💳 Pay ${paymentMethod === 'fiat'
-                  ? `${selectedFiatCurrencyData?.symbol}${Math.round(amounts.userPays)}`
-                  : `${amounts.userPays.toFixed(6)} ${selectedCrypto}`
-                } → Get ${amounts.businessReceives} USDC (KYC Fixed)`
-              )}
-            </button>
-
-            {/* KYC Troubleshooting Guide */}
-            {kycAttempts > 0 && !isProcessing && (
-              <div className="p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
-                <div className="text-yellow-300 text-sm">
-                  <div className="font-semibold mb-2">🔧 KYC Troubleshooting Guide</div>
-                  <div className="space-y-1 text-xs">
-                    <div>• Document Quality: Ensure photos are clear, well-lit, and readable</div>
-                    <div>• ID Requirements: Use government-issued photo ID (passport, driver&apos;s license)</div>
-                    <div>• Selfie Tips: Face camera directly, ensure good lighting, remove accessories</div>
-                    <div>• Address Proof: Bank statement, utility bill (less than 3 months old)</div>
-                    <div>• Browser Issues: Try incognito mode, different browser, or mobile device</div>
-                    <div>• Network: Ensure stable internet connection during verification</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Error Troubleshooting */}
-            {sdkLoadAttempts > 1 && !isProcessing && (
-              <div className="p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
-                <div className="text-yellow-300 text-sm">
-                  <div className="font-semibold mb-2">🔧 Connection Issues Detected</div>
-                  <div className="space-y-1 text-xs">
-                    <div>• Trying backup payment methods with KYC fixes</div>
-                    <div>• CSP/CORS errors are normal (Transak internal logging)</div>
-                    <div>• If payment window doesn&apos;t open, try disabling ad blockers</div>
-                    <div>• Ensure JavaScript is enabled in your browser</div>
-                    <div>• KYC redirect loops have been resolved in this version</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Fixed CSP Error Notice */}
-            <div className="p-3 bg-gray-800/50 border border-gray-600/30 rounded-lg">
-              <div className="text-gray-400 text-xs">
-                <div className="font-semibold mb-1">ℹ️ 2025 Fixes Applied:</div>
-                <div className="space-y-1">
-                  <div>• ✅ Fixed: Empty cards endpoint response issue</div>
-                  <div>• ✅ Fixed: KYC redirect loop after completion</div>
-                  <div>• ✅ Fixed: Unique customer ID conflicts</div>
-                  <div>• ✅ Fixed: Webhook configuration issues</div>
-                  <div>• ✅ Enhanced: KYC event handling and error recovery</div>
-                  <div>• LogRocket/New Relic 403 errors: Normal Transak internal logging</div>
-                  <div>• CSP script violations: Normal security policy, doesn&apos;t affect payments</div>
-                </div>
-              </div>
-            </div>
-
-            {isSingleReport && (
-              <div className="text-center">
-                <p className="text-sm text-gray-400 mb-2">
-                  Want unlimited access? Consider our subscription plans above.
-                </p>
-                <p className="text-xs text-orange-400">
-                  Single report payments are perfect for trying our service risk-free! KYC issues resolved.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Debug Information (Development Only) */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-6 p-4 bg-purple-900/20 border border-purple-600/30 rounded-lg">
-              <div className="text-purple-300 text-sm">
-                <div className="font-semibold mb-2">🔧 2025 Debug Information (KYC Fixed):</div>
-                <div className="space-y-1 text-xs">
-                  <div>• Environment: {getTransakEnvironment()}</div>
-                  <div>• API Key: {getTransakApiKey() ? `${getTransakApiKey().substring(0, 8)}...` : 'Not Set'}</div>
-                  <div>• Payment Method: {paymentMethod}</div>
-                  <div>• Selected Plan: {selectedPlan}</div>
-                  <div>• SDK Load Attempts: {sdkLoadAttempts}</div>
-                  <div>• KYC Attempts: {kycAttempts}</div>
-                  <div>• Customer Pays: {paymentMethod === 'fiat'
-                    ? `${selectedFiatCurrencyData?.symbol}${Math.round(amounts.userPays)} ${selectedFiatCurrency}`
-                    : `${amounts.userPays.toFixed(6)} ${selectedCrypto}`
-                  }</div>
-                  <div>• Business Receives: {amounts.businessReceives} USDC</div>
-                  <div>• Treasury Wallet: {treasuryWallet.substring(0, 8)}...{treasuryWallet.substring(-8)}</div>
-                  <div>• KYC Fixes Applied:</div>
-                  <ul className="ml-4 text-xs space-y-1">
-                    <li>✅ Unique customer IDs with timestamp + random</li>
-                    <li>✅ Proper webhook configuration</li>
-                    <li>✅ Fixed redirect URLs to prevent loops</li>
-                    <li>✅ Disabled auto-fill to prevent conflicts</li>
-                    <li>✅ Enhanced KYC event handling</li>
-                    <li>✅ isAutoFillUserData: false</li>
-                    <li>✅ disableWalletAddressForm: true</li>
-                    <li>✅ Force fresh session for each attempt</li>
-                  </ul>
+                <div style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.5 }}>
+                  Ensure documents are clear and readable. Use a valid government-issued ID and try a different browser if needed.
                 </div>
               </div>
             </div>
           )}
 
-          {/* Configuration Status */}
-          <div className="mt-4 p-4 bg-blue-900/20 border border-blue-600/30 rounded-lg">
-            <div className="text-blue-300 text-sm">
-              <div className="font-semibold mb-2">🔧 2025 Transak Configuration Status (KYC FIXED):</div>
-              <div className="space-y-1 text-xs">
-                <div>• Flow: Standard BUY (on-ramp) → Customer pays {paymentMethod === 'crypto' ? selectedCrypto : selectedFiatCurrency} → You get USDC</div>
-                <div>• Environment: {getTransakEnvironment()}</div>
-                <div>• Pre-filled Amount: {paymentMethod === 'fiat'
-                  ? `${Math.round(amounts.userPays)} ${selectedFiatCurrency}`
-                  : `${amounts.userPays.toFixed(6)} ${selectedCrypto}`} (using defaultFiatAmount)
-                </div>
-                <div>• Receiving Currency: USDC (locked, visible in widget)</div>
-                <div>• Receiving Amount: {amounts.businessReceives} USDC (≈ ${amounts.businessReceives} USD)</div>
-                <div>• Network: Ethereum</div>
-                <div>• Treasury Wallet: {treasuryWallet.substring(0, 12)}...</div>
-                <div>• KYC Issues: RESOLVED ✅</div>
-                <div>• Cards Endpoint: Fixed empty response issue ✅</div>
-                <div>• Redirect Loops: Eliminated ✅</div>
-                <div>• Customer ID Conflicts: Prevented ✅</div>
-              </div>
-            </div>
-          </div>
+          {/* Pay Button */}
+          <button
+            onClick={handlePayment}
+            disabled={isProcessing || isPriceLoading}
+            style={{
+              width: "100%", padding: "14px 20px", borderRadius: 12,
+              background: isProcessing || isPriceLoading
+                ? "rgba(255,255,255,0.04)"
+                : "linear-gradient(135deg, #7c6af7, #4338ca)",
+              border: "none",
+              color: isProcessing || isPriceLoading ? "#6b7280" : "#fff",
+              fontSize: 15, fontWeight: 700,
+              cursor: isProcessing || isPriceLoading ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              boxShadow: isProcessing || isPriceLoading ? "none" : "0 4px 20px rgba(124,106,247,0.3)",
+              transition: "all 0.15s",
+              marginBottom: 16,
+            }}
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+                Processing...
+              </>
+            ) : isPriceLoading ? (
+              'Loading prices...'
+            ) : (
+              <>
+                <Zap size={16} />
+                Pay {paymentMethod === 'fiat'
+                  ? `${selectedFiatCurrencyData?.symbol}${Math.round(amounts.userPays)}`
+                  : `${amounts.userPays.toFixed(selectedCrypto === 'SOL' || selectedCrypto === 'BTC' ? 6 : 2)} ${selectedCrypto}`}
+                <ChevronRight size={16} />
+              </>
+            )}
+          </button>
 
-          {/* Security & Features Notice */}
-          <div className="mt-6 pt-4 border-t border-gray-700">
-            <div className="text-center space-y-2">
-              <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
-                <span>🔒 KYC Issues Fixed</span>
-                <span>•</span>
-                <span>💳 All Payment Methods</span>
-                <span>•</span>
-                <span>⚡ USDC Direct Receipt</span>
-                <span>•</span>
-                <span>🔧 2025 Updates Applied</span>
-              </div>
-              <p className="text-xs text-gray-500">
-                Powered by Transak 2025 • KYC Issues Resolved • Fixed Configuration • ZkAGI2025
-              </p>
+          {/* Footer */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
+            paddingTop: 12,
+            borderTop: "1px solid rgba(255,255,255,0.04)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#4b5563" }}>
+              <Shield size={11} />
+              Secure payment
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#4b5563" }}>
+              <CreditCard size={11} />
+              All methods
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#4b5563" }}>
+              <Zap size={11} />
+              Instant access
             </div>
           </div>
         </div>
       </div>
+
+      {/* Spin animation for loader */}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

@@ -164,7 +164,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ coin, depth = 10, refreshInterval
 
   // show error
   if (error) {
-    return <div style={{ color: '#F55', fontFamily: 'sans-serif' }}>{error}</div>
+    return <div style={{ color: '#ef4444', fontFamily: "'DM Sans', sans-serif", fontSize: 13 }}>{error}</div>
   }
 
   // compute max size
@@ -188,32 +188,34 @@ const OrderBook: React.FC<OrderBookProps> = ({ coin, depth = 10, refreshInterval
 
     return (
       <div key={`${isAsk ? 'ask' : 'bid'}-${i}`} style={{
-        position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', padding: '2px 0', fontSize: 12,
-        color: isAsk ? '#FF5555' : '#07E75B'
+        position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', padding: '3px 0', fontSize: 12,
+        fontFamily: "'DM Mono', monospace",
+        color: isAsk ? '#ef4444' : '#34d399'
       }}>
         <div style={{ zIndex: 2, textAlign: 'right' }}>{order.p}</div>
         <div style={{ zIndex: 2, textAlign: 'right' }}>{order.s}</div>
         <div style={{ zIndex: 2, textAlign: 'right' }}>{cum.toFixed(2)}</div>
         <div style={{ position: 'absolute', top: 0, bottom: 0, [isAsk ? 'right' : 'left']: 0,
-          width: `${width}%`, background: isAsk ? 'rgba(255,85,85,0.2)' : 'rgba(7,231,91,0.2)', zIndex: 1
+          width: `${width}%`, background: isAsk ? 'rgba(239,68,68,0.1)' : 'rgba(52,211,153,0.1)', zIndex: 1,
+          borderRadius: 2
         }} />
       </div>
     )
   }
 
   return (
-    <div style={{ width: '100%', fontFamily: 'sans-serif', color: '#FFF' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <h4 style={{ margin: 0 }}>Order Book</h4>
-        <div style={{ fontSize: 12, opacity: 0.7 }}>Spread {spread} ({pct}%)</div>
+    <div style={{ width: '100%', fontFamily: "'DM Sans', sans-serif", color: '#e2e8f0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>{coin}/USDT</span>
+        <span style={{ fontSize: 11, fontFamily: "'DM Mono', monospace", color: '#6b7280', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: 6 }}>Spread {spread} ({pct}%)</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', fontSize: 11, color: '#6b7280', marginBottom: 6, fontFamily: "'DM Mono', monospace" }}>
         <div style={{ textAlign: 'right' }}>Price</div>
         <div style={{ textAlign: 'right' }}>Size</div>
         <div style={{ textAlign: 'right' }}>Total</div>
       </div>
       <div>{asks.map((o, i) => renderRow(o, true, i))}</div>
-      <div style={{ height: 8 }} />
+      <div style={{ height: 6, borderBottom: '1px solid rgba(255,255,255,0.06)' }} />
       <div>{bids.map((o, i) => renderRow(o, false, i))}</div>
     </div>
   )

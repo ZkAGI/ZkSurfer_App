@@ -679,7 +679,7 @@ const payload: PlaceOrderBody = {
         border: '1px solid rgba(124,106,247,0.3)',
         boxShadow: '0 0 24px -4px rgba(124,106,247,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
       }}>
-        <Image src="images/tiger.svg" alt="logo" width={24} height={24} />
+        <Image src="/images/tiger.svg" alt="logo" width={24} height={24} />
       </div>
       <div>
         <h1 className="text-base font-syne font-bold tracking-tight text-white">

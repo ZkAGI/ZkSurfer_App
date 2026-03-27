@@ -10,6 +10,7 @@ import { useConversationStore } from '@/stores/conversation-store';
 import { useMedicalProofStore } from '@/stores/medical-proof-store';
 import { FullReportData, CryptoNewsItem, MacroNewsItem, HourlyForecast } from '@/types/types';
 import { dummyReportData } from '@/data/dummyReportData';
+import compressImageMint from '@/lib/compressImage';
 
 // Components
 import ZkTerminal from '@/component/ZkTerminal/ZkTerminal';
@@ -18,12 +19,21 @@ import ReportSidebar from '@/component/ui/ReportSidebar';
 import SubscriptionModal from '@/component/ui/SubscriptionModal';
 import PastPredictions from '@/component/ui/PastPredictions';
 import VideoAgentModal from '@/component/ui/VideoAgentModal';
+import PredictionAgentModal from '@/component/ui/PredictionAgentModal';
+
+interface MessageStats {
+  timeTakenMs: number;
+  tokensEstimated: number;
+  creditsUsed: number;
+  model: string;
+}
 
 interface Message {
   role: 'user' | 'assistant';
   content: string | ReactNode;
   type?: 'text' | 'image' | 'command';
   command?: string;
+  stats?: MessageStats;
 }
 
 interface HourlyEntryLocal {
@@ -104,6 +114,8 @@ const HomeContent: FC = () => {
   const [reportData, setReportData] = useState<FullReportData | PastPredictionData | null>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showVideoAgent, setShowVideoAgent] = useState(false);
+  const [showPredictionAgent, setShowPredictionAgent] = useState(false);
+  const [isMinting, setIsMinting] = useState(false);
 
   // Initialize credits
   useEffect(() => {
@@ -742,13 +754,16 @@ const HomeContent: FC = () => {
 
       // ── Default: send to chat API for AI response ──
       const { selectedModel, credits: currentCredits, apiKey: currentApiKey } = useModelStore.getState();
+      const chatModel = selectedModel || 'DeepSeek';
+      const chatStartTime = Date.now();
+      const creditsBefore = currentCredits;
 
       const response = await streamChatResponse({
         messages: [...displayMessages, userMessage].map(m => ({
           role: m.role,
           content: typeof m.content === 'string' ? m.content : '',
         })),
-        selectedModel: selectedModel || 'DeepSeek',
+        selectedModel: chatModel,
         credits: currentCredits,
         apiKey: currentApiKey,
       });
@@ -794,6 +809,21 @@ const HomeContent: FC = () => {
           };
           return updated;
         });
+      } else {
+        // Attach stats to the completed message
+        const timeTakenMs = Date.now() - chatStartTime;
+        const tokensEstimated = Math.ceil(fullResponse.length / 4);
+        // Refresh credits to calculate usage
+        const creditsAfter = useModelStore.getState().credits;
+        const creditsUsed = Math.max(0, creditsBefore - creditsAfter);
+        setDisplayMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
+            stats: { timeTakenMs, tokensEstimated, creditsUsed, model: chatModel },
+          };
+          return updated;
+        });
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -816,13 +846,13 @@ const HomeContent: FC = () => {
       useAgentCart.getState().setFlowGateOpen(true);
     } else if (command === 'video-agent') {
       setShowVideoAgent(true);
+    } else if (command === 'prediction-agent') {
+      setShowPredictionAgent(true);
     } else if (command === 'analyze') {
       handleOpenReport();
     } else if (command === 'image-gen') {
       // Will be triggered via ZkTerminal input
     } else if (command === 'generate-private') {
-      // Will be triggered via ZkTerminal input
-    } else if (command === 'privacy-ai') {
       // Will be triggered via ZkTerminal input
     }
   };
@@ -892,6 +922,34 @@ const HomeContent: FC = () => {
     setIsReportOpen(true);
   };
 
+  const handleMintNFT = async (base64Image: string) => {
+    if (!publicKey) {
+      toast.error('Connect your wallet to mint NFTs');
+      return;
+    }
+    setIsMinting(true);
+    try {
+      const compressedBase64 = await compressImageMint(base64Image, 800, 0.7);
+      const response = await fetch('/api/mint-nft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          base64Image: compressedBase64,
+          name: 'NFT',
+          recipient: publicKey.toString(),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Error minting NFT');
+      toast.success(`NFT minted successfully! Mint: ${data.mintAddress.slice(0, 8)}...`);
+    } catch (error: any) {
+      console.error('Failed to mint NFT:', error);
+      toast.error(error.message || 'Failed to mint NFT');
+    } finally {
+      setIsMinting(false);
+    }
+  };
+
   return (
     <div className="relative">
       <ZkTerminal
@@ -903,6 +961,8 @@ const HomeContent: FC = () => {
         messages={displayMessages}
         pastPredictionsError={pastPredictionsError}
         onRetryPastPredictions={handleRetryPastPredictions}
+        onMintNFT={handleMintNFT}
+        isMinting={isMinting}
       />
 
       {/* Swarm Creation Modal */}
@@ -912,6 +972,12 @@ const HomeContent: FC = () => {
       <VideoAgentModal
         isOpen={showVideoAgent}
         onClose={() => setShowVideoAgent(false)}
+      />
+
+      {/* Prediction Agent Modal */}
+      <PredictionAgentModal
+        isOpen={showPredictionAgent}
+        onClose={() => setShowPredictionAgent(false)}
       />
 
       {/* Report Sidebar */}

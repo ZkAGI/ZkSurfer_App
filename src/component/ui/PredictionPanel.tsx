@@ -55,7 +55,7 @@
 //                 <div className="relative">
 //                     <button
 //                         onClick={() => setIsAssetDropdownOpen(!isAssetDropdownOpen)}
-//                         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:bg-gray-750 transition-colors"
+//                         className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-left flex items-center justify-between hover:bg-gray-750 transition-colors"
 //                         type="button"
 //                     >
 //                         <span>{currentAsset}</span>
@@ -63,11 +63,11 @@
 //                     </button>
 
 //                     {isAssetDropdownOpen && (
-//                         <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10">
+//                         <div className="absolute top-full left-0 right-0 mt-1 bg-white/[0.03] border border-white/[0.08] rounded-lg shadow-lg z-10">
 //                             {assets.map((asset) => (
 //                                 <button
 //                                     key={asset}
-//                                     className="w-full px-4 py-3 text-left hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg"
+//                                     className="w-full px-4 py-3 text-left hover:bg-white/[0.06] first:rounded-t-lg last:rounded-b-lg"
 //                                     onClick={() => handleAssetSelect(asset)}
 //                                     type="button"
 //                                 >
@@ -84,8 +84,8 @@
 //                 <button
 //                     onClick={() => setDirection('Long')}
 //                     className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${prediction.direction === 'Long'
-//                         ? 'bg-blue-600 text-white'
-//                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+//                         ? 'bg-[#7c6af7] text-white'
+//                         : 'bg-gray-800 text-gray-300 hover:bg-white/[0.06]'
 //                         }`}
 //                     type="button"
 //                 >
@@ -95,7 +95,7 @@
 //                     onClick={() => setDirection('Short')}
 //                     className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${prediction.direction === 'Short'
 //                         ? 'bg-red-600 text-white'
-//                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+//                         : 'bg-gray-800 text-gray-300 hover:bg-white/[0.06]'
 //                         }`}
 //                     type="button"
 //                 >
@@ -110,7 +110,7 @@
 //                     type="number"
 //                     value={prediction.entryPrice}
 //                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('entryPrice', e.target.value)}
-//                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+//                     className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
 //                     placeholder="38,500"
 //                 />
 //             </div>
@@ -123,7 +123,7 @@
 //                         type="number"
 //                         value={prediction.stopLoss}
 //                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('stopLoss', e.target.value)}
-//                         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-red-500 focus:outline-none"
+//                         className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:border-red-500 focus:outline-none"
 //                         placeholder="38,000"
 //                     />
 //                 </div>
@@ -133,7 +133,7 @@
 //                         type="number"
 //                         value={prediction.takeProfit}
 //                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('takeProfit', e.target.value)}
-//                         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none"
+//                         className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none"
 //                         placeholder="41,500"
 //                     />
 //                 </div>
@@ -144,8 +144,8 @@
 //                 onClick={placePrediction}
 //                 disabled={prediction.isActive}
 //                 className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${prediction.isActive
-//                     ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-//                     : 'bg-blue-600 hover:bg-blue-700 text-white'
+//                     ? 'bg-white/[0.06] text-gray-400 cursor-not-allowed'
+//                     : 'bg-[#7c6af7] hover:bg-[#6355d4] text-white'
 //                     }`}
 //                 type="button"
 //             >
@@ -156,7 +156,7 @@
 //             {prediction.isActive && (
 //                 <button
 //                     onClick={resetPrediction}
-//                     className="w-full py-2 px-4 rounded-lg font-medium bg-gray-700 hover:bg-gray-600 text-gray-300 transition-colors"
+//                     className="w-full py-2 px-4 rounded-lg font-medium bg-white/[0.06] hover:bg-white/[0.1] text-gray-300 transition-colors"
 //                     type="button"
 //                 >
 //                     Reset Prediction
@@ -409,7 +409,7 @@
 //   return (
 //     <div className={clsx('bg-gray-900 text-white p-6 rounded-lg w-full max-w-md md:w-80 h-full space-y-4 mx-auto md:mx-0', className)}>
 //       {/* =============== Copy ZkAGI Trade card =============== */}
-//       <div className="rounded-lg border border-gray-700 bg-gray-850 p-4">
+//       <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
 //         <div className="flex items-start justify-between">
 //           <div>
 //             <h3 className="text-lg font-semibold">Copy ZkAGI Trade</h3>
@@ -420,7 +420,7 @@
 //           {!showCopyWizard && (
 //             <button
 //               onClick={() => { setShowCopyWizard(true); setStep(1); }}
-//               className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold"
+//               className="px-3 py-1.5 rounded bg-[#7c6af7] hover:bg-[#6355d4] text-sm font-semibold"
 //             >
 //               Copy
 //             </button>
@@ -431,9 +431,9 @@
 //           <div className="mt-4 space-y-3">
 //             {/* Stepper */}
 //             <div className="flex items-center text-xs">
-//               <div className={clsx('px-2 py-1 rounded', step === 1 ? 'bg-blue-600' : 'bg-gray-700')}>1. Secrets</div>
-//               <div className="mx-2 h-px flex-1 bg-gray-700" />
-//               <div className={clsx('px-2 py-1 rounded', step === 2 ? 'bg-blue-600' : 'bg-gray-700')}>2. Risk Config</div>
+//               <div className={clsx('px-2 py-1 rounded', step === 1 ? 'bg-[#7c6af7]' : 'bg-white/[0.06]')}>1. Secrets</div>
+//               <div className="mx-2 h-px flex-1 bg-white/[0.06]" />
+//               <div className={clsx('px-2 py-1 rounded', step === 2 ? 'bg-[#7c6af7]' : 'bg-white/[0.06]')}>2. Risk Config</div>
 //             </div>
 
 //             {step === 1 && (
@@ -443,15 +443,15 @@
 //                   {/* <input
 //                     value={creds.wallet}
 //                     onChange={e => setCreds(s => ({ ...s, wallet: e.target.value.trim() }))}
-//                     className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+//                     className="w-full bg-white/[0.03] border border-white/[0.08] rounded px-3 py-2 text-sm"
 //                     placeholder="0x…"
 //                   /> */}
 //                   <input
 //   value={creds.wallet}
 //   onChange={e => setCreds(s => ({ ...s, wallet: e.target.value.trim() }))}
 //   className={clsx(
-//     "w-full bg-gray-800 border rounded px-3 py-2 text-sm",
-//     credsErrors.wallet ? "border-red-600" : "border-gray-700"
+//     "w-full bg-white/[0.03] border rounded px-3 py-2 text-sm",
+//     credsErrors.wallet ? "border-red-600" : "border-white/[0.08]"
 //   )}
 //   placeholder="0x…"
 // />
@@ -463,15 +463,15 @@
 //                   {/* <input
 //                     value={creds.apiKey}
 //                     onChange={e => setCreds(s => ({ ...s, apiKey: e.target.value.trim() }))}
-//                     className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+//                     className="w-full bg-white/[0.03] border border-white/[0.08] rounded px-3 py-2 text-sm"
 //                     placeholder="hlpk_********"
 //                   /> */}
 //                   <input
 //   value={creds.apiKey}
 //   onChange={e => setCreds(s => ({ ...s, apiKey: e.target.value.trim() }))}
 //   className={clsx(
-//     "w-full bg-gray-800 border rounded px-3 py-2 text-sm",
-//     credsErrors.apiKey ? "border-red-600" : "border-gray-700"
+//     "w-full bg-white/[0.03] border rounded px-3 py-2 text-sm",
+//     credsErrors.apiKey ? "border-red-600" : "border-white/[0.08]"
 //   )}
 //   placeholder="hlpk_********"
 // />
@@ -486,7 +486,7 @@
 //                       type={showSecret ? 'text' : 'password'}
 //                       value={creds.apiSecret}
 //                       onChange={e => setCreds(s => ({ ...s, apiSecret: e.target.value }))}
-//                       className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+//                       className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded px-3 py-2 text-sm"
 //                       placeholder="••••••••"
 //                     /> */}
 //                     <input
@@ -494,8 +494,8 @@
 //   value={creds.apiSecret}
 //   onChange={e => setCreds(s => ({ ...s, apiSecret: e.target.value }))}
 //   className={clsx(
-//     "flex-1 bg-gray-800 border rounded px-3 py-2 text-sm",
-//     credsErrors.apiSecret ? "border-red-600" : "border-gray-700"
+//     "flex-1 bg-white/[0.03] border rounded px-3 py-2 text-sm",
+//     credsErrors.apiSecret ? "border-red-600" : "border-white/[0.08]"
 //   )}
 //   placeholder="••••••••"
 // />
@@ -503,7 +503,7 @@
 //                     <button
 //                       type="button"
 //                       onClick={() => setShowSecret(v => !v)}
-//                       className="px-2 text-xs rounded bg-gray-700 hover:bg-gray-600"
+//                       className="px-2 text-xs rounded bg-white/[0.06] hover:bg-white/[0.1]"
 //                     >
 //                       {showSecret ? 'Hide' : 'Show'}
 //                     </button>
@@ -516,14 +516,14 @@
 
 //                 <div className="flex gap-2">
 //                   <button
-//                     className="flex-1 px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+//                     className="flex-1 px-3 py-2 rounded bg-white/[0.06] hover:bg-white/[0.1] text-sm"
 //                     onClick={() => setShowCopyWizard(false)}
 //                     type="button"
 //                   >
 //                     Cancel
 //                   </button>
 //                   {/* <button
-//                     className="flex-1 px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-sm"
+//                     className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] disabled:opacity-50 text-sm"
 //                     disabled={!step1Valid}
 //                     onClick={() => setStep(2)}
 //                     type="button"
@@ -531,7 +531,7 @@
 //                     Next
 //                   </button> */}
 //                   <button
-//   className="flex-1 px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-sm"
+//   className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] disabled:opacity-50 text-sm"
 //   // keep your existing simple non-empty guard if you like:
 //   disabled={!creds.wallet || !creds.apiKey || !creds.apiSecret}
 //   onClick={validateStep1AndGoNext}
@@ -566,8 +566,8 @@
 //                       value={cfg.aumPct}
 //                       onChange={e => setCfg(s => ({ ...s, aumPct: e.target.value }))}
 //                       className={clsx(
-//                         'w-full bg-gray-800 border rounded px-3 py-2 text-sm',
-//                         percentOk(cfg.aumPct) ? 'border-gray-700' : 'border-red-600'
+//                         'w-full bg-white/[0.03] border rounded px-3 py-2 text-sm',
+//                         percentOk(cfg.aumPct) ? 'border-white/[0.08]' : 'border-red-600'
 //                       )}
 //                       placeholder="e.g. 50"
 //                     /> */}
@@ -576,8 +576,8 @@
 //   value={cfg.aumPct}
 //   onChange={e => setCfg(s => ({ ...s, aumPct: e.target.value }))}
 //   className={clsx(
-//     "w-full bg-gray-800 border rounded px-3 py-2 text-sm",
-//     cfgErrors.aumPct ? "border-red-600" : "border-gray-700"
+//     "w-full bg-white/[0.03] border rounded px-3 py-2 text-sm",
+//     cfgErrors.aumPct ? "border-red-600" : "border-white/[0.08]"
 //   )}
 //   placeholder="e.g. 50"
 // />
@@ -591,8 +591,8 @@
 //                       value={cfg.pctPerTrade}
 //                       onChange={e => setCfg(s => ({ ...s, pctPerTrade: e.target.value }))}
 //                       className={clsx(
-//                         'w-full bg-gray-800 border rounded px-3 py-2 text-sm',
-//                         percentOk(cfg.pctPerTrade) ? 'border-gray-700' : 'border-red-600'
+//                         'w-full bg-white/[0.03] border rounded px-3 py-2 text-sm',
+//                         percentOk(cfg.pctPerTrade) ? 'border-white/[0.08]' : 'border-red-600'
 //                       )}
 //                       placeholder="e.g. 2"
 //                     />
@@ -605,8 +605,8 @@
 //                       value={cfg.maxDailyLossUsd}
 //                       onChange={e => setCfg(s => ({ ...s, maxDailyLossUsd: e.target.value }))}
 //                       className={clsx(
-//                         'w-full bg-gray-800 border rounded px-3 py-2 text-sm',
-//                         positiveUsdOk(cfg.maxDailyLossUsd) ? 'border-gray-700' : 'border-red-600'
+//                         'w-full bg-white/[0.03] border rounded px-3 py-2 text-sm',
+//                         positiveUsdOk(cfg.maxDailyLossUsd) ? 'border-white/[0.08]' : 'border-red-600'
 //                       )}
 //                       placeholder="e.g. 100"
 //                     />
@@ -618,8 +618,8 @@
 //                       value={cfg.maxLossPerTradeUsd}
 //                       onChange={e => setCfg(s => ({ ...s, maxLossPerTradeUsd: e.target.value }))}
 //                       className={clsx(
-//                         'w-full bg-gray-800 border rounded px-3 py-2 text-sm',
-//                         positiveUsdOk(cfg.maxLossPerTradeUsd) ? 'border-gray-700' : 'border-red-600'
+//                         'w-full bg-white/[0.03] border rounded px-3 py-2 text-sm',
+//                         positiveUsdOk(cfg.maxLossPerTradeUsd) ? 'border-white/[0.08]' : 'border-red-600'
 //                       )}
 //                       placeholder="e.g. 25"
 //                     />
@@ -632,8 +632,8 @@
 //                       value={cfg.expectedDailyProfitUsd}
 //                       onChange={e => setCfg(s => ({ ...s, expectedDailyProfitUsd: e.target.value }))}
 //                       className={clsx(
-//                         'w-full bg-gray-800 border rounded px-3 py-2 text-sm',
-//                         positiveUsdOk(cfg.expectedDailyProfitUsd) ? 'border-gray-700' : 'border-red-600'
+//                         'w-full bg-white/[0.03] border rounded px-3 py-2 text-sm',
+//                         positiveUsdOk(cfg.expectedDailyProfitUsd) ? 'border-white/[0.08]' : 'border-red-600'
 //                       )}
 //                       placeholder="e.g. 150"
 //                     />
@@ -646,7 +646,7 @@
 //                     onClick={() => setCfg(s => ({ ...s, useLeverage: !s.useLeverage }))}
 //                     className={clsx(
 //                       'px-3 py-1 rounded text-sm',
-//                       cfg.useLeverage ? 'bg-emerald-600' : 'bg-gray-700'
+//                       cfg.useLeverage ? 'bg-[#34d399]' : 'bg-white/[0.06]'
 //                     )}
 //                     type="button"
 //                   >
@@ -663,7 +663,7 @@
 //                         min={1}
 //                         value={cfg.levMin}
 //                         onChange={e => setCfg(s => ({ ...s, levMin: Number(e.target.value) }))}
-//                         className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+//                         className="w-full bg-white/[0.03] border border-white/[0.08] rounded px-3 py-2 text-sm"
 //                       />
 //                     </div>
 //                     <div className="space-y-1">
@@ -673,7 +673,7 @@
 //                         min={cfg.levMin}
 //                         value={cfg.levMax}
 //                         onChange={e => setCfg(s => ({ ...s, levMax: Number(e.target.value) }))}
-//                         className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+//                         className="w-full bg-white/[0.03] border border-white/[0.08] rounded px-3 py-2 text-sm"
 //                       />
 //                     </div>
 //                     <p className="col-span-2 text-[10px] text-gray-500">
@@ -684,14 +684,14 @@
 
 //                 <div className="flex gap-2">
 //                   <button
-//                     className="flex-1 px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+//                     className="flex-1 px-3 py-2 rounded bg-white/[0.06] hover:bg-white/[0.1] text-sm"
 //                     onClick={() => setStep(1)}
 //                     type="button"
 //                   >
 //                     Back
 //                   </button>
 //                   <button
-//                     className="flex-1 px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-sm"
+//                     className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] disabled:opacity-50 text-sm"
 //                     disabled={!step2Valid || submitting}
 //                     onClick={handleEnableCopy}
 //                     type="button"
@@ -714,7 +714,7 @@
 //         <div className="relative">
 //           <button
 //             onClick={() => setIsAssetDropdownOpen(!isAssetDropdownOpen)}
-//             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:bg-gray-750 transition-colors"
+//             className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-left flex items-center justify-between hover:bg-gray-750 transition-colors"
 //             type="button"
 //           >
 //             <span>{currentAsset}</span>
@@ -722,11 +722,11 @@
 //           </button>
 
 //           {isAssetDropdownOpen && (
-//             <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10">
+//             <div className="absolute top-full left-0 right-0 mt-1 bg-white/[0.03] border border-white/[0.08] rounded-lg shadow-lg z-10">
 //               {assets.map((asset) => (
 //                 <button
 //                   key={asset}
-//                   className="w-full px-4 py-3 text-left hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg"
+//                   className="w-full px-4 py-3 text-left hover:bg-white/[0.06] first:rounded-t-lg last:rounded-b-lg"
 //                   onClick={() => handleAssetSelect(asset)}
 //                   type="button"
 //                 >
@@ -744,7 +744,7 @@
 //           onClick={() => setDirection('Long')}
 //           className={clsx(
 //             'flex-1 py-3 px-4 rounded-lg font-medium transition-colors',
-//             prediction.direction === 'Long' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+//             prediction.direction === 'Long' ? 'bg-[#7c6af7] text-white' : 'bg-gray-800 text-gray-300 hover:bg-white/[0.06]'
 //           )}
 //           type="button"
 //         >
@@ -754,7 +754,7 @@
 //           onClick={() => setDirection('Short')}
 //           className={clsx(
 //             'flex-1 py-3 px-4 rounded-lg font-medium transition-colors',
-//             prediction.direction === 'Short' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+//             prediction.direction === 'Short' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-white/[0.06]'
 //           )}
 //           type="button"
 //         >
@@ -769,7 +769,7 @@
 //           type="number"
 //           value={prediction.entryPrice}
 //           onChange={(e) => handleInputChange('entryPrice', e.target.value)}
-//           className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+//           className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
 //           placeholder="38,500"
 //         />
 //       </div> */}
@@ -782,7 +782,7 @@
 //             type="number"
 //             value={prediction.stopLoss}
 //             onChange={(e) => handleInputChange('stopLoss', e.target.value)}
-//             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-red-500 focus:outline-none"
+//             className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:border-red-500 focus:outline-none"
 //             placeholder="38,000"
 //           />
 //         </div>
@@ -792,7 +792,7 @@
 //             type="number"
 //             value={prediction.takeProfit}
 //             onChange={(e) => handleInputChange('takeProfit', e.target.value)}
-//             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none"
+//             className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none"
 //             placeholder="41,500"
 //           />
 //         </div>
@@ -804,7 +804,7 @@
 //         disabled={prediction.isActive}
 //         className={clsx(
 //           'w-full py-3 px-4 rounded-lg font-medium transition-colors',
-//           prediction.isActive ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
+//           prediction.isActive ? 'bg-white/[0.06] text-gray-400 cursor-not-allowed' : 'bg-[#7c6af7] hover:bg-[#6355d4] text-white'
 //         )}
 //         type="button"
 //       >
@@ -815,7 +815,7 @@
 //       {/* {prediction.isActive && (
 //         <button
 //           onClick={resetPrediction}
-//           className="w-full py-2 px-4 rounded-lg font-medium bg-gray-700 hover:bg-gray-600 text-gray-300 transition-colors"
+//           className="w-full py-2 px-4 rounded-lg font-medium bg-white/[0.06] hover:bg-white/[0.1] text-gray-300 transition-colors"
 //           type="button"
 //         >
 //           Reset Prediction
@@ -1094,7 +1094,7 @@
 
 //   return (
 //     <div className={clsx('bg-gray-900 text-white p-6 rounded-lg w-full max-w-md md:w-80 h-full space-y-4 mx-auto md:mx-0', className)}>
-//       <div className="rounded-lg border border-gray-700 bg-gray-850 p-4">
+//       <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
 //         <div className="flex items-start justify-between">
 //           <div>
 //             <h3 className="text-lg font-semibold">
@@ -1111,7 +1111,7 @@
 //           {allowCopy && !showCopyWizard && (
 //             <button
 //               onClick={() => { setShowCopyWizard(true); setStep(1) }}
-//               className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold disabled:opacity-50"
+//               className="px-3 py-1.5 rounded bg-[#7c6af7] hover:bg-[#6355d4] text-sm font-semibold disabled:opacity-50"
 //               disabled={!userId}
 //               title={userId ? '' : 'Connect wallet or open from Report page'}
 //             >
@@ -1130,21 +1130,21 @@
 //             <div className="flex gap-2">
 //               <button
 //                 onClick={() => postAction('/api/bot/start')}
-//                 className="flex-1 px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold"
+//                 className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] text-sm font-semibold"
 //                 type="button"
 //               >
 //                 Start
 //               </button>
 //               <button
 //                 onClick={() => postAction('/api/bot/stop')}
-//                 className="flex-1 px-3 py-2 rounded bg-red-600 hover:bg-red-700 text-sm font-semibold"
+//                 className="flex-1 px-3 py-2 rounded bg-red-500/80 hover:bg-red-500 text-sm font-semibold"
 //                 type="button"
 //               >
 //                 Stop
 //               </button>
 //               <button
 //                 onClick={() => postAction('/api/bot/trade-once')}
-//                 className="flex-1 px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-sm font-semibold"
+//                 className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] text-sm font-semibold"
 //                 type="button"
 //               >
 //                 Run once
@@ -1165,9 +1165,9 @@
 //           <div className="mt-4 space-y-3">
 //             {/* Stepper */}
 //             <div className="flex items-center text-xs">
-//               <div className={clsx('px-2 py-1 rounded', step === 1 ? 'bg-blue-600' : 'bg-gray-700')}>1. Secrets</div>
-//               <div className="mx-2 h-px flex-1 bg-gray-700" />
-//               <div className={clsx('px-2 py-1 rounded', step === 2 ? 'bg-blue-600' : 'bg-gray-700')}>2. Config</div>
+//               <div className={clsx('px-2 py-1 rounded', step === 1 ? 'bg-[#7c6af7]' : 'bg-white/[0.06]')}>1. Secrets</div>
+//               <div className="mx-2 h-px flex-1 bg-white/[0.06]" />
+//               <div className={clsx('px-2 py-1 rounded', step === 2 ? 'bg-[#7c6af7]' : 'bg-white/[0.06]')}>2. Config</div>
 //             </div>
 
 //             {/* Step 1 */}
@@ -1178,7 +1178,7 @@
 //                   <input
 //                     value={creds.wallet}
 //                     onChange={e => setCreds(s => ({ ...s, wallet: e.target.value.trim() }))}
-//                     className={clsx('w-full bg-gray-800 border rounded px-3 py-2 text-sm', credsErrors.wallet ? 'border-red-600' : 'border-gray-700')}
+//                     className={clsx('w-full bg-white/[0.03] border rounded px-3 py-2 text-sm', credsErrors.wallet ? 'border-red-600' : 'border-white/[0.08]')}
 //                     placeholder="0x…"
 //                   />
 //                   {credsErrors.wallet && <p className="text-[11px] text-red-500">{credsErrors.wallet}</p>}
@@ -1189,7 +1189,7 @@
 //                   <input
 //                     value={creds.apiKey}
 //                     onChange={e => setCreds(s => ({ ...s, apiKey: e.target.value.trim() }))}
-//                     className={clsx('w-full bg-gray-800 border rounded px-3 py-2 text-sm', credsErrors.apiKey ? 'border-red-600' : 'border-gray-700')}
+//                     className={clsx('w-full bg-white/[0.03] border rounded px-3 py-2 text-sm', credsErrors.apiKey ? 'border-red-600' : 'border-white/[0.08]')}
 //                     placeholder="hlpk_********"
 //                   />
 //                   {credsErrors.apiKey && <p className="text-[11px] text-red-500">{credsErrors.apiKey}</p>}
@@ -1202,13 +1202,13 @@
 //                       type={showSecret ? 'text' : 'password'}
 //                       value={creds.apiAddr}
 //                       onChange={e => setCreds(s => ({ ...s, apiAddr: e.target.value.trim() }))}
-//                       className={clsx('flex-1 bg-gray-800 border rounded px-3 py-2 text-sm', credsErrors.apiAddr ? 'border-red-600' : 'border-gray-700')}
+//                       className={clsx('flex-1 bg-white/[0.03] border rounded px-3 py-2 text-sm', credsErrors.apiAddr ? 'border-red-600' : 'border-white/[0.08]')}
 //                       placeholder="••••••••"
 //                     />
 //                     <button
 //                       type="button"
 //                       onClick={() => setShowSecret(v => !v)}
-//                       className="px-2 text-xs rounded bg-gray-700 hover:bg-gray-600"
+//                       className="px-2 text-xs rounded bg-white/[0.06] hover:bg-white/[0.1]"
 //                     >
 //                       {showSecret ? 'Hide' : 'Show'}
 //                     </button>
@@ -1218,14 +1218,14 @@
 
 //                 <div className="flex gap-2">
 //                   <button
-//                     className="flex-1 px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+//                     className="flex-1 px-3 py-2 rounded bg-white/[0.06] hover:bg-white/[0.1] text-sm"
 //                     onClick={() => setShowCopyWizard(false)}
 //                     type="button"
 //                   >
 //                     Cancel
 //                   </button>
 //                   <button
-//                     className="flex-1 px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-sm"
+//                     className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] disabled:opacity-50 text-sm"
 //                     disabled={!creds.wallet || !creds.apiKey || !creds.apiAddr}
 //                     onClick={validateStep1AndGoNext}
 //                     type="button"
@@ -1251,7 +1251,7 @@
 //                       inputMode="decimal"
 //                       value={cfg.capitalUsage}
 //                       onChange={e => setCfg(s => ({ ...s, capitalUsage: e.target.value }))}
-//                       className={clsx('w-full bg-gray-800 border rounded px-3 py-2 text-sm', cfgErrors.capitalUsage ? 'border-red-600' : 'border-gray-700')}
+//                       className={clsx('w-full bg-white/[0.03] border rounded px-3 py-2 text-sm', cfgErrors.capitalUsage ? 'border-red-600' : 'border-white/[0.08]')}
 //                       placeholder="e.g. 0.3"
 //                     />
 //                     {cfgErrors.capitalUsage && <p className="text-[11px] text-red-500">{cfgErrors.capitalUsage}</p>}
@@ -1263,7 +1263,7 @@
 //                       inputMode="numeric"
 //                       value={cfg.maxLeverage}
 //                       onChange={e => setCfg(s => ({ ...s, maxLeverage: e.target.value }))}
-//                       className={clsx('w-full bg-gray-800 border rounded px-3 py-2 text-sm', cfgErrors.maxLeverage ? 'border-red-600' : 'border-gray-700')}
+//                       className={clsx('w-full bg-white/[0.03] border rounded px-3 py-2 text-sm', cfgErrors.maxLeverage ? 'border-red-600' : 'border-white/[0.08]')}
 //                       placeholder="e.g. 5"
 //                     />
 //                     {cfgErrors.maxLeverage && <p className="text-[11px] text-red-500">{cfgErrors.maxLeverage}</p>}
@@ -1275,7 +1275,7 @@
 //                       inputMode="decimal"
 //                       value={cfg.minNotional}
 //                       onChange={e => setCfg(s => ({ ...s, minNotional: e.target.value }))}
-//                       className={clsx('w-full bg-gray-800 border rounded px-3 py-2 text-sm', cfgErrors.minNotional ? 'border-red-600' : 'border-gray-700')}
+//                       className={clsx('w-full bg-white/[0.03] border rounded px-3 py-2 text-sm', cfgErrors.minNotional ? 'border-red-600' : 'border-white/[0.08]')}
 //                       placeholder="e.g. 20"
 //                     />
 //                     {cfgErrors.minNotional && <p className="text-[11px] text-red-500">{cfgErrors.minNotional}</p>}
@@ -1287,7 +1287,7 @@
 //                       <span className="text-xs text-gray-400">{cfg.enable ? 'true' : 'false'}</span>
 //                       <button
 //                         onClick={() => setCfg(s => ({ ...s, enable: !s.enable }))}
-//                         className={clsx('px-3 py-1 rounded text-sm', cfg.enable ? 'bg-emerald-600' : 'bg-gray-700')}
+//                         className={clsx('px-3 py-1 rounded text-sm', cfg.enable ? 'bg-[#34d399]' : 'bg-white/[0.06]')}
 //                         type="button"
 //                       >
 //                         {cfg.enable ? 'Enabled' : 'Disabled'}
@@ -1298,14 +1298,14 @@
 
 //                 <div className="flex gap-2">
 //                   <button
-//                     className="flex-1 px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+//                     className="flex-1 px-3 py-2 rounded bg-white/[0.06] hover:bg-white/[0.1] text-sm"
 //                     onClick={() => setStep(1)}
 //                     type="button"
 //                   >
 //                     Back
 //                   </button>
 //                   <button
-//                     className="flex-1 px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-sm"
+//                     className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] disabled:opacity-50 text-sm"
 //                     disabled={!step2Valid || submitting}
 //                     onClick={handleEnableCopy}
 //                     type="button"
@@ -1610,20 +1610,20 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
   const step2Valid = RiskCfgSchema.safeParse(cfg).success
 
   return (
-    <div className={clsx('relative bg-gray-900 text-white p-6 rounded-lg w-full max-w-md md:w-80 h-full space-y-4 mx-auto md:mx-0', className)}>
+    <div className={clsx('relative text-white w-full h-full space-y-4', className)}>
       {/* Toast */}
       {toast && (
         <div
           className={clsx(
             'fixed z-50 right-4 top-4 px-3 py-2 rounded text-sm shadow',
-            toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'
+            toast.type === 'success' ? 'bg-[#34d399]' : 'bg-red-600'
           )}
         >
           {toast.msg}
         </div>
       )}
 
-      <div className="rounded-lg border border-gray-700 bg-gray-850 p-4">
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-lg font-semibold">
@@ -1640,7 +1640,7 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
           {allowCopy && !showCopyWizard && (
             <button
               onClick={() => { setShowCopyWizard(true); setStep(1) }}
-              className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold disabled:opacity-50"
+              className="px-3 py-1.5 rounded bg-[#7c6af7] hover:bg-[#6355d4] text-sm font-semibold disabled:opacity-50"
               disabled={!userId}
               title={userId ? '' : 'Connect wallet or open from Report page'}
             >
@@ -1660,21 +1660,21 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
             <div className="flex gap-2">
               <button
                 onClick={() => postAction('/api/bot/start')}
-                className="flex-1 px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold"
+                className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] text-sm font-semibold"
                 type="button"
               >
                 Start
               </button>
               <button
                 onClick={() => postAction('/api/bot/stop')}
-                className="flex-1 px-3 py-2 rounded bg-red-600 hover:bg-red-700 text-sm font-semibold"
+                className="flex-1 px-3 py-2 rounded bg-red-500/80 hover:bg-red-500 text-sm font-semibold"
                 type="button"
               >
                 Stop
               </button>
               <button
                 onClick={() => postAction('/api/bot/trade-once')}
-                className="flex-1 px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-sm font-semibold"
+                className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] text-sm font-semibold"
                 type="button"
               >
                 Run once
@@ -1690,7 +1690,7 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
 
             {/* Tiny div to show trade-once response if present */}
             {onceResult && (
-              <div className="mt-2 p-2 rounded bg-gray-800 border border-gray-700 text-[11px] leading-snug break-words">
+              <div className="mt-2 p-2 rounded bg-white/[0.03] border border-white/[0.08] text-[11px] leading-snug break-words">
                 <div className="text-gray-300 font-semibold mb-1">Last trade-once response</div>
                 <pre className="whitespace-pre-wrap">
 {typeof onceResult === 'string'
@@ -1707,9 +1707,9 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
           <div className="mt-4 space-y-3">
             {/* Stepper */}
             <div className="flex items-center text-xs">
-              <div className={clsx('px-2 py-1 rounded', step === 1 ? 'bg-blue-600' : 'bg-gray-700')}>1. Secrets</div>
-              <div className="mx-2 h-px flex-1 bg-gray-700" />
-              <div className={clsx('px-2 py-1 rounded', step === 2 ? 'bg-blue-600' : 'bg-gray-700')}>2. Config</div>
+              <div className={clsx('px-2 py-1 rounded', step === 1 ? 'bg-[#7c6af7]' : 'bg-white/[0.06]')}>1. Secrets</div>
+              <div className="mx-2 h-px flex-1 bg-white/[0.06]" />
+              <div className={clsx('px-2 py-1 rounded', step === 2 ? 'bg-[#7c6af7]' : 'bg-white/[0.06]')}>2. Config</div>
             </div>
 
             {/* Step 1 */}
@@ -1720,7 +1720,7 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
                   <input
                     value={creds.wallet}
                     onChange={e => setCreds(s => ({ ...s, wallet: e.target.value.trim() }))}
-                    className={clsx('w-full bg-gray-800 border rounded px-3 py-2 text-sm', credsErrors.wallet ? 'border-red-600' : 'border-gray-700')}
+                    className={clsx('w-full bg-white/[0.03] border rounded px-3 py-2 text-sm', credsErrors.wallet ? 'border-red-600' : 'border-white/[0.08]')}
                     placeholder="0x…"
                   />
                   {credsErrors.wallet && <p className="text-[11px] text-red-500">{credsErrors.wallet}</p>}
@@ -1731,7 +1731,7 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
                   <input
                     value={creds.apiKey}
                     onChange={e => setCreds(s => ({ ...s, apiKey: e.target.value.trim() }))}
-                    className={clsx('w-full bg-gray-800 border rounded px-3 py-2 text-sm', credsErrors.apiKey ? 'border-red-600' : 'border-gray-700')}
+                    className={clsx('w-full bg-white/[0.03] border rounded px-3 py-2 text-sm', credsErrors.apiKey ? 'border-red-600' : 'border-white/[0.08]')}
                     placeholder="hlpk_********"
                   />
                   {credsErrors.apiKey && <p className="text-[11px] text-red-500">{credsErrors.apiKey}</p>}
@@ -1744,13 +1744,13 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
                       type={showSecret ? 'text' : 'password'}
                       value={creds.apiAddr}
                       onChange={e => setCreds(s => ({ ...s, apiAddr: e.target.value.trim() }))}
-                      className={clsx('flex-1 bg-gray-800 border rounded px-3 py-2 text-sm', credsErrors.apiAddr ? 'border-red-600' : 'border-gray-700')}
+                      className={clsx('flex-1 bg-white/[0.03] border rounded px-3 py-2 text-sm', credsErrors.apiAddr ? 'border-red-600' : 'border-white/[0.08]')}
                       placeholder="••••••••"
                     />
                     <button
                       type="button"
                       onClick={() => setShowSecret(v => !v)}
-                      className="px-2 text-xs rounded bg-gray-700 hover:bg-gray-600"
+                      className="px-2 text-xs rounded bg-white/[0.06] hover:bg-white/[0.1]"
                     >
                       {showSecret ? 'Hide' : 'Show'}
                     </button>
@@ -1760,14 +1760,14 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
 
                 <div className="flex gap-2">
                   <button
-                    className="flex-1 px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+                    className="flex-1 px-3 py-2 rounded bg-white/[0.06] hover:bg-white/[0.1] text-sm"
                     onClick={() => setShowCopyWizard(false)}
                     type="button"
                   >
                     Cancel
                   </button>
                   <button
-                    className="flex-1 px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-sm"
+                    className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] disabled:opacity-50 text-sm"
                     disabled={!step1Valid}
                     onClick={validateStep1AndGoNext}
                     type="button"
@@ -1792,7 +1792,7 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
                     inputMode="decimal"
                     value={cfg.capitalUsage}
                     onChange={e => setCfg(s => ({ ...s, capitalUsage: e.target.value }))}
-                    className={clsx('w-full bg-gray-800 border rounded px-3 py-2 text-sm', cfgErrors.capitalUsage ? 'border-red-600' : 'border-gray-700')}
+                    className={clsx('w-full bg-white/[0.03] border rounded px-3 py-2 text-sm', cfgErrors.capitalUsage ? 'border-red-600' : 'border-white/[0.08]')}
                     placeholder="e.g. 0.3"
                   />
                   {cfgErrors.capitalUsage && <p className="text-[11px] text-red-500">{cfgErrors.capitalUsage}</p>}
@@ -1804,7 +1804,7 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
                     inputMode="numeric"
                     value={cfg.maxLeverage}
                     onChange={e => setCfg(s => ({ ...s, maxLeverage: e.target.value }))}
-                    className={clsx('w-full bg-gray-800 border rounded px-3 py-2 text-sm', cfgErrors.maxLeverage ? 'border-red-600' : 'border-gray-700')}
+                    className={clsx('w-full bg-white/[0.03] border rounded px-3 py-2 text-sm', cfgErrors.maxLeverage ? 'border-red-600' : 'border-white/[0.08]')}
                     placeholder="e.g. 5"
                   />
                   {cfgErrors.maxLeverage && <p className="text-[11px] text-red-500">{cfgErrors.maxLeverage}</p>}
@@ -1816,7 +1816,7 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
                     inputMode="decimal"
                     value={cfg.minNotional}
                     onChange={e => setCfg(s => ({ ...s, minNotional: e.target.value }))}
-                    className={clsx('w-full bg-gray-800 border rounded px-3 py-2 text-sm', cfgErrors.minNotional ? 'border-red-600' : 'border-gray-700')}
+                    className={clsx('w-full bg-white/[0.03] border rounded px-3 py-2 text-sm', cfgErrors.minNotional ? 'border-red-600' : 'border-white/[0.08]')}
                     placeholder="e.g. 20"
                   />
                   {cfgErrors.minNotional && <p className="text-[11px] text-red-500">{cfgErrors.minNotional}</p>}
@@ -1828,7 +1828,7 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
                     <span className="text-xs text-gray-400">{cfg.enable ? 'true' : 'false'}</span>
                     <button
                       onClick={() => setCfg(s => ({ ...s, enable: !s.enable }))}
-                      className={clsx('px-3 py-1 rounded text-sm', cfg.enable ? 'bg-emerald-600' : 'bg-gray-700')}
+                      className={clsx('px-3 py-1 rounded text-sm', cfg.enable ? 'bg-[#34d399]' : 'bg-white/[0.06]')}
                       type="button"
                     >
                       {cfg.enable ? 'Enabled' : 'Disabled'}
@@ -1838,14 +1838,14 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ className }) => {
 
                 <div className="flex gap-2">
                   <button
-                    className="flex-1 px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+                    className="flex-1 px-3 py-2 rounded bg-white/[0.06] hover:bg-white/[0.1] text-sm"
                     onClick={() => setStep(1)}
                     type="button"
                   >
                     Back
                   </button>
                   <button
-                    className="flex-1 px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-sm"
+                    className="flex-1 px-3 py-2 rounded bg-[#7c6af7] hover:bg-[#6355d4] disabled:opacity-50 text-sm"
                     disabled={!step2Valid || submitting}
                     onClick={handleEnableCopy}
                     type="button"

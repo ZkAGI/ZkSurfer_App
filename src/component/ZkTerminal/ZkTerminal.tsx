@@ -7,7 +7,7 @@ import {
   Activity, Globe, AlertTriangle, RefreshCw, ArrowUpRight,
   Cpu, Shield, Sparkles, Command, Layers, CircleDot,
   TrendingUp, Wallet, Bot, Settings, LogOut, Search, Menu, X,
-  User, Loader2, HelpCircle, Video, Eye, Clock
+  User, Loader2, HelpCircle, Video, Eye, Clock, Download
 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -40,11 +40,11 @@ const CARDS = [
     command: "generate-private"
   },
   {
-    num: "04", icon: Shield, color: "#f59e0b", bg: "rgba(245,158,11,0.1)",
-    title: "Verify Privacy",
-    desc: "Use /privacy-ai to upload a zk-proof and query its contents with AI assistance.",
-    tag: null,
-    command: "privacy-ai"
+    num: "04", icon: Bot, color: "#7c6af7", bg: "rgba(124,106,247,0.1)",
+    title: "Prediction Agent",
+    desc: "Set up an autonomous trading bot — AI-powered signals, risk controls, auto-execution.",
+    tag: "New",
+    command: "prediction-agent"
   },
 ];
 
@@ -82,11 +82,19 @@ const CMD_PALETTE = [
   { cmd: "/privacy-ai", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", desc: "Upload a zk-proof + ask a question about its contents", icon: Eye },
 ];
 
+interface MessageStats {
+  timeTakenMs: number;
+  tokensEstimated: number;
+  creditsUsed: number;
+  model: string;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string | React.ReactNode;
   type?: 'text' | 'image' | 'command';
   command?: string;
+  stats?: MessageStats;
 }
 
 interface HourlyEntry {
@@ -126,6 +134,8 @@ interface ZkTerminalProps {
   messages?: Message[];
   pastPredictionsError?: string | null;
   onRetryPastPredictions?: () => void;
+  onMintNFT?: (base64Image: string) => void;
+  isMinting?: boolean;
 }
 
 const ZkTerminal: FC<ZkTerminalProps> = ({
@@ -137,6 +147,8 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   messages = [],
   pastPredictionsError = null,
   onRetryPastPredictions,
+  onMintNFT,
+  isMinting = false,
 }) => {
   const params = useParams();
   const lang = params.lang as string || 'en';
@@ -157,6 +169,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   const [showCmdPalette, setShowCmdPalette] = useState(false);
   const [cmdFilter, setCmdFilter] = useState("");
   const [showPlugins, setShowPlugins] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'terminal' | 'predictions'>('terminal');
   const [pluginStatus, setPluginStatus] = useState(false);
   const [pluginMemory, setPluginMemory] = useState(true);
   const [litChip, setLitChip] = useState<string | null>(null);
@@ -263,7 +276,11 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
-      setShowCmdPalette(false);
+      if (showCmdPalette) {
+        setShowCmdPalette(false);
+        setCmdFilter("");
+        setInputVal("");
+      }
       setShowPlugins(false);
     }
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -332,6 +349,8 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
       const target = e.target as HTMLElement;
       if (showCmdPalette && !target.closest('.cmd-pal') && !target.closest('.input-ta')) {
         setShowCmdPalette(false);
+        setCmdFilter("");
+        setInputVal("");
       }
       if (showPlugins && !target.closest('.plug-modal') && !target.closest('.plug-btn')) {
         setShowPlugins(false);
@@ -354,6 +373,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
         @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
         @keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(300%)} }
@@ -377,6 +397,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
         display: "flex", height: "100vh", overflow: "hidden",
         fontFamily: "'DM Sans', sans-serif",
         background: "#07090f", color: "#e2e8f0",
+        width: "100%", maxWidth: "100vw",
       }}>
 
         {/* Mobile Header */}
@@ -393,13 +414,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
               <Menu size={20} color="#e2e8f0" />
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: 7,
-                background: "linear-gradient(135deg, #7c6af7, #4338ca)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <Terminal size={12} color="#fff" />
-              </div>
+              <img src="/images/tiger.svg" alt="ZkTerminal" style={{ width: 28, height: 28, borderRadius: 7 }} />
               <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>ZkTerminal</span>
             </div>
             <CustomWalletButton />
@@ -433,15 +448,10 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
             display: "flex", alignItems: "center", justifyContent: "space-between",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-              <div style={{
-                width: 30, height: 30, borderRadius: 8,
-                background: "linear-gradient(135deg, #7c6af7, #4338ca)",
-                display: "flex", alignItems: "center", justifyContent: "center",
+              <img src="/images/tiger.svg" alt="ZkTerminal" style={{
+                width: 30, height: 30, borderRadius: 8, flexShrink: 0,
                 boxShadow: "0 0 16px rgba(124,106,247,0.4)",
-                flexShrink: 0,
-              }}>
-                <Terminal size={13} color="#fff" />
-              </div>
+              }} />
               <span style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Syne', sans-serif", letterSpacing: "-0.3px" }}>
                 ZkTerminal
               </span>
@@ -600,9 +610,10 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
 
         {/* MAIN */}
         <main style={{
-          flex: 1, display: "flex", flexDirection: "column", overflow: "hidden",
+          flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden",
           background: "#07090f", position: "relative",
           marginTop: isMobile ? 56 : 0,
+          width: isMobile ? "100%" : undefined,
         }}>
           {/* Glows */}
           <div style={{
@@ -665,14 +676,51 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
             </div>
           )}
 
+          {/* MOBILE TAB BAR */}
+          {isMobile && !hasMessages && (
+            <div style={{
+              display: "flex", alignItems: "center",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(7,9,15,0.95)",
+              flexShrink: 0, padding: "0 4px",
+            }}>
+              {([
+                { key: 'terminal' as const, label: 'Terminal', icon: Terminal },
+                { key: 'predictions' as const, label: 'Predictions', icon: TrendingUp },
+              ]).map(tab => {
+                const active = mobileTab === tab.key;
+                const TabIcon = tab.icon;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setMobileTab(tab.key)}
+                    style={{
+                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                      padding: "10px 0",
+                      background: "none", border: "none", cursor: "pointer",
+                      color: active ? "#a78bfa" : "#4b5563",
+                      fontSize: 12, fontWeight: active ? 600 : 400,
+                      fontFamily: "'DM Sans', sans-serif",
+                      borderBottom: active ? "2px solid #7c6af7" : "2px solid transparent",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <TabIcon size={13} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* CONTENT */}
           <div style={{
-            flex: 1, overflow: hasMessages ? "auto" : "hidden",
-            display: "flex",
-            alignItems: hasMessages ? "flex-start" : "center",
+            flex: 1, minWidth: 0, overflow: hasMessages ? "auto" : (isMobile ? "auto" : "hidden"),
+            display: (isMobile && !hasMessages && mobileTab !== 'terminal') ? "none" : "flex",
+            alignItems: hasMessages ? "flex-start" : (isMobile ? "flex-start" : "center"),
             justifyContent: "center",
             position: "relative", zIndex: 1,
-            padding: hasMessages ? 0 : "0 24px",
+            padding: hasMessages ? 0 : (isMobile ? "20px 12px 0" : "0 24px"),
           }}>
 
             {!hasMessages ? (
@@ -728,17 +776,30 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                   width: "100%", paddingBottom: 18,
                 }}>
                   <div ref={inputWrapRef} style={{ width: "100%", position: "relative" }}>
-                    {/* Command Palette */}
-                    {showCmdPalette && (
-                      <div className="cmd-pal" style={{
-                        position: "absolute", bottom: "calc(100% + 8px)", left: 0, right: 0,
-                        background: "#0d1122",
-                        border: "1px solid rgba(255,255,255,0.10)",
-                        borderRadius: 16, zIndex: 200,
-                        boxShadow: "0 8px 60px rgba(0,0,0,0.85)",
-                        animation: "slideUp 0.15s ease",
-                        overflow: "hidden",
-                      }}>
+                    {/* Command Palette - rendered as fixed overlay */}
+                    {showCmdPalette && createPortal(
+                      <div
+                        style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.5)" }}
+                        onClick={() => { setShowCmdPalette(false); setCmdFilter(""); setInputVal(""); }}
+                      >
+                        <div
+                          className="cmd-pal"
+                          onClick={e => e.stopPropagation()}
+                          style={{
+                            position: "absolute",
+                            top: isMobile ? "50%" : "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: isMobile ? "calc(100% - 32px)" : 560,
+                            maxWidth: 600,
+                            background: "#0d1122",
+                            border: "1px solid rgba(255,255,255,0.10)",
+                            borderRadius: 16, zIndex: 9999,
+                            boxShadow: "0 8px 60px rgba(0,0,0,0.95)",
+                            animation: "slideDown 0.15s ease",
+                            overflow: "hidden",
+                          }}
+                        >
                         <div style={{
                           display: "flex", alignItems: "center", gap: 10,
                           padding: "12px 16px",
@@ -760,7 +821,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                           </div>
                         </div>
                         <div style={{
-                          display: "grid", gridTemplateColumns: "1fr 1fr",
+                          display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
                           gap: 5, padding: 8, maxHeight: 300, overflowY: "auto",
                         }}>
                           {filteredCmds.map(c => {
@@ -817,6 +878,8 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                           </span>
                         </div>
                       </div>
+                      </div>,
+                      document.body
                     )}
 
                     {/* Plugins Modal - Full Overlay (portaled to body) */}
@@ -1256,7 +1319,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                       }}>
                         {msg.role === 'user'
                           ? <User size={14} color="#a78bfa" />
-                          : <Terminal size={14} color="#818cf8" />
+                          : <img src="/images/tiger.svg" alt="ZkTerminal" style={{ width: 20, height: 20, borderRadius: 4 }} />
                         }
                       </div>
                       <div style={{
@@ -1283,7 +1346,67 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                           fontSize: 14, lineHeight: 1.7, color: "#e2e8f0",
                           wordBreak: "break-word",
                         }}>
-                          {typeof msg.content === 'string' ? (
+                          {msg.type === 'image' && typeof msg.content === 'string' ? (
+                            <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", display: "inline-block", maxWidth: 420 }}>
+                              <img
+                                src={msg.content}
+                                alt="Generated image"
+                                style={{
+                                  width: "100%",
+                                  borderRadius: 10,
+                                  display: "block",
+                                }}
+                              />
+                              <div style={{
+                                position: "absolute", top: 10, right: 10,
+                                display: "flex", gap: 8,
+                              }}>
+                                {onMintNFT && (
+                                  <button
+                                    onClick={() => onMintNFT(msg.content as string)}
+                                    disabled={isMinting}
+                                    style={{
+                                      height: 36, borderRadius: 10,
+                                      padding: "0 14px",
+                                      background: isMinting ? "rgba(0,0,0,0.7)" : "rgba(167,139,250,0.85)",
+                                      backdropFilter: "blur(8px)",
+                                      border: "1px solid rgba(167,139,250,0.4)",
+                                      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                                      color: "#fff", cursor: isMinting ? "not-allowed" : "pointer",
+                                      fontSize: 12, fontWeight: 600,
+                                      transition: "all 0.15s",
+                                      opacity: isMinting ? 0.7 : 1,
+                                    }}
+                                    title="Mint as NFT"
+                                  >
+                                    {isMinting ? (
+                                      <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                                    ) : (
+                                      <Sparkles size={14} />
+                                    )}
+                                    {isMinting ? "Minting..." : "Mint NFT"}
+                                  </button>
+                                )}
+                                <a
+                                  href={msg.content}
+                                  download="zkterminal-image.png"
+                                  style={{
+                                    width: 36, height: 36, borderRadius: 10,
+                                    background: "rgba(0,0,0,0.55)",
+                                    backdropFilter: "blur(8px)",
+                                    border: "1px solid rgba(255,255,255,0.15)",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    color: "#fff", cursor: "pointer",
+                                    textDecoration: "none",
+                                    transition: "all 0.15s",
+                                  }}
+                                  title="Download image"
+                                >
+                                  <Download size={16} />
+                                </a>
+                              </div>
+                            </div>
+                          ) : typeof msg.content === 'string' ? (
                             <ReactMarkdown
                               components={{
                                 p: ({ children }) => <p style={{ margin: "0 0 8px" }}>{children}</p>,
@@ -1298,6 +1421,47 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                             >{msg.content}</ReactMarkdown>
                           ) : msg.content}
                         </div>
+                        {/* Stats footer for assistant messages */}
+                        {msg.role === 'assistant' && msg.stats && (
+                          <div style={{
+                            display: "flex", alignItems: "center", gap: 12,
+                            marginTop: 6, flexWrap: "wrap",
+                          }}>
+                            <span style={{
+                              fontSize: 11, color: "#4b5563",
+                              fontFamily: "'DM Mono', monospace",
+                              display: "flex", alignItems: "center", gap: 4,
+                            }}>
+                              <Clock size={10} color="#4b5563" />
+                              {msg.stats.timeTakenMs < 1000
+                                ? `${msg.stats.timeTakenMs}ms`
+                                : `${(msg.stats.timeTakenMs / 1000).toFixed(1)}s`}
+                            </span>
+                            <span style={{
+                              fontSize: 11, color: "#4b5563",
+                              fontFamily: "'DM Mono', monospace",
+                            }}>
+                              ~{msg.stats.tokensEstimated} tokens
+                            </span>
+                            {msg.stats.creditsUsed > 0 && (
+                              <span style={{
+                                fontSize: 11, color: "#4b5563",
+                                fontFamily: "'DM Mono', monospace",
+                              }}>
+                                {msg.stats.creditsUsed.toFixed(2)} credits
+                              </span>
+                            )}
+                            <span style={{
+                              fontSize: 10, color: "#374151",
+                              background: "rgba(255,255,255,0.04)",
+                              border: "1px solid rgba(255,255,255,0.06)",
+                              padding: "1px 8px", borderRadius: 99,
+                              fontFamily: "'DM Mono', monospace",
+                            }}>
+                              {msg.stats.model}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1314,7 +1478,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                         display: "flex", alignItems: "center", justifyContent: "center",
                         animation: "borderGlow 2s ease-in-out infinite",
                       }}>
-                        <Terminal size={14} color="#818cf8" />
+                        <img src="/images/tiger.svg" alt="ZkTerminal" style={{ width: 20, height: 20, borderRadius: 4 }} />
                       </div>
                       <div style={{ flex: 1, maxWidth: isMobile ? "85%" : "75%" }}>
                         <div style={{
@@ -1461,6 +1625,321 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
               </div>
             )}
           </div>
+
+          {/* MOBILE PREDICTIONS TAB */}
+          {isMobile && !hasMessages && mobileTab === 'predictions' && (
+            <div style={{
+              flex: 1, overflow: "auto", padding: "16px 12px",
+              display: "flex", flexDirection: "column", gap: 16,
+            }}>
+              {/* Today's Report Card */}
+              <div
+                onClick={onOpenReport}
+                style={{
+                  background: "linear-gradient(135deg, rgba(124,106,247,0.10), rgba(67,56,202,0.05))",
+                  border: "1px solid rgba(124,106,247,0.20)",
+                  borderRadius: 14, padding: "16px", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                }}
+              >
+                <div>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: "#a78bfa", marginBottom: 6,
+                  }}>
+                    <TrendingUp size={10} />
+                    Today&apos;s Report
+                  </div>
+                  <p style={{ fontSize: 13, color: "#c4b5fd", fontWeight: 600, marginBottom: 2 }}>
+                    AI Trading Insights
+                  </p>
+                  <p style={{ fontSize: 11, color: "#6b7280" }}>
+                    Trends, signals &amp; forecasts
+                  </p>
+                </div>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: "rgba(167,139,250,0.15)",
+                  border: "1px solid rgba(167,139,250,0.25)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <ChevronRight size={14} color="#a78bfa" />
+                </div>
+              </div>
+
+              {/* Past Predictions */}
+              <div>
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  marginBottom: 12,
+                }}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: "#a78bfa",
+                  }}>
+                    <BarChart2 size={10} />
+                    Past Predictions
+                  </div>
+                  {pastPredictions.length > 0 && (
+                    <span style={{
+                      fontSize: 10, fontFamily: "'DM Mono', monospace",
+                      color: "#4b5563", fontWeight: 500,
+                    }}>
+                      {pastPredictions.length}d
+                    </span>
+                  )}
+                </div>
+
+                {pastPredictionsError ? (
+                  <div style={{
+                    background: "rgba(248,113,113,0.04)",
+                    border: "1px solid rgba(248,113,113,0.15)",
+                    borderRadius: 12, padding: 16,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
+                      <AlertTriangle size={13} color="#f87171" />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#f87171" }}>Error loading predictions</span>
+                    </div>
+                    <p style={{ fontSize: 11, color: "rgba(248,113,113,0.5)", lineHeight: 1.5, marginBottom: 10 }}>
+                      {pastPredictionsError}
+                    </p>
+                    <button
+                      onClick={onRetryPastPredictions}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 6,
+                        background: "rgba(248,113,113,0.1)",
+                        border: "1px solid rgba(248,113,113,0.2)",
+                        color: "#f87171", fontSize: 11, fontWeight: 600,
+                        padding: "6px 12px", borderRadius: 7,
+                        cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >
+                      <RefreshCw size={10} />
+                      Retry
+                    </button>
+                  </div>
+                ) : pastPredictionsLoading ? (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 30 }}>
+                    <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} color="#a78bfa" />
+                    <span style={{ fontSize: 12, color: "#6b7280", marginLeft: 8 }}>Loading predictions...</span>
+                  </div>
+                ) : pastPredictions.length === 0 ? (
+                  <div style={{
+                    padding: 30, fontSize: 12, color: "#6b7280", textAlign: "center",
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 12,
+                  }}>
+                    No past predictions available.
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {pastPredictions.map((day) => {
+                      const allNews = [...day.crypto_news, ...day.macro_news];
+                      const sentimentScores = allNews.map(n => {
+                        if (!n.analysis) return null;
+                        const jsonBlock = n.analysis.match(/```json\s*([\s\S]*?)```/);
+                        if (jsonBlock) {
+                          try {
+                            const parsed = JSON.parse(jsonBlock[1]);
+                            const s = parsed.sentiment_score ?? parsed.sentimentScore ?? parsed.Sentiment_Score;
+                            if (typeof s === 'number') return s > 5 ? s / 20 : s;
+                          } catch { /* */ }
+                        }
+                        try {
+                          const direct = JSON.parse(n.analysis);
+                          if (direct && typeof direct === 'object') {
+                            const s = direct.sentiment_score ?? direct.sentimentScore ?? direct.Sentiment_Score;
+                            if (typeof s === 'number') return s > 5 ? s / 20 : s;
+                          }
+                        } catch { /* */ }
+                        const inlineMatch = n.analysis.match(/"sentiment_score"\s*:\s*([\d.]+)/);
+                        if (inlineMatch) {
+                          const v = parseFloat(inlineMatch[1]);
+                          if (!isNaN(v)) return v > 5 ? v / 20 : v;
+                        }
+                        return null;
+                      }).filter((s): s is number => typeof s === 'number' && !isNaN(s));
+
+                      let avgSentiment: number | null = sentimentScores.length > 0
+                        ? sentimentScores.reduce((a, b) => a + b, 0) / sentimentScores.length
+                        : null;
+
+                      if (avgSentiment === null && day.hourlyForecast) {
+                        const fc = day.hourlyForecast;
+                        const allEntries = [
+                          ...(fc.BTC || []), ...(fc.ETH || []), ...(fc.SOL || []),
+                        ].filter(e => e && typeof e.accuracy_percent === 'number');
+                        if (allEntries.length > 0) {
+                          const avgAcc = allEntries.reduce((s, e) => s + (e.accuracy_percent ?? 0), 0) / allEntries.length;
+                          const avgDev = allEntries.reduce((s, e) => s + Math.abs(e.deviation_percent ?? 0), 0) / allEntries.length;
+                          const avgSent = allEntries.reduce((s, e) => s + (e.sentiment_score ?? 2.5), 0) / allEntries.length;
+                          const accComp = (avgAcc / 100) * 5;
+                          const devComp = Math.max(0, Math.min(5, 5 - (avgDev / 10)));
+                          const sentComp = avgSent > 5 ? avgSent / 20 : avgSent;
+                          avgSentiment = Math.max(0, Math.min(5, Math.round((accComp * 0.4 + devComp * 0.3 + sentComp * 0.3) * 10) / 10));
+                        } else {
+                          const rawEntries = [...(fc.BTC || []), ...(fc.ETH || []), ...(fc.SOL || [])];
+                          const forecastScores = rawEntries
+                            .map(e => e.sentiment_score)
+                            .filter((s): s is number => typeof s === 'number' && !isNaN(s));
+                          if (forecastScores.length > 0) {
+                            const rawAvg = forecastScores.reduce((sum, s) => sum + s, 0) / forecastScores.length;
+                            avgSentiment = rawAvg > 5 ? rawAvg / 20 : rawAvg;
+                            avgSentiment = Math.max(0, Math.min(5, avgSentiment));
+                          }
+                        }
+                      }
+
+                      const sentimentTag = avgSentiment === null ? 'neutral'
+                        : avgSentiment <= 1.6 ? 'bearish'
+                        : avgSentiment <= 3.3 ? 'neutral'
+                        : 'bullish';
+
+                      const tagConfig = {
+                        bullish: { label: "BULLISH", color: "#34d399", bg: "rgba(52,211,153,0.10)", border: "rgba(52,211,153,0.25)" },
+                        neutral: { label: "NEUTRAL", color: "#f59e0b", bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.25)" },
+                        bearish: { label: "BEARISH", color: "#f87171", bg: "rgba(248,113,113,0.10)", border: "rgba(248,113,113,0.25)" },
+                      }[sentimentTag];
+
+                      const dateObj = new Date(day.fetched_date + "T00:00:00");
+                      const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                      const forecastCount = day.hourlyForecast
+                        ? (day.hourlyForecast.BTC?.length || 0) + (day.hourlyForecast.ETH?.length || 0) + (day.hourlyForecast.SOL?.length || 0)
+                        : 0;
+                      const topStory = day.crypto_news[0]?.title || day.macro_news[0]?.title || null;
+
+                      return (
+                        <div
+                          key={day.fetched_date}
+                          onClick={() => onViewPastReport?.(day)}
+                          style={{
+                            background: "rgba(255,255,255,0.025)",
+                            border: "1px solid rgba(255,255,255,0.07)",
+                            borderRadius: 14, padding: "14px 16px 12px",
+                            cursor: "pointer", transition: "all 0.2s",
+                          }}
+                        >
+                          {/* Date + Sentiment badge */}
+                          <div style={{
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            marginBottom: 10,
+                          }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                              <Clock size={11} color="#586069" />
+                              <span style={{ fontSize: 11.5, color: "#8b949e", fontWeight: 400 }}>{formattedDate}</span>
+                            </div>
+                            <span style={{
+                              fontSize: 9.5, fontWeight: 700, padding: "3px 10px", borderRadius: 99,
+                              letterSpacing: "0.05em",
+                              color: tagConfig.color, background: tagConfig.bg,
+                              border: `1px solid ${tagConfig.border}`,
+                            }}>
+                              {tagConfig.label}
+                            </span>
+                          </div>
+
+                          {/* Stats row */}
+                          <div style={{
+                            display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+                            textAlign: "center", gap: 0,
+                            background: "rgba(255,255,255,0.02)",
+                            borderRadius: 8, padding: "8px 0",
+                            marginBottom: topStory ? 10 : 0,
+                          }}>
+                            {[
+                              { label: "Crypto", val: day.crypto_news.length },
+                              { label: "Macro", val: day.macro_news.length },
+                              { label: "Forecasts", val: forecastCount, color: tagConfig.color },
+                            ].map((item, i) => (
+                              <div key={item.label} style={{
+                                borderRight: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                              }}>
+                                <div style={{ fontSize: 8.5, fontWeight: 600, color: "#586069", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>{item.label}</div>
+                                <div style={{ fontSize: 16, fontWeight: 700, color: item.color || "#e2e8f0", fontFamily: "'DM Mono', monospace" }}>{item.val}</div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Top story */}
+                          {topStory && (
+                            <div style={{
+                              fontSize: 11, color: "#8b949e", lineHeight: 1.4,
+                              display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
+                              overflow: "hidden",
+                            }}>{topStory}</div>
+                          )}
+
+                          {/* Sentiment bar */}
+                          {avgSentiment !== null && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+                              <span style={{ fontSize: 9.5, fontWeight: 500, color: "#586069" }}>Sentiment</span>
+                              <div style={{ flex: 1, height: 3, background: "rgba(255,255,255,0.05)", borderRadius: 99, position: "relative" }}>
+                                <div style={{
+                                  position: "absolute", top: 0, bottom: 0, left: 0,
+                                  width: `${(avgSentiment / 5) * 100}%`, borderRadius: 99,
+                                  background: `linear-gradient(90deg, #ef4444, #f59e0b, ${tagConfig.color})`,
+                                }} />
+                              </div>
+                              <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, fontWeight: 700, color: tagConfig.color }}>
+                                {avgSentiment.toFixed(1)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Live Stats */}
+              <div style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 12, overflow: "hidden",
+              }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "#a78bfa",
+                  padding: "12px 14px 8px",
+                }}>
+                  <Activity size={10} />
+                  Live Stats
+                </div>
+                {[
+                  { label: "Active agents", value: "0", color: null as string | null, altBg: false },
+                  { label: "ZK proofs", value: "—", color: null as string | null, altBg: true },
+                  { label: "Credits today", value: "0.00", color: null as string | null, altBg: false },
+                  { label: "Network", value: "Mainnet", color: "#34d399" as string | null, altBg: true },
+                ].map(({ label, value, color, altBg }, i) => (
+                  <div key={label} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "7px 14px",
+                    background: altBg ? "rgba(255,255,255,0.015)" : "transparent",
+                    borderTop: "1px solid rgba(255,255,255,0.04)",
+                  }}>
+                    <span style={{ fontSize: 11.5, color: "#6b7280" }}>{label}</span>
+                    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11.5, fontWeight: color ? 500 : 400, color: color || "#e2e8f0" }}>
+                      {color && (
+                        <span style={{
+                          display: "inline-block", width: 5, height: 5, borderRadius: "50%",
+                          background: color, boxShadow: `0 0 5px ${color}`,
+                          marginRight: 5, animation: "blink 2s infinite",
+                        }} />
+                      )}
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </main>
 
         {/* RIGHT PANEL - Desktop Only, hidden in chat mode */}

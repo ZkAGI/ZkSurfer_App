@@ -2366,7 +2366,7 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
             timeInForce: 'GTC',
             status: 'calculated',
           };
-        } else if (fetchingPrices.has(cacheKey)) {
+        } else if (fetchingPricesRef.current.has(cacheKey)) {
           // Currently fetching
           return {
             entryPrice: currentForecast.entry_price!,

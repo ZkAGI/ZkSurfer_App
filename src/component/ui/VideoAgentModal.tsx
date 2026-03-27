@@ -356,9 +356,9 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
         product, mode, voice, format, customInstructions,
         agentName: agentName || 'My Video Agent',
         productId: productId || savedAgent?.productId,
-        voiceFileName: voiceFile?.name,
-        referenceImageName: referenceImage?.name,
-        referenceVideoName: referenceVideo?.name,
+        voiceFileName: (voiceFile as File | null)?.name,
+        referenceImageName: (referenceImage as File | null)?.name,
+        referenceVideoName: (referenceVideo as File | null)?.name,
         createdAt: savedAgent?.createdAt || now,
         updatedAt: now,
       };

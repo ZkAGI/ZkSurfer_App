@@ -15,7 +15,10 @@ const purchaseSchema = z
   .refine((val) => val <= 10000, "Maximum amount is $10,000");
 import {
   Key, Plus, ArrowLeft, Wallet, Copy, Check, Trash2, Zap, X,
-  Terminal, Settings, LayoutGrid, Menu, HelpCircle, Shield
+  Terminal, Settings, LayoutGrid, Menu, HelpCircle, Shield,
+  BarChart2, Activity, Clock, Image, MessageSquare, Video,
+  CheckCircle, XCircle, TrendingUp, ChevronDown, ChevronUp,
+  FileText, Cpu, Loader2
 } from "lucide-react";
 import { CustomWalletButton } from '@/component/ui/CustomWalletButton';
 
@@ -55,6 +58,20 @@ export default function ApiKeysPage({ dictionary }: ApiKeysPageProps) {
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [showAnalytics, setShowAnalytics] = useState(true);
+
+    // Usage analytics
+    interface UsageRecord {
+      id: string;
+      user_id: string;
+      media_type: string;
+      credits_cost: number;
+      success: boolean;
+      timestamp: string;
+    }
+    const [usageRecords, setUsageRecords] = useState<UsageRecord[]>([]);
+    const [usageLoading, setUsageLoading] = useState(false);
+    const [usageError, setUsageError] = useState<string | null>(null);
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 768);
@@ -68,6 +85,44 @@ export default function ApiKeysPage({ dictionary }: ApiKeysPageProps) {
             fetchApiKeys();
         }
     }, [publicKey]);
+
+    // Fetch usage whenever the active API key changes
+    useEffect(() => {
+        if (globalApiKey) {
+            fetchUsageAnalytics(globalApiKey);
+        }
+    }, [globalApiKey]);
+
+    const fetchUsageAnalytics = async (activeKey: string) => {
+        if (!activeKey || !publicKey) return;
+        setUsageLoading(true);
+        setUsageError(null);
+        try {
+            const walletAddr = publicKey.toString();
+            const response = await fetch(`https://zynapse.zkagi.ai/v1/usage/${walletAddr}`, {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json",
+                    "X-API-Key": activeKey,
+                },
+            });
+            if (!response.ok) {
+                console.warn(`Usage API returned ${response.status}`);
+                setUsageError("No usage data available yet");
+                setUsageRecords([]);
+                return;
+            }
+            const data = await response.json();
+            const records = Array.isArray(data) ? data : (data.usage || data.records || data.data || []);
+            setUsageRecords(records);
+        } catch (error) {
+            console.warn("Usage analytics fetch failed:", error);
+            setUsageError("No usage data available yet");
+            setUsageRecords([]);
+        } finally {
+            setUsageLoading(false);
+        }
+    };
 
     const fetchApiKeys = async () => {
         if (!publicKey) return;
@@ -762,6 +817,380 @@ export default function ApiKeysPage({ dictionary }: ApiKeysPageProps) {
                         Create API Key
                       </button>
                     </div>
+                  )}
+                </div>
+              )}
+              {/* ─── Usage Analytics Dashboard ─── */}
+              {publicKey && (
+                <div style={{ marginTop: 32 }}>
+                  {/* Section Header */}
+                  <div
+                    onClick={() => setShowAnalytics(!showAnalytics)}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      marginBottom: 20, cursor: "pointer",
+                    }}
+                  >
+                    <div>
+                      <h2 style={{
+                        fontSize: 22, fontWeight: 700, color: "#f1f5f9",
+                        fontFamily: "'Syne', sans-serif", marginBottom: 4,
+                        display: "flex", alignItems: "center", gap: 10,
+                      }}>
+                        <BarChart2 size={20} color="#a78bfa" />
+                        Usage Analytics
+                      </h2>
+                      <p style={{ fontSize: 13, color: "#6b7280" }}>
+                        Track API key usage, services consumed, and credit spend
+                      </p>
+                    </div>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 8,
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#6b7280",
+                    }}>
+                      {showAnalytics ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </div>
+                  </div>
+
+                  {showAnalytics && (
+                    <>
+                      {usageLoading ? (
+                        <div style={{
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          padding: "60px 0", gap: 10, color: "#6b7280",
+                        }}>
+                          <Loader2 size={20} style={{ animation: "spin 0.8s linear infinite" }} />
+                          Loading usage data...
+                        </div>
+                      ) : usageError && usageRecords.length === 0 ? (
+                        <div style={{
+                          textAlign: "center", padding: "48px 20px",
+                          background: "rgba(255,255,255,0.02)",
+                          border: "1px solid rgba(255,255,255,0.06)",
+                          borderRadius: 16,
+                        }}>
+                          <div style={{
+                            width: 56, height: 56, borderRadius: 16, margin: "0 auto 16px",
+                            background: "rgba(255,255,255,0.04)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>
+                            <Activity size={24} color="#374151" />
+                          </div>
+                          <h4 style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0", marginBottom: 6 }}>
+                            No Usage Data Yet
+                          </h4>
+                          <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+                            Usage analytics will appear here once you start using ZkAGI services
+                          </p>
+                          <button
+                            onClick={() => globalApiKey && fetchUsageAnalytics(globalApiKey)}
+                            style={{
+                              display: "inline-flex", alignItems: "center", gap: 6,
+                              padding: "8px 16px", borderRadius: 8,
+                              background: "rgba(124,106,247,0.08)",
+                              border: "1px solid rgba(124,106,247,0.15)",
+                              color: "#a78bfa", fontSize: 12, fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <Activity size={13} /> Refresh
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Summary Stats */}
+                          {(() => {
+                            const totalCalls = usageRecords.length;
+                            const totalCredits = usageRecords.reduce((sum, r) => sum + (r.credits_cost || 0), 0);
+                            const successCount = usageRecords.filter(r => r.success).length;
+                            const successRate = totalCalls > 0 ? ((successCount / totalCalls) * 100).toFixed(1) : "0";
+
+                            // Group by media_type
+                            const byType = usageRecords.reduce<Record<string, { count: number; credits: number }>>((acc, r) => {
+                              const type = r.media_type || 'unknown';
+                              if (!acc[type]) acc[type] = { count: 0, credits: 0 };
+                              acc[type].count++;
+                              acc[type].credits += r.credits_cost || 0;
+                              return acc;
+                            }, {});
+
+                            // Recent records (last 10)
+                            const recentRecords = [...usageRecords]
+                              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                              .slice(0, 10);
+
+                            // Media type icon mapping
+                            const getTypeIcon = (type: string) => {
+                              if (type.includes('image')) return Image;
+                              if (type.includes('video')) return Video;
+                              if (type.includes('chat') || type.includes('text')) return MessageSquare;
+                              if (type.includes('audio') || type.includes('voice')) return Cpu;
+                              return FileText;
+                            };
+
+                            const getTypeColor = (type: string) => {
+                              if (type.includes('image')) return '#a78bfa';
+                              if (type.includes('video')) return '#f472b6';
+                              if (type.includes('chat') || type.includes('text')) return '#34d399';
+                              if (type.includes('audio') || type.includes('voice')) return '#60a5fa';
+                              return '#f59e0b';
+                            };
+
+                            return (
+                              <>
+                                {/* Stats Cards */}
+                                <div style={{
+                                  display: "grid",
+                                  gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+                                  gap: 12, marginBottom: 20,
+                                }}>
+                                  {[
+                                    {
+                                      label: "Total API Calls",
+                                      value: totalCalls.toLocaleString(),
+                                      icon: Activity, color: "#a78bfa",
+                                    },
+                                    {
+                                      label: "Credits Used",
+                                      value: totalCredits.toFixed(2),
+                                      icon: Zap, color: "#f59e0b",
+                                    },
+                                    {
+                                      label: "Success Rate",
+                                      value: `${successRate}%`,
+                                      icon: TrendingUp, color: "#34d399",
+                                    },
+                                    {
+                                      label: "Services Used",
+                                      value: Object.keys(byType).length.toString(),
+                                      icon: BarChart2, color: "#60a5fa",
+                                    },
+                                  ].map(stat => (
+                                    <div key={stat.label} style={{
+                                      background: "rgba(255,255,255,0.02)",
+                                      border: "1px solid rgba(255,255,255,0.06)",
+                                      borderRadius: 14, padding: "16px 18px",
+                                    }}>
+                                      <div style={{
+                                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                                        marginBottom: 8,
+                                      }}>
+                                        <span style={{ fontSize: 11, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
+                                          {stat.label}
+                                        </span>
+                                        <stat.icon size={14} color={stat.color} />
+                                      </div>
+                                      <div style={{
+                                        fontSize: 22, fontWeight: 600, color: "#f1f5f9",
+                                        fontFamily: "'DM Mono', monospace",
+                                      }}>
+                                        {stat.value}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* Usage by Service Type */}
+                                {Object.keys(byType).length > 0 && (
+                                  <div style={{
+                                    background: "rgba(255,255,255,0.02)",
+                                    border: "1px solid rgba(255,255,255,0.06)",
+                                    borderRadius: 16, overflow: "hidden",
+                                    marginBottom: 20,
+                                  }}>
+                                    <div style={{
+                                      padding: "14px 20px",
+                                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                                      display: "flex", alignItems: "center", gap: 8,
+                                    }}>
+                                      <BarChart2 size={14} color="#a78bfa" />
+                                      <span style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>
+                                        Usage by Service
+                                      </span>
+                                    </div>
+                                    <div style={{ padding: "12px 20px" }}>
+                                      {Object.entries(byType)
+                                        .sort((a, b) => b[1].count - a[1].count)
+                                        .map(([type, data]) => {
+                                          const TypeIcon = getTypeIcon(type);
+                                          const typeColor = getTypeColor(type);
+                                          const pct = totalCalls > 0 ? (data.count / totalCalls) * 100 : 0;
+
+                                          return (
+                                            <div key={type} style={{
+                                              padding: "12px 0",
+                                              borderBottom: "1px solid rgba(255,255,255,0.04)",
+                                            }}>
+                                              <div style={{
+                                                display: "flex", alignItems: "center", justifyContent: "space-between",
+                                                marginBottom: 8,
+                                              }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                                  <div style={{
+                                                    width: 30, height: 30, borderRadius: 8,
+                                                    background: `${typeColor}12`,
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                  }}>
+                                                    <TypeIcon size={14} color={typeColor} />
+                                                  </div>
+                                                  <div>
+                                                    <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0" }}>
+                                                      {type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                                    </div>
+                                                    <div style={{ fontSize: 11, color: "#6b7280" }}>
+                                                      {data.count} call{data.count !== 1 ? 's' : ''}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <div style={{ textAlign: "right" }}>
+                                                  <div style={{
+                                                    fontSize: 13, fontWeight: 600, color: "#f1f5f9",
+                                                    fontFamily: "'DM Mono', monospace",
+                                                  }}>
+                                                    {data.credits.toFixed(2)}
+                                                  </div>
+                                                  <div style={{ fontSize: 11, color: "#6b7280" }}>credits</div>
+                                                </div>
+                                              </div>
+                                              {/* Progress bar */}
+                                              <div style={{
+                                                height: 4, borderRadius: 2,
+                                                background: "rgba(255,255,255,0.04)",
+                                                overflow: "hidden",
+                                              }}>
+                                                <div style={{
+                                                  height: "100%", borderRadius: 2,
+                                                  width: `${pct}%`,
+                                                  background: typeColor,
+                                                  transition: "width 0.3s",
+                                                }} />
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Recent Activity Table */}
+                                {recentRecords.length > 0 && (
+                                  <div style={{
+                                    background: "rgba(255,255,255,0.02)",
+                                    border: "1px solid rgba(255,255,255,0.06)",
+                                    borderRadius: 16, overflow: "hidden",
+                                  }}>
+                                    <div style={{
+                                      padding: "14px 20px",
+                                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                                    }}>
+                                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        <Clock size={14} color="#f59e0b" />
+                                        <span style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>
+                                          Recent Activity
+                                        </span>
+                                      </div>
+                                      <span style={{ fontSize: 12, color: "#6b7280" }}>
+                                        Last {recentRecords.length} actions
+                                      </span>
+                                    </div>
+
+                                    {/* Table Header */}
+                                    <div style={{
+                                      display: "grid",
+                                      gridTemplateColumns: "1fr 100px 80px 60px",
+                                      padding: "10px 20px",
+                                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                                      fontSize: 11, fontWeight: 600, color: "#4b5563",
+                                      textTransform: "uppercase", letterSpacing: "0.05em",
+                                    }}>
+                                      <div>Service</div>
+                                      <div style={{ textAlign: "right" }}>Credits</div>
+                                      <div style={{ textAlign: "right" }}>Status</div>
+                                      <div style={{ textAlign: "right" }}>Time</div>
+                                    </div>
+
+                                    {recentRecords.map((record, idx) => {
+                                      const RecordIcon = getTypeIcon(record.media_type);
+                                      const recordColor = getTypeColor(record.media_type);
+                                      const date = new Date(record.timestamp);
+                                      const timeAgo = (() => {
+                                        const diff = Date.now() - date.getTime();
+                                        const mins = Math.floor(diff / 60000);
+                                        if (mins < 60) return `${mins}m`;
+                                        const hrs = Math.floor(mins / 60);
+                                        if (hrs < 24) return `${hrs}h`;
+                                        const days = Math.floor(hrs / 24);
+                                        return `${days}d`;
+                                      })();
+
+                                      return (
+                                        <div
+                                          key={record.id}
+                                          style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "1fr 100px 80px 60px",
+                                            padding: "12px 20px",
+                                            borderBottom: idx < recentRecords.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                                            alignItems: "center",
+                                            transition: "background 0.12s",
+                                          }}
+                                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
+                                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                                        >
+                                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                            <div style={{
+                                              width: 28, height: 28, borderRadius: 7,
+                                              background: `${recordColor}12`,
+                                              display: "flex", alignItems: "center", justifyContent: "center",
+                                              flexShrink: 0,
+                                            }}>
+                                              <RecordIcon size={13} color={recordColor} />
+                                            </div>
+                                            <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 500 }}>
+                                              {record.media_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                            </span>
+                                          </div>
+                                          <div style={{
+                                            textAlign: "right", fontSize: 13,
+                                            fontFamily: "'DM Mono', monospace",
+                                            color: "#f1f5f9",
+                                          }}>
+                                            {record.credits_cost.toFixed(2)}
+                                          </div>
+                                          <div style={{ textAlign: "right" }}>
+                                            <span style={{
+                                              display: "inline-flex", alignItems: "center", gap: 4,
+                                              fontSize: 11, fontWeight: 600,
+                                              padding: "3px 8px", borderRadius: 99,
+                                              color: record.success ? "#34d399" : "#ef4444",
+                                              background: record.success ? "rgba(52,211,153,0.1)" : "rgba(239,68,68,0.1)",
+                                              border: `1px solid ${record.success ? "rgba(52,211,153,0.2)" : "rgba(239,68,68,0.2)"}`,
+                                            }}>
+                                              {record.success ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                                              {record.success ? "OK" : "Fail"}
+                                            </span>
+                                          </div>
+                                          <div style={{
+                                            textAlign: "right", fontSize: 12, color: "#6b7280",
+                                            fontFamily: "'DM Mono', monospace",
+                                          }}>
+                                            {timeAgo}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </>
+                      )}
+                    </>
                   )}
                 </div>
               )}

@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import PredictionPanel from '@/component/ui/PredictionPanel';
 import { TradingChart } from '@/component/ui/TradingChart';
 import OrderBook from '@/component/ui/OrderBook';
-import { ArrowLeft, TrendingUp, Activity, BarChart3 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Activity, BarChart3, Terminal } from 'lucide-react';
 
 const TradingPageClient: React.FC = () => {
   const router = useRouter();
@@ -13,111 +13,185 @@ const TradingPageClient: React.FC = () => {
   const lang = params.lang as string || 'en';
 
   return (
-    <div className="min-h-screen bg-dsBg">
+    <div style={{
+      minHeight: "100vh", background: "#07090f",
+      fontFamily: "'DM Sans', sans-serif", color: "#e2e8f0",
+    }}>
       {/* Header */}
-      <div className="ds-topbar sticky top-0 z-10">
-        <div className="flex items-center gap-4">
+      <div style={{
+        position: "sticky", top: 0, zIndex: 10,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "10px 22px",
+        background: "rgba(11,13,22,0.9)", backdropFilter: "blur(14px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <button
             onClick={() => router.push(`/${lang}/home`)}
-            className="w-9 h-9 rounded-lg bg-dsBorder/50 flex items-center justify-center
-                       text-dsMuted hover:text-white hover:bg-dsBorder transition-all"
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#6b7280", cursor: "pointer",
+            }}
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={16} />
           </button>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600
-                            flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <TrendingUp size={16} className="text-white" />
-            </div>
-            <h1 className="ds-heading-md">Prediction Dashboard</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <img src="/images/tiger.svg" alt="ZkTerminal" style={{
+              width: 34, height: 34, borderRadius: 10,
+              boxShadow: "0 0 16px rgba(124,106,247,0.3)",
+            }} />
+            <h1 style={{
+              fontSize: 18, fontWeight: 700, color: "#f1f5f9",
+              fontFamily: "'Syne', sans-serif",
+            }}>Prediction Dashboard</h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Live Indicator */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full
-                          bg-dsGreen/10 border border-dsGreen/20">
-            <div className="w-2 h-2 rounded-full bg-dsGreen animate-pulse" />
-            <span className="text-xs font-dmMono text-dsGreen">Live Data</span>
-          </div>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "5px 14px", borderRadius: 99,
+          background: "rgba(52,211,153,0.06)",
+          border: "1px solid rgba(52,211,153,0.15)",
+        }}>
+          <div style={{
+            width: 7, height: 7, borderRadius: "50%",
+            background: "#34d399",
+            animation: "blink 1.4s infinite",
+          }} />
+          <span style={{ fontSize: 11, fontFamily: "'DM Mono', monospace", color: "#34d399", fontWeight: 600 }}>
+            Live Data
+          </span>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 18px" }}>
         {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="ds-stats-panel">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-dsMuted">Market Status</span>
-              <Activity size={14} className="text-dsGreen" />
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 12, marginBottom: 20,
+        }}>
+          {[
+            { label: "Market Status", value: "Markets Open", icon: Activity, color: "#34d399", showDot: true },
+            { label: "Today's Predictions", value: "24", icon: TrendingUp, color: "#a78bfa" },
+            { label: "Accuracy Rate", value: "78.5%", icon: BarChart3, color: "#f59e0b" },
+          ].map((stat) => (
+            <div key={stat.label} style={{
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 14, padding: "14px 18px",
+            }}>
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                marginBottom: 8,
+              }}>
+                <span style={{ fontSize: 12, color: "#6b7280" }}>{stat.label}</span>
+                <stat.icon size={14} color={stat.color} />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {stat.showDot && (
+                  <div style={{
+                    width: 7, height: 7, borderRadius: "50%",
+                    background: "#34d399",
+                    animation: "blink 1.4s infinite",
+                  }} />
+                )}
+                <span style={{
+                  fontSize: 16, fontWeight: 600, color: "#f1f5f9",
+                  fontFamily: stat.label !== "Market Status" ? "'DM Mono', monospace" : undefined,
+                }}>{stat.value}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-dsGreen animate-pulse" />
-              <span className="text-white font-semibold">Markets Open</span>
-            </div>
-          </div>
-
-          <div className="ds-stats-panel">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-dsMuted">Today&apos;s Predictions</span>
-              <TrendingUp size={14} className="text-dsPurple-light" />
-            </div>
-            <span className="text-white font-semibold font-dmMono">24</span>
-          </div>
-
-          <div className="ds-stats-panel">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-dsMuted">Accuracy Rate</span>
-              <BarChart3 size={14} className="text-amber-400" />
-            </div>
-            <span className="text-white font-semibold font-dmMono">78.5%</span>
-          </div>
+          ))}
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Prediction Panel */}
-          <div className="lg:col-span-1">
-            <div className="ds-card h-full">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp size={16} className="text-dsPurple-light" />
-                <h3 className="text-sm font-semibold text-white">AI Predictions</h3>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gap: 14,
+        }}>
+          {/* Desktop: 3-column layout */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 14,
+          }}>
+            {/* Prediction Panel */}
+            <div style={{
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 16, padding: "18px 20px",
+              overflow: "hidden",
+            }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8, marginBottom: 14,
+              }}>
+                <TrendingUp size={15} color="#a78bfa" />
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0" }}>AI Predictions</span>
               </div>
               <PredictionPanel />
             </div>
-          </div>
 
-          {/* Trading Chart */}
-          <div className="lg:col-span-2">
-            <div className="ds-card h-full">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <BarChart3 size={16} className="text-dsGreen" />
-                  <h3 className="text-sm font-semibold text-white">Price Chart</h3>
+            {/* Trading Chart - takes 2x width on large screens */}
+            <div style={{
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 16, padding: "18px 20px",
+              gridColumn: "span 1",
+              minHeight: 440,
+            }}>
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                marginBottom: 14,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <BarChart3 size={15} color="#34d399" />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0" }}>Price Chart</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="ds-badge-number">BTC/USDT</span>
-                </div>
+                <span style={{
+                  fontSize: 11, fontFamily: "'DM Mono', monospace",
+                  color: "#6b7280",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  padding: "3px 10px", borderRadius: 8,
+                }}>BTC/USDT</span>
               </div>
-              <div className="h-[400px]">
+              <div style={{ height: 380 }}>
                 <TradingChart />
               </div>
             </div>
-          </div>
 
-          {/* Order Book */}
-          <div className="lg:col-span-1">
-            <div className="ds-card h-full">
-              <div className="flex items-center gap-2 mb-4">
-                <Activity size={16} className="text-amber-400" />
-                <h3 className="text-sm font-semibold text-white">Order Book</h3>
+            {/* Order Book */}
+            <div style={{
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 16, padding: "18px 20px",
+              overflow: "hidden",
+            }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8, marginBottom: 14,
+              }}>
+                <Activity size={15} color="#f59e0b" />
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0" }}>Order Book</span>
               </div>
               <OrderBook coin="BTC" depth={10} />
             </div>
           </div>
         </div>
       </div>
+
+      {/* Animations */}
+      <style>{`
+        @keyframes blink {
+          0%, 50%, 100% { opacity: 1; }
+          25% { opacity: 0.3; }
+        }
+      `}</style>
     </div>
   );
 };

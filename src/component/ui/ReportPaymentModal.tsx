@@ -674,10 +674,10 @@ const handleStripePayment = async (planId: string) => {
         return (
           <div className="p-6 max-w-md mx-auto space-y-5">
             <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: ‘#64748b’, fontFamily: "’DM Mono’, monospace" }}>
+              <p className="text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: '#64748b', fontFamily: "'DM Mono', monospace" }}>
                 Email Verification
               </p>
-              <p className="text-[12px]" style={{ color: ‘#94a3b8’ }}>
+              <p className="text-[12px]" style={{ color: '#94a3b8' }}>
                 We&apos;ll send you a one-time code to confirm your address before payment.
               </p>
             </div>
@@ -688,21 +688,21 @@ const handleStripePayment = async (planId: string) => {
               onChange={e => setUserInputEmail(e.target.value)}
               className="w-full px-4 py-3 rounded-lg text-[13px] text-white outline-none transition-all duration-200"
               style={{
-                background: ‘rgba(255,255,255,0.03)’,
-                border: ‘1px solid rgba(255,255,255,0.08)’,
-                fontFamily: "’DM Sans’, sans-serif",
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                fontFamily: "'DM Sans', sans-serif",
               }}
-              onFocus={e => { e.currentTarget.style.borderColor = ‘rgba(124,106,247,0.4)’; }}
-              onBlur={e => { e.currentTarget.style.borderColor = ‘rgba(255,255,255,0.08)’; }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'rgba(124,106,247,0.4)'; }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
             />
             <div className="flex gap-3">
               <button
                 onClick={() => setCurrentStep(PaymentStep.PLAN_SELECTION)}
                 className="flex-1 py-2.5 rounded-lg text-[12px] font-semibold transition-all duration-200"
                 style={{
-                  background: ‘rgba(255,255,255,0.04)’,
-                  border: ‘1px solid rgba(255,255,255,0.08)’,
-                  color: ‘#94a3b8’,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#94a3b8',
                 }}
                 disabled={isVerifyingEmail}
               >
@@ -712,12 +712,12 @@ const handleStripePayment = async (planId: string) => {
                 onClick={handleEmailVerification}
                 className="flex-1 py-2.5 rounded-lg text-[12px] font-semibold transition-all duration-200 disabled:opacity-40"
                 style={{
-                  background: ‘linear-gradient(135deg, #7c6af7, #6d5ce7)’,
-                  color: ‘#fff’,
+                  background: 'linear-gradient(135deg, #7c6af7, #6d5ce7)',
+                  color: '#fff',
                 }}
                 disabled={isVerifyingEmail}
               >
-                {isVerifyingEmail ? ‘Sending...’ : ‘Send Magic Link’}
+                {isVerifyingEmail ? 'Sending...' : 'Send Magic Link'}
               </button>
             </div>
           </div>
