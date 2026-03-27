@@ -80,8 +80,8 @@ export const useSubscriptionStore = create<SubscriptionState>()(
                         ...result,
                         walletAddress,
                     });
-                } catch (error) {
-                    console.error('❌ Failed to check subscription:', error);
+                } catch {
+                    // API may be unreachable on localhost
                     set({ isLoading: false });
                 }
             },

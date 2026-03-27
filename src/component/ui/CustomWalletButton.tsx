@@ -2045,7 +2045,9 @@ export const CustomWalletButton = () => {
             }
           }
         })
-        .catch((err) => console.error("Error calling add-user:", err));
+        .catch(() => {
+          // Silently handle - API may be unreachable on localhost
+        });
     }
   }, [publicKey, hasCalledAddUser, setCredits, setApiKey]);
 
@@ -2178,45 +2180,72 @@ export const CustomWalletButton = () => {
                     safeLocalStorage.getItem("walletName") === MagicWalletName;
 
     return (
-      <div className="wallet-adapter-dropdown relative">
+      <div className="wallet-adapter-dropdown relative" style={{ flexShrink: 0 }}>
         <div
-          className="transition-all ease-out duration-500 relative cursor-pointer group block w-full overflow-hidden border-transparent bg-gradient-to-br from-zkLightPurple via-zkLightPurple to-zkIndigo p-[1px] hover:p-0"
-          style={{
-            clipPath: "polygon(0% 0%, calc(100% - 20px) 0%, 100% 20px, 100% 100%, 20px 100%, 0% calc(100% - 20px), 0% 100%, 0% 0%)",
-            backgroundImage: "linear-gradient(to right, #A4C8FF, #643ADE)",
-            backgroundSize: "200% 200%",
-            animation: "spinGradient 3s linear infinite",
-          }}
           onClick={() => setMenuOpen(!menuOpen)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 12px',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            borderRadius: 8,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
         >
-          <div className="flex items-center justify-center px-4 py-2 text-white">
-            <span className="font-mono">{displayAddress}</span>
-          </div>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', boxShadow: '0 0 5px #34d399', flexShrink: 0 }} />
+          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 500, color: '#e2e8f0', whiteSpace: 'nowrap' }}>{displayAddress}</span>
         </div>
 
         <ul
           ref={menuRef}
-          className={`absolute top-full left-0 mt-1 w-full bg-gray-800 border border-gray-600 rounded-md shadow-lg z-50 ${menuOpen ? 'block' : 'hidden'}`}
           role="menu"
+          style={{
+            display: menuOpen ? 'block' : 'none',
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            right: 0,
+            minWidth: 180,
+            background: 'rgba(17,17,20,0.95)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 10,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            zIndex: 50,
+            overflow: 'hidden',
+            padding: '4px 0',
+          }}
         >
-          <li className="px-4 py-2 text-white hover:bg-gray-700 cursor-pointer border-b border-gray-600" onClick={handleCopyAddress} role="menuitem">
-            {copied ? '✓ Copied' : '📋 Copy address'}
-          </li>
-          <li className="px-4 py-2 text-white hover:bg-gray-700 cursor-pointer border-b border-gray-600" onClick={handleChangeWallet} role="menuitem">
-            🔄 Change wallet
-          </li>
-          {isMagic && (
-            <li className="px-4 py-2 text-white hover:bg-gray-700 cursor-pointer border-b border-gray-600" onClick={handleRevealKey} role="menuitem">
-              {revealing ? '🔄 Revealing...' : '🔑 Reveal Private Key'}
+          {[
+            { label: copied ? 'Copied!' : 'Copy address', onClick: handleCopyAddress },
+            { label: 'Change wallet', onClick: handleChangeWallet },
+            ...(isMagic ? [{ label: revealing ? 'Revealing...' : 'Reveal Private Key', onClick: handleRevealKey }] : []),
+            { label: connectionState === 'disconnecting' ? 'Disconnecting...' : 'Disconnect', onClick: handleDisconnect, danger: true },
+          ].map((item, i) => (
+            <li
+              key={i}
+              role="menuitem"
+              onClick={item.onClick}
+              style={{
+                padding: '8px 14px',
+                fontSize: 13,
+                fontWeight: 500,
+                color: (item as any).danger ? '#ef4444' : '#e2e8f0',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+                borderBottom: i < (isMagic ? 3 : 2) ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                listStyle: 'none',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              {item.label}
             </li>
-          )}
-          <li 
-            className="px-4 py-2 text-white hover:bg-gray-700 cursor-pointer" 
-            onClick={handleDisconnect} 
-            role="menuitem"
-          >
-            {connectionState === 'disconnecting' ? '⏳ Disconnecting...' : '🚪 Disconnect'}
-          </li>
+          ))}
         </ul>
       </div>
     );

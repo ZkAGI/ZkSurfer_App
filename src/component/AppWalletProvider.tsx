@@ -248,6 +248,21 @@ import { CustomWalletModalProvider } from "./ui/CustomWalletModalProvider";
 import { MagicWalletAdapter, MagicWalletName } from "./MagicWalletAdapter";
 import { CivicAuthProvider } from "@civic/auth-web3/react";
 import type { WalletName } from "@solana/wallet-adapter-base";
+import { Component, type ReactNode, type ErrorInfo } from "react";
+
+/** Catches CivicAuthError silently so it doesn't break the app on localhost */
+class CivicErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: false }; } // don't hide children
+  componentDidCatch(error: Error, _info: ErrorInfo) {
+    if (error.name === 'CivicAuthError' || error.message?.includes('Failed to fetch')) {
+      // Silently swallow Civic auth network errors (e.g. on localhost)
+      return;
+    }
+    throw error; // re-throw non-Civic errors
+  }
+  render() { return this.props.children; }
+}
 
 /** ---------- constants ---------- */
 const CIVIC_WALLET_NAME = "Civic";
@@ -477,11 +492,13 @@ export default function AppWalletProvider({
           <WalletInitializer />
           <PersistentConnectionManager />
           <CustomWalletModalProvider>
-            <CivicAuthProvider
-              clientId={process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID || ""}
-            >
-              {children}
-            </CivicAuthProvider>
+            <CivicErrorBoundary>
+              <CivicAuthProvider
+                clientId={process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID || ""}
+              >
+                {children}
+              </CivicAuthProvider>
+            </CivicErrorBoundary>
           </CustomWalletModalProvider>
         </WalletProvider>
       </MagicAdapterContext.Provider>

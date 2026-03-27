@@ -7,7 +7,7 @@ import {
   Activity, Globe, AlertTriangle, RefreshCw, ArrowUpRight,
   Cpu, Shield, Sparkles, Command, Layers, CircleDot,
   TrendingUp, Wallet, Bot, Settings, LogOut, Search, Menu, X,
-  User, Loader2, HelpCircle, Video, Eye, Clock, Download
+  User, Loader2, HelpCircle, Video, Eye, Clock, Download, Mic, Volume2
 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -322,7 +322,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   const handleCardClick = (command: string) => {
     if (command === 'create-swarm') {
       setFlowGateOpen(true);
-    } else if (command === 'video-agent') {
+    } else if (command === 'video-agent' || command === 'prediction-agent' || command === 'voice-agent') {
       onCardClick?.(command);
     } else {
       onCardClick?.(command);
@@ -533,15 +533,51 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
             }}>Agent Swarms</span>
             <ChevronDown size={11} color="#374151" />
           </div>
-          <div style={{ padding: "3px 14px 8px", fontSize: 12, color: "#374151", fontStyle: "italic" }}>
-            No agents created yet
+          <div style={{ padding: "3px 10px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
+            {[
+              { icon: Video, label: "Video Agent", color: "#a78bfa", command: "video-agent" },
+              { icon: TrendingUp, label: "Prediction Agent", color: "#7c6af7", command: "prediction-agent" },
+              { icon: Mic, label: "Voice Agent", color: "#f472b6", command: "voice-agent" },
+            ].map(agent => {
+              const AgentIcon = agent.icon;
+              return (
+                <div
+                  key={agent.command}
+                  onClick={() => onCardClick?.(agent.command)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "7px 8px", borderRadius: 8,
+                    cursor: "pointer", transition: "all 0.15s",
+                    background: "transparent",
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)";
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.background = "transparent";
+                  }}
+                >
+                  <div style={{
+                    width: 24, height: 24, borderRadius: 6,
+                    background: `${agent.color}12`,
+                    border: `1px solid ${agent.color}25`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                  }}>
+                    <AgentIcon size={11} color={agent.color} />
+                  </div>
+                  <span style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500 }}>{agent.label}</span>
+                  <Plus size={10} color="#374151" style={{ marginLeft: "auto" }} />
+                </div>
+              );
+            })}
           </div>
 
           <div style={{ flex: 1 }} />
 
           {/* Help Card */}
           <a
-            href="https://app.gitbook.com/o/rmFFGxpNLUTqMbbTMW3k/s/cD3hqS7a0U5cMxQQhMo6/"
+            href="https://docs.zkagi.ai/docs/"
             target="_blank"
             rel="noopener noreferrer"
             style={{ textDecoration: "none" }}
@@ -1559,6 +1595,111 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                   background: "linear-gradient(to top, #07090f 60%, transparent)",
                   position: "sticky", bottom: 0,
                 }}>
+                  {/* Command Palette for chat view */}
+                  {showCmdPalette && typeof document !== 'undefined' && createPortal(
+                    <div
+                      style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.5)" }}
+                      onClick={() => { setShowCmdPalette(false); setCmdFilter(""); setInputVal(""); }}
+                    >
+                      <div
+                        className="cmd-pal"
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                          position: "absolute",
+                          top: "50%", left: "50%",
+                          transform: "translate(-50%, -50%)",
+                          width: isMobile ? "calc(100% - 32px)" : 560,
+                          maxWidth: 600,
+                          background: "#0d1122",
+                          border: "1px solid rgba(255,255,255,0.10)",
+                          borderRadius: 16, zIndex: 9999,
+                          boxShadow: "0 8px 60px rgba(0,0,0,0.95)",
+                          animation: "slideDown 0.15s ease",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 10,
+                          padding: "12px 16px",
+                          borderBottom: "1px solid rgba(255,255,255,0.06)",
+                        }}>
+                          <Search size={14} color="#a78bfa" />
+                          <input
+                            style={{
+                              flex: 1, background: "transparent", border: "none", outline: "none",
+                              color: "#e2e8f0", fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                            }}
+                            placeholder="Search commands..."
+                            value={cmdFilter}
+                            onChange={e => { setCmdFilter(e.target.value); }}
+                            autoFocus
+                          />
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ padding: "2px 6px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 4, fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#6b7280" }}>esc</span>
+                          </div>
+                        </div>
+                        <div style={{
+                          display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                          gap: 5, padding: 8, maxHeight: 300, overflowY: "auto",
+                        }}>
+                          {filteredCmds.map(c => {
+                            const Icon = c.icon;
+                            return (
+                              <div
+                                key={c.cmd}
+                                onClick={() => handleCmdPick(c.cmd)}
+                                style={{
+                                  padding: "11px 13px", borderRadius: 11,
+                                  border: "1px solid rgba(255,255,255,0.06)",
+                                  cursor: "pointer",
+                                  background: "rgba(255,255,255,0.02)",
+                                  transition: "all 0.15s",
+                                  display: "flex", alignItems: "flex-start", gap: 11,
+                                }}
+                                onMouseEnter={e => {
+                                  (e.currentTarget as HTMLElement).style.background = "rgba(167,139,250,0.07)";
+                                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(167,139,250,0.25)";
+                                  (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+                                }}
+                                onMouseLeave={e => {
+                                  (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
+                                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)";
+                                  (e.currentTarget as HTMLElement).style.transform = "none";
+                                }}
+                              >
+                                <div style={{
+                                  width: 32, height: 32, borderRadius: 9,
+                                  background: c.bg,
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  flexShrink: 0, marginTop: 1,
+                                }}>
+                                  <Icon size={14} color={c.color} />
+                                </div>
+                                <div>
+                                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12.5, fontWeight: 500, color: c.color, marginBottom: 3 }}>{c.cmd}</div>
+                                  <div style={{ fontSize: 11, color: "#374151", lineHeight: 1.45 }}>{c.desc}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div style={{
+                          padding: "8px 12px",
+                          borderTop: "1px solid rgba(255,255,255,0.06)",
+                          display: "flex", alignItems: "center", gap: 6,
+                        }}>
+                          <span style={{ fontSize: 11, color: "#374151", display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ padding: "2px 6px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 4, fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#6b7280" }}>&#8629;</span> select
+                          </span>
+                          <span style={{ fontSize: 11, color: "#374151", display: "flex", alignItems: "center", gap: 4, marginLeft: 10 }}>
+                            <span style={{ padding: "2px 6px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 4, fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#6b7280" }}>esc</span> close
+                          </span>
+                        </div>
+                      </div>
+                    </div>,
+                    document.body
+                  )}
+
                   <div style={{
                     background: "rgba(255,255,255,0.035)",
                     border: inputFocused ? "1px solid rgba(124,106,247,0.45)" : "1px solid rgba(255,255,255,0.10)",
@@ -1569,6 +1710,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                   }}>
                     <textarea
                       ref={inputRef}
+                      className="input-ta"
                       style={{
                         width: "100%", background: "transparent",
                         border: "none", outline: "none",
@@ -1584,6 +1726,39 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                       onFocus={() => setInputFocused(true)}
                       onBlur={() => setInputFocused(false)}
                     />
+
+                    {/* Command Chips */}
+                    <div className="zk-chips-row" style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "8px 12px",
+                      borderTop: "1px solid rgba(255,255,255,0.06)",
+                      overflowX: "auto",
+                    }}>
+                      {CHIP_COMMANDS.map(chip => {
+                        const Icon = chip.icon;
+                        const isLit = litChip === chip.cmd;
+                        return (
+                          <div
+                            key={chip.cmd}
+                            onClick={() => handleChipClick(chip.cmd)}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 5,
+                              padding: "4px 11px", borderRadius: 8,
+                              border: isLit ? "1px solid rgba(167,139,250,0.28)" : "1px solid rgba(255,255,255,0.06)",
+                              background: isLit ? "rgba(167,139,250,0.08)" : "rgba(255,255,255,0.025)",
+                              color: isLit ? "#a78bfa" : "#6b7280",
+                              fontSize: 12, fontFamily: "'DM Mono', monospace",
+                              cursor: "pointer", whiteSpace: "nowrap",
+                              transition: "all 0.15s", flexShrink: 0,
+                            }}
+                          >
+                            <Icon size={11} color={chip.color} />
+                            {chip.cmd}
+                          </div>
+                        );
+                      })}
+                    </div>
+
                     <div style={{
                       display: "flex", alignItems: "center", gap: 8,
                       padding: "7px 12px 10px",
@@ -1942,8 +2117,8 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
           )}
         </main>
 
-        {/* RIGHT PANEL - Desktop Only, hidden in chat mode */}
-        {!isMobile && !hasMessages && (
+        {/* RIGHT PANEL - Desktop Only */}
+        {!isMobile && (
           <aside style={{
             width: 268, flexShrink: 0,
             background: "#0b0d16",

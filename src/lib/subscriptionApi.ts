@@ -78,8 +78,8 @@ export const verifySubscription = async (walletAddress: string): Promise<Verific
 
         console.log('🔍 Subscription verification result:', data);
         return data;
-    } catch (error) {
-        console.error('❌ Error verifying subscription:', error);
+    } catch {
+        // API may be unreachable on localhost
         return { success: false };
     }
 };

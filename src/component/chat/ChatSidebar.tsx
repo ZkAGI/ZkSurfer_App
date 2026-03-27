@@ -206,7 +206,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
           {/* Docs Link */}
           <div className="p-4">
             <a
-              href="https://app.gitbook.com/o/rmFFGxpNLUTqMbbTMW3k/s/cD3hqS7a0U5cMxQQhMo6/"
+              href="https://docs.zkagi.ai/docs/"
               target="_blank"
               rel="noopener noreferrer"
               className="block"

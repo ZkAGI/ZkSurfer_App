@@ -20,6 +20,7 @@ import SubscriptionModal from '@/component/ui/SubscriptionModal';
 import PastPredictions from '@/component/ui/PastPredictions';
 import VideoAgentModal from '@/component/ui/VideoAgentModal';
 import PredictionAgentModal from '@/component/ui/PredictionAgentModal';
+import VoiceAgentModal from '@/component/ui/VoiceAgentModal';
 
 interface MessageStats {
   timeTakenMs: number;
@@ -115,6 +116,7 @@ const HomeContent: FC = () => {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showVideoAgent, setShowVideoAgent] = useState(false);
   const [showPredictionAgent, setShowPredictionAgent] = useState(false);
+  const [showVoiceAgent, setShowVoiceAgent] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
 
   // Initialize credits
@@ -166,8 +168,8 @@ const HomeContent: FC = () => {
 
         const balanceData = await balanceResponse.json();
         setCredits(balanceData.credit_balance || 0);
-      } catch (error) {
-        console.error("Error initializing credits:", error);
+      } catch {
+        // API may be unreachable on localhost — default to 0 credits
         setCredits(0);
       } finally {
         setIsLoadingCredits(false);
@@ -340,7 +342,9 @@ const HomeContent: FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Chat API error: ${response.status}`);
+        const chatErr = new Error(errorData.error || `Chat API error: ${response.status}`);
+        chatErr.name = 'ChatAPIError';
+        throw chatErr;
       }
 
       return response;
@@ -826,14 +830,15 @@ const HomeContent: FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error sending message:', error);
       const errMsg = error instanceof Error ? error.message : 'Unknown error';
+      const isConnectionErr = errMsg.includes('abort') || errMsg.includes('network') || errMsg.includes('Chat API error');
+      if (!isConnectionErr) console.error('Error sending message:', error);
       toast.error('Failed to get response', {
-        description: errMsg,
+        description: isConnectionErr ? 'Connection error — please try again' : errMsg,
       });
       setDisplayMessages(prev => [...prev, {
         role: 'assistant',
-        content: `Sorry, there was an error processing your request: ${errMsg}`,
+        content: `Sorry, there was an error processing your request. Please try again.`,
         type: 'text'
       }]);
     } finally {
@@ -848,6 +853,8 @@ const HomeContent: FC = () => {
       setShowVideoAgent(true);
     } else if (command === 'prediction-agent') {
       setShowPredictionAgent(true);
+    } else if (command === 'voice-agent') {
+      setShowVoiceAgent(true);
     } else if (command === 'analyze') {
       handleOpenReport();
     } else if (command === 'image-gen') {
@@ -978,6 +985,12 @@ const HomeContent: FC = () => {
       <PredictionAgentModal
         isOpen={showPredictionAgent}
         onClose={() => setShowPredictionAgent(false)}
+      />
+
+      {/* Voice Agent Modal */}
+      <VoiceAgentModal
+        isOpen={showVoiceAgent}
+        onClose={() => setShowVoiceAgent(false)}
       />
 
       {/* Report Sidebar */}

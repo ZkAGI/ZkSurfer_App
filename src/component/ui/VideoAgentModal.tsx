@@ -16,7 +16,7 @@ import bs58 from 'bs58';
 const API_BASE = '/api/video-agent';
 
 type VideoStatus = 'QUEUED' | 'PROCESSING' | 'RENDERING' | 'COMPLETED' | 'FAILED';
-type View = 'landing' | 'wizard' | 'create-video' | 'generating' | 'results' | 'history';
+type View = 'overview' | 'landing' | 'wizard' | 'create-video' | 'generating' | 'results' | 'history';
 type WizardStep = 0 | 1 | 2 | 3 | 4;
 
 interface VideoJob {
@@ -103,7 +103,7 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // Views
-  const [view, setView] = useState<View>('landing');
+  const [view, setView] = useState<View>('overview');
   const [wizardStep, setWizardStep] = useState<WizardStep>(0);
   const [slideDir, setSlideDir] = useState<'left' | 'right'>('right');
 
@@ -698,10 +698,11 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3 flex-shrink-0">
           <div className="flex items-center gap-3">
-            {view !== 'landing' && (
+            {view !== 'overview' && (
               <button
                 onClick={() => {
-                  if (view === 'wizard') { if (wizardStep > 0) goWizardBack(); else setView('landing'); }
+                  if (view === 'landing') setView('overview');
+                  else if (view === 'wizard') { if (wizardStep > 0) goWizardBack(); else setView('landing'); }
                   else if (view === 'create-video' || view === 'history') setView('landing');
                   else if (view === 'results') setView('create-video');
                   else setView('landing');
@@ -717,7 +718,8 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
             <div>
               <h2 className="text-[15px] font-semibold text-white tracking-tight">Video Agent</h2>
               <p className="text-[11px] text-[#6b7280] mt-0.5">
-                {view === 'wizard' ? `Step ${wizardStep + 1} of 5` :
+                {view === 'overview' ? 'How it works' :
+                 view === 'wizard' ? `Step ${wizardStep + 1} of 5` :
                  view === 'generating' ? 'Generating...' :
                  view === 'results' ? 'Output Ready' :
                  view === 'history' ? 'Your Videos' :
@@ -726,7 +728,7 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {view === 'landing' && (
+            {(view === 'overview' || view === 'landing') && (
               <button
                 onClick={() => { setView('history'); fetchHistory(); }}
                 className="w-8 h-8 rounded-lg bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)] flex items-center justify-center transition-colors"
@@ -748,6 +750,120 @@ export const VideoAgentModal: React.FC<VideoAgentModalProps> = ({ isOpen, onClos
 
         {/* ═══ CONTENT ═══ */}
         <div className="flex-1 overflow-y-auto px-6 pb-6 wallet-modal-scroll">
+
+          {/* ══ OVERVIEW ══ */}
+          {view === 'overview' && (
+            <div className="space-y-4" style={{ animation: 'walletSectionIn 0.4s ease-out both' }}>
+              {/* Hero */}
+              <div className="text-center pt-2 pb-3">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.15) 0%, rgba(96,165,250,0.10) 100%)', border: '1px solid rgba(167,139,250,0.2)' }}>
+                  <Film className="w-7 h-7 text-[#a78bfa]" />
+                </div>
+                <h3 className="text-[16px] font-bold text-white mb-1">AI Video Generation Agent</h3>
+                <p className="text-[12px] text-[#6b7280] max-w-[320px] mx-auto leading-relaxed">
+                  Transform text prompts into professional videos with AI-generated scripts, voiceovers, and visuals.
+                </p>
+              </div>
+
+              {/* Flow diagram */}
+              <div
+                className="rounded-2xl p-4"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                <div className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wider mb-3">Pipeline Flow</div>
+                <div className="flex flex-col gap-2">
+                  {[
+                    { icon: Type, label: 'Topic Input', desc: 'Describe your video topic', color: '#a78bfa' },
+                    { icon: Bot, label: 'AI Script Generation', desc: 'GPT writes script & scene plan', color: '#60a5fa' },
+                    { icon: Volume2, label: 'Voice Synthesis', desc: 'TTS generates narration audio', color: '#34d399' },
+                    { icon: ImageIcon, label: 'Visual Generation', desc: 'AI creates scene imagery', color: '#f59e0b' },
+                    { icon: Film, label: 'Video Assembly', desc: 'Scenes composed into final video', color: '#ec4899' },
+                    { icon: Download, label: 'Download Ready', desc: 'HD video available for download', color: '#8b5cf6' },
+                  ].map((step, i) => (
+                    <div key={i} className="flex items-center gap-3" style={{ animation: `walletItemIn 0.3s ease-out ${0.05 * i}s both` }}>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${step.color}15`, border: `1px solid ${step.color}30` }}>
+                        <step.icon className="w-4 h-4" style={{ color: step.color }} />
+                      </div>
+                      {i < 5 && <div className="absolute left-[39px] top-[40px] w-px h-2" style={{ background: `${step.color}30` }} />}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] font-medium text-white">{step.label}</div>
+                        <div className="text-[10px] text-[#6b7280]">{step.desc}</div>
+                      </div>
+                      {i < 5 && <ChevronRight className="w-3 h-3 text-[#4b5563] flex-shrink-0" />}
+                      {i === 5 && <CheckCircle2 className="w-3 h-3 text-[#8b5cf6] flex-shrink-0" />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Capabilities */}
+              <div
+                className="rounded-2xl p-4"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                <div className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wider mb-3">Capabilities</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { icon: Monitor, label: 'Landscape 16:9', desc: 'Desktop & YouTube' },
+                    { icon: Smartphone, label: 'Portrait 9:16', desc: 'Reels & Shorts' },
+                    { icon: Mic, label: 'Multiple Voices', desc: 'Built-in & custom' },
+                    { icon: Sparkles, label: 'Story Mode', desc: 'Narrative-driven videos' },
+                    { icon: Upload, label: 'Reference Upload', desc: 'Style & voice files' },
+                    { icon: Palette, label: 'Custom Branding', desc: 'Product-aware content' },
+                  ].map((cap, i) => (
+                    <div
+                      key={i}
+                      className="rounded-xl p-2.5 flex items-start gap-2"
+                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', animation: `walletItemIn 0.3s ease-out ${0.05 * i}s both` }}
+                    >
+                      <cap.icon className="w-3.5 h-3.5 text-[#a78bfa] mt-0.5 flex-shrink-0" />
+                      <div>
+                        <div className="text-[11px] font-medium text-white">{cap.label}</div>
+                        <div className="text-[9px] text-[#6b7280]">{cap.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Agent modes */}
+              <div
+                className="rounded-2xl p-4"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                <div className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wider mb-3">Agent Modes</div>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-3 rounded-xl p-3" style={{ background: 'rgba(167,139,250,0.05)', border: '1px solid rgba(167,139,250,0.1)' }}>
+                    <Bot className="w-4 h-4 text-[#a78bfa] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-[12px] font-medium text-white">Persistent Agent</div>
+                      <div className="text-[10px] text-[#6b7280] leading-relaxed">Configure once with product, voice, format & style. The agent remembers preferences for unlimited video generation.</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 rounded-xl p-3" style={{ background: 'rgba(52,211,153,0.05)', border: '1px solid rgba(52,211,153,0.1)' }}>
+                    <Zap className="w-4 h-4 text-[#34d399] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-[12px] font-medium text-white">Quick Video</div>
+                      <div className="text-[10px] text-[#6b7280] leading-relaxed">Skip setup entirely. Enter a topic and generate a one-off video with default settings instantly.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA */}
+              <button
+                onClick={() => setView('landing')}
+                className="w-full flex items-center justify-center gap-2.5 rounded-xl px-4 py-4 text-[14px] font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
+                style={{
+                  background: 'linear-gradient(135deg, #7c6af7 0%, #6c5ce7 100%)',
+                  boxShadow: '0 4px 20px rgba(124,106,247,0.3)',
+                  animation: 'walletItemIn 0.3s ease-out 0.3s both',
+                }}
+              >
+                Get Started <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {/* ══ LANDING ══ */}
           {view === 'landing' && (
