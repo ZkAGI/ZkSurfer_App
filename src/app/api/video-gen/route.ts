@@ -108,7 +108,26 @@ export async function POST(request: NextRequest) {
         if (!externalResponse.ok) {
           let errorMessage = "Video generation failed";
           try {
-            errorMessage = (await externalResponse.text()) || errorMessage;
+            const rawText = await externalResponse.text();
+            // Parse nested JSON error responses from external API
+            try {
+              let parsed = JSON.parse(rawText);
+              // Handle nested {"detail": "{\"detail\": \"...\"}"}
+              while (parsed.detail && typeof parsed.detail === "string") {
+                try {
+                  const inner = JSON.parse(parsed.detail);
+                  parsed = inner;
+                } catch {
+                  errorMessage = parsed.detail;
+                  break;
+                }
+              }
+              if (parsed.error) errorMessage = parsed.error;
+              else if (parsed.message) errorMessage = parsed.message;
+              else if (typeof parsed.detail === "string") errorMessage = parsed.detail;
+            } catch {
+              if (rawText) errorMessage = rawText;
+            }
           } catch {}
           console.error("[video-gen] External API error:", errorMessage);
           controller.enqueue(new Uint8Array([0x02]));
