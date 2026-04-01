@@ -655,8 +655,9 @@ const HomeContent: FC = () => {
             return;
           }
 
-          // Step 1: Submit job (returns immediately with jobId)
-          const submitResponse = await fetch('/api/video-gen', {
+          // Streaming call — server sends heartbeats while waiting for external API,
+          // then streams the video blob when ready. No timeout limit.
+          const response = await fetch('/api/video-gen', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -666,52 +667,50 @@ const HomeContent: FC = () => {
             body: JSON.stringify({ prompt }),
           });
 
-          if (!submitResponse.ok) {
-            const errBody = await submitResponse.text();
+          if (!response.ok) {
+            const errBody = await response.text();
             let errMsg = 'Video generation failed';
             try { errMsg = JSON.parse(errBody).error || errMsg; } catch { errMsg = errBody || errMsg; }
             throw new Error(errMsg);
           }
 
-          const { jobId } = await submitResponse.json();
-          if (!jobId) throw new Error('Failed to start video generation job');
+          // Read the streamed response
+          // Protocol: 0x00=heartbeat, 0x01=video follows, 0x02=error follows
+          const buffer = new Uint8Array(await response.arrayBuffer());
 
-          // Step 2: Poll until video is ready
-          const POLL_INTERVAL = 3000;
-          const MAX_POLL_TIME = 15 * 60 * 1000;
-          const pollStart = Date.now();
+          // Strip leading heartbeat bytes (0x00)
+          let offset = 0;
+          while (offset < buffer.length && buffer[offset] === 0x00) offset++;
 
-          while (true) {
-            if (Date.now() - pollStart > MAX_POLL_TIME) {
-              throw new Error('Video generation timed out. Please try again.');
-            }
+          if (offset >= buffer.length) {
+            throw new Error('Empty response from video generation');
+          }
 
-            await new Promise(r => setTimeout(r, POLL_INTERVAL));
-
-            const pollResponse = await fetch(`/api/video-gen?jobId=${jobId}`);
-
-            if (pollResponse.status === 202) {
-              // Still processing — keep polling
-              continue;
-            }
-
-            if (pollResponse.status === 200) {
-              // Video is ready — it's returned as a video/mp4 blob
-              const videoBlob = await pollResponse.blob();
-              const videoUrl = URL.createObjectURL(videoBlob);
-              setDisplayMessages(prev => [...prev, {
-                role: 'assistant',
-                content: videoUrl,
-                type: 'video',
-                command: 'video-gen',
-              }]);
-              break;
-            }
-
-            // Error
-            let errMsg = 'Video generation failed';
-            try { errMsg = (await pollResponse.json()).error || errMsg; } catch {}
-            throw new Error(errMsg);
+          if (buffer[offset] === 0x01) {
+            // Success — remaining bytes are the video
+            const videoData = buffer.slice(offset + 1);
+            const blob = new Blob([videoData], { type: 'video/mp4' });
+            const videoUrl = URL.createObjectURL(blob);
+            setDisplayMessages(prev => [...prev, {
+              role: 'assistant',
+              content: videoUrl,
+              type: 'video',
+              command: 'video-gen',
+            }]);
+          } else if (buffer[offset] === 0x02) {
+            // Error — remaining bytes are the error message
+            const errorMsg = new TextDecoder().decode(buffer.slice(offset + 1));
+            throw new Error(errorMsg);
+          } else {
+            // Unknown format — try treating entire response as video
+            const blob = new Blob([buffer], { type: 'video/mp4' });
+            const videoUrl = URL.createObjectURL(blob);
+            setDisplayMessages(prev => [...prev, {
+              role: 'assistant',
+              content: videoUrl,
+              type: 'video',
+              command: 'video-gen',
+            }]);
           }
         } catch (err: any) {
           console.error('Video generation error:', err);
