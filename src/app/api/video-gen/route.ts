@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 
-export const maxDuration = 900;
+export const maxDuration = 300;
 
 // In-memory job store
 interface VideoJob {
