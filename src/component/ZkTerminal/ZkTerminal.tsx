@@ -92,7 +92,7 @@ interface MessageStats {
 interface Message {
   role: 'user' | 'assistant';
   content: string | React.ReactNode;
-  type?: 'text' | 'image' | 'command';
+  type?: 'text' | 'image' | 'video' | 'command';
   command?: string;
   stats?: MessageStats;
 }
@@ -1437,6 +1437,42 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                                     transition: "all 0.15s",
                                   }}
                                   title="Download image"
+                                >
+                                  <Download size={16} />
+                                </a>
+                              </div>
+                            </div>
+                          ) : msg.type === 'video' && typeof msg.content === 'string' ? (
+                            <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", display: "inline-block", maxWidth: 480 }}>
+                              <video
+                                src={msg.content}
+                                controls
+                                playsInline
+                                style={{
+                                  width: "100%",
+                                  borderRadius: 10,
+                                  display: "block",
+                                  background: "#000",
+                                }}
+                              />
+                              <div style={{
+                                position: "absolute", top: 10, right: 10,
+                                display: "flex", gap: 8,
+                              }}>
+                                <a
+                                  href={msg.content}
+                                  download="zkterminal-video.mp4"
+                                  style={{
+                                    width: 36, height: 36, borderRadius: 10,
+                                    background: "rgba(0,0,0,0.55)",
+                                    backdropFilter: "blur(8px)",
+                                    border: "1px solid rgba(255,255,255,0.15)",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    color: "#fff", cursor: "pointer",
+                                    textDecoration: "none",
+                                    transition: "all 0.15s",
+                                  }}
+                                  title="Download video"
                                 >
                                   <Download size={16} />
                                 </a>

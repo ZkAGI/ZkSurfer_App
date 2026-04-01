@@ -32,7 +32,7 @@ interface MessageStats {
 interface Message {
   role: 'user' | 'assistant';
   content: string | ReactNode;
-  type?: 'text' | 'image' | 'command';
+  type?: 'text' | 'image' | 'video' | 'command';
   command?: string;
   stats?: MessageStats;
 }
@@ -545,36 +545,173 @@ const HomeContent: FC = () => {
         }
 
         try {
-          const { apiKey: currentApiKey, credits: currentCredits } = useModelStore.getState();
-          const response = await fetch('/api/video-gen', {
+          let { apiKey: currentApiKey, credits: currentCredits } = useModelStore.getState();
+
+          // Auto-fetch or create API key if not available
+          if (!currentApiKey) {
+            const walletAddress = publicKey?.toString() ?? '';
+            if (!walletAddress) {
+              setDisplayMessages(prev => [...prev, {
+                role: 'assistant',
+                content: 'Please connect your wallet first to generate videos.',
+                type: 'text',
+              }]);
+              setIsLoading(false);
+              return;
+            }
+
+            setDisplayMessages(prev => [...prev, {
+              role: 'assistant',
+              content: 'Setting up your API key... Please wait.',
+              type: 'text',
+            }]);
+
+            const headersList = {
+              'Accept': '*/*',
+              'api-key': 'zk-123321',
+              'Content-Type': 'application/json',
+            };
+            const bodyContent = JSON.stringify({ wallet_address: walletAddress });
+
+            // Try to add user first, then generate key if user exists
+            const addUserResponse = await fetch('https://zynapse.zkagi.ai/add-user', {
+              method: 'POST',
+              body: bodyContent,
+              headers: headersList,
+            });
+            const addUserData = await addUserResponse.json();
+
+            let generatedKey = '';
+            if (addUserResponse.status === 200 && addUserData.api_keys?.length > 0) {
+              generatedKey = addUserData.api_keys[0];
+            } else if (addUserResponse.status === 400 && addUserData.detail === 'User already exists') {
+              // Fetch existing keys first
+              const keysResponse = await fetch(API_KEYS_URL, {
+                method: 'POST',
+                headers: headersList,
+                body: bodyContent,
+              });
+              if (keysResponse.ok) {
+                const keysData = await keysResponse.json();
+                const keys = keysData.api_keys || [];
+                if (keys.length > 0) {
+                  generatedKey = keys[0];
+                }
+              }
+              // If no existing keys, generate a new one
+              if (!generatedKey) {
+                const genRes = await fetch('https://zynapse.zkagi.ai/generate-api-key', {
+                  method: 'POST',
+                  body: bodyContent,
+                  headers: headersList,
+                });
+                const genData = await genRes.json();
+                if (genData.api_key) {
+                  generatedKey = genData.api_key;
+                }
+              }
+            }
+
+            if (!generatedKey) {
+              setDisplayMessages(prev => [...prev, {
+                role: 'assistant',
+                content: 'Could not generate API key. Please try the /api command manually.',
+                type: 'text',
+              }]);
+              setIsLoading(false);
+              return;
+            }
+
+            currentApiKey = generatedKey;
+            useModelStore.getState().setApiKey(generatedKey);
+
+            // Fetch credits for the new key
+            try {
+              const balanceResponse = await fetch(BALANCE_API_URL, {
+                method: 'GET',
+                headers: {
+                  'Accept': '*/*',
+                  'Authorization': `Bearer ${generatedKey}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+              if (balanceResponse.ok) {
+                const balanceData = await balanceResponse.json();
+                currentCredits = balanceData.credit_balance || 0;
+                useModelStore.getState().setCredits(currentCredits);
+              }
+            } catch {
+              // Continue with 0 credits if balance check fails
+            }
+          }
+
+          if (currentCredits <= 0) {
+            setDisplayMessages(prev => [...prev, {
+              role: 'assistant',
+              content: 'Insufficient credits for video generation. Please top up your credits to continue.',
+              type: 'text',
+            }]);
+            setIsLoading(false);
+            return;
+          }
+
+          // Step 1: Submit job (returns immediately with jobId)
+          const submitResponse = await fetch('/api/video-gen', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-api-key': currentApiKey || '',
+              'x-api-key': currentApiKey,
               'x-current-credits': currentCredits.toString(),
             },
             body: JSON.stringify({ prompt }),
           });
 
-          if (!response.ok) throw new Error(await response.text() || 'Video generation failed');
+          if (!submitResponse.ok) {
+            const errBody = await submitResponse.text();
+            let errMsg = 'Video generation failed';
+            try { errMsg = JSON.parse(errBody).error || errMsg; } catch { errMsg = errBody || errMsg; }
+            throw new Error(errMsg);
+          }
 
-          const contentType = response.headers.get('content-type');
-          if (contentType?.includes('video/mp4')) {
-            const videoBlob = await response.blob();
-            const videoUrl = URL.createObjectURL(videoBlob);
-            setDisplayMessages(prev => [...prev, {
-              role: 'assistant',
-              content: videoUrl,
-              type: 'text',
-              command: 'video-gen',
-            }]);
-          } else {
-            const data = await response.json();
-            setDisplayMessages(prev => [...prev, {
-              role: 'assistant',
-              content: data.videoUrl || data.message || 'Video generated successfully.',
-              type: 'text',
-            }]);
+          const { jobId } = await submitResponse.json();
+          if (!jobId) throw new Error('Failed to start video generation job');
+
+          // Step 2: Poll until video is ready
+          const POLL_INTERVAL = 3000;
+          const MAX_POLL_TIME = 15 * 60 * 1000;
+          const pollStart = Date.now();
+
+          while (true) {
+            if (Date.now() - pollStart > MAX_POLL_TIME) {
+              throw new Error('Video generation timed out. Please try again.');
+            }
+
+            await new Promise(r => setTimeout(r, POLL_INTERVAL));
+
+            const pollResponse = await fetch(`/api/video-gen?jobId=${jobId}`);
+
+            if (pollResponse.status === 202) {
+              // Still processing — keep polling
+              continue;
+            }
+
+            if (pollResponse.status === 200) {
+              // Video is ready — it's returned as a video/mp4 blob
+              const videoBlob = await pollResponse.blob();
+              const videoUrl = URL.createObjectURL(videoBlob);
+              setDisplayMessages(prev => [...prev, {
+                role: 'assistant',
+                content: videoUrl,
+                type: 'video',
+                command: 'video-gen',
+              }]);
+              break;
+            }
+
+            // Error
+            let errMsg = 'Video generation failed';
+            try { errMsg = (await pollResponse.json()).error || errMsg; } catch {}
+            throw new Error(errMsg);
           }
         } catch (err: any) {
           console.error('Video generation error:', err);
