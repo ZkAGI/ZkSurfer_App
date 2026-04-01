@@ -655,87 +655,64 @@ const HomeContent: FC = () => {
             return;
           }
 
-          // Call the external video API directly from the browser.
-          // This bypasses Vercel's serverless timeout — the browser has no fetch timeout.
-          const videoEndpoint = process.env.NEXT_PUBLIC_VIDEO_GEN_ENDPOINT;
-          if (!videoEndpoint) {
-            throw new Error('Video generation endpoint is not configured');
-          }
-
-          const response = await fetch(videoEndpoint, {
+          // Call through our server route (streaming).
+          // Server-side Node.js fetch works with the external API; browser fetch doesn't.
+          // Streaming bypasses Vercel's 300s limit (maxDuration = TTFB only for streams).
+          // Server retries up to 3 times on timeout errors automatically.
+          const response = await fetch('/api/video-gen', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-API-Key': currentApiKey,
-              accept: '*/*',
+              'x-api-key': currentApiKey,
+              'x-current-credits': currentCredits.toString(),
             },
-            body: JSON.stringify({
-              prompt,
-              fast_mode: 'Fast',
-              lora_scale: 1,
-              num_frames: 49,
-              aspect_ratio: '16:9',
-              sample_shift: 4,
-              sample_steps: 14,
-              frames_per_second: 12,
-              sample_guide_scale: 4.5,
-            }),
+            body: JSON.stringify({ prompt }),
           });
 
           if (!response.ok) {
+            const errBody = await response.text();
             let errMsg = 'Video generation failed';
-            try {
-              const errData = await response.json();
-              // Unwrap nested {"detail": "{\"detail\":\"...\"}"}
-              let detail = errData.detail || errData.error || errData.message;
-              if (typeof detail === 'string') {
-                try {
-                  const inner = JSON.parse(detail);
-                  detail = inner.detail || inner.error || inner.message || detail;
-                } catch {}
-              }
-              if (detail) errMsg = detail;
-            } catch {
-              const text = await response.text().catch(() => '');
-              if (text) errMsg = text;
-            }
+            try { errMsg = JSON.parse(errBody).error || errMsg; } catch { errMsg = errBody || errMsg; }
             throw new Error(errMsg);
           }
 
-          // Got the response — check content type
-          const contentType = response.headers.get('content-type') || '';
+          // Read the streamed response
+          // Protocol: 0x00=heartbeat, 0x01=video follows, 0x02=error follows
+          const buffer = new Uint8Array(await response.arrayBuffer());
 
-          if (contentType.includes('video/') || contentType.includes('octet-stream')) {
-            const videoBlob = await response.blob();
-            const videoUrl = URL.createObjectURL(videoBlob);
+          // Strip leading heartbeat bytes (0x00)
+          let offset = 0;
+          while (offset < buffer.length && buffer[offset] === 0x00) offset++;
+
+          if (offset >= buffer.length) {
+            throw new Error('Empty response from video generation');
+          }
+
+          if (buffer[offset] === 0x01) {
+            // Success — remaining bytes are the video
+            const videoData = buffer.slice(offset + 1);
+            const blob = new Blob([videoData], { type: 'video/mp4' });
+            const videoUrl = URL.createObjectURL(blob);
             setDisplayMessages(prev => [...prev, {
               role: 'assistant',
               content: videoUrl,
               type: 'video',
               command: 'video-gen',
             }]);
+          } else if (buffer[offset] === 0x02) {
+            // Error — remaining bytes are the error message
+            const errorMsg = new TextDecoder().decode(buffer.slice(offset + 1));
+            throw new Error(errorMsg);
           } else {
-            // JSON response — might contain a video URL
-            const data = await response.json();
-            const foundUrl =
-              data.videoUrl || data.video_url || data.url || data.download_url ||
-              (typeof data.output === 'string' ? data.output : null) ||
-              (Array.isArray(data.output) ? data.output[0] : null) ||
-              data.result;
-
-            if (typeof foundUrl === 'string' && foundUrl.startsWith('http')) {
-              const dlResponse = await fetch(foundUrl);
-              const videoBlob = await dlResponse.blob();
-              const videoUrl = URL.createObjectURL(videoBlob);
-              setDisplayMessages(prev => [...prev, {
-                role: 'assistant',
-                content: videoUrl,
-                type: 'video',
-                command: 'video-gen',
-              }]);
-            } else {
-              throw new Error(data.error || data.message || 'Unexpected response from video API');
-            }
+            // Unknown format — try treating as video
+            const blob = new Blob([buffer], { type: 'video/mp4' });
+            const videoUrl = URL.createObjectURL(blob);
+            setDisplayMessages(prev => [...prev, {
+              role: 'assistant',
+              content: videoUrl,
+              type: 'video',
+              command: 'video-gen',
+            }]);
           }
         } catch (err: any) {
           console.error('Video generation error:', err);

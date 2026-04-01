@@ -91,112 +91,168 @@ export async function POST(request: NextRequest) {
       }, 15_000);
 
       try {
-        console.log("[video-gen] Calling external API...");
+        // Retry up to 3 times — GPU services can be flaky with timeouts
+        const MAX_RETRIES = 3;
+        let videoBytes: Uint8Array | undefined;
+        let lastError = "Video generation failed";
 
-        const externalResponse = await fetch(externalEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-API-Key": apiKey,
-            accept: "*/*",
-          },
-          body: JSON.stringify(externalPayload),
-        });
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            console.log(`[video-gen] Attempt ${attempt}/${MAX_RETRIES} — calling external API...`);
+
+            if (attempt > 1) {
+              // Wait before retrying (5s, 10s)
+              await new Promise((r) => setTimeout(r, attempt * 5000));
+            }
+
+            const externalResponse = await fetch(externalEndpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-API-Key": apiKey,
+                accept: "*/*",
+              },
+              body: JSON.stringify(externalPayload),
+            });
+
+            if (!externalResponse.ok) {
+              let errorMessage = "Video generation failed";
+              try {
+                const rawText = await externalResponse.text();
+                try {
+                  let parsed = JSON.parse(rawText);
+                  while (parsed.detail && typeof parsed.detail === "string") {
+                    try {
+                      const inner = JSON.parse(parsed.detail);
+                      parsed = inner;
+                    } catch {
+                      errorMessage = parsed.detail;
+                      break;
+                    }
+                  }
+                  if (parsed.error) errorMessage = parsed.error;
+                  else if (parsed.message) errorMessage = parsed.message;
+                  else if (typeof parsed.detail === "string")
+                    errorMessage = parsed.detail;
+                } catch {
+                  if (rawText) errorMessage = rawText;
+                }
+              } catch {}
+
+              lastError = errorMessage;
+              console.error(`[video-gen] Attempt ${attempt} error:`, errorMessage);
+
+              // Retry on timeout errors
+              if (
+                errorMessage.toLowerCase().includes("timed out") &&
+                attempt < MAX_RETRIES
+              ) {
+                continue;
+              }
+              throw new Error(errorMessage);
+            }
+
+            // Read response
+            const contentType =
+              externalResponse.headers.get("content-type") || "";
+
+            if (
+              contentType.includes("video/") ||
+              contentType.includes("application/octet-stream") ||
+              contentType.includes("binary/octet-stream")
+            ) {
+              videoBytes = new Uint8Array(
+                await externalResponse.arrayBuffer()
+              );
+            } else {
+              const rawBuffer = await externalResponse.arrayBuffer();
+              let jsonData: any = null;
+
+              try {
+                jsonData = JSON.parse(
+                  new TextDecoder().decode(rawBuffer)
+                );
+              } catch {
+                videoBytes = new Uint8Array(rawBuffer);
+              }
+
+              if (jsonData) {
+                const videoUrl =
+                  jsonData.videoUrl ||
+                  jsonData.video_url ||
+                  jsonData.url ||
+                  jsonData.download_url ||
+                  (typeof jsonData.output === "string"
+                    ? jsonData.output
+                    : null) ||
+                  (Array.isArray(jsonData.output)
+                    ? jsonData.output[0]
+                    : null) ||
+                  jsonData.result;
+
+                if (
+                  typeof videoUrl === "string" &&
+                  videoUrl.startsWith("http")
+                ) {
+                  console.log(
+                    "[video-gen] Downloading video from URL:",
+                    videoUrl
+                  );
+                  const dlResponse = await fetch(videoUrl);
+                  if (!dlResponse.ok) {
+                    throw new Error("Failed to download video from URL");
+                  }
+                  videoBytes = new Uint8Array(
+                    await dlResponse.arrayBuffer()
+                  );
+                } else {
+                  throw new Error(
+                    jsonData.error ||
+                      jsonData.detail ||
+                      jsonData.message ||
+                      "Unexpected response from video API"
+                  );
+                }
+              }
+            }
+
+            // If we got video bytes, break out of retry loop
+            if (videoBytes && videoBytes.byteLength > 0) {
+              console.log(
+                `[video-gen] Success on attempt ${attempt}, video size: ${videoBytes.byteLength} bytes`
+              );
+              break;
+            }
+          } catch (retryErr: any) {
+            lastError = retryErr.message || "Video generation failed";
+            if (attempt === MAX_RETRIES) {
+              throw retryErr;
+            }
+            if (
+              !lastError.toLowerCase().includes("timed out") &&
+              !lastError.toLowerCase().includes("timeout")
+            ) {
+              throw retryErr; // Don't retry non-timeout errors
+            }
+            console.log(
+              `[video-gen] Attempt ${attempt} timed out, will retry...`
+            );
+          }
+        }
 
         clearInterval(heartbeat);
 
-        if (!externalResponse.ok) {
-          let errorMessage = "Video generation failed";
-          try {
-            const rawText = await externalResponse.text();
-            // Parse nested JSON error responses from external API
-            try {
-              let parsed = JSON.parse(rawText);
-              // Handle nested {"detail": "{\"detail\": \"...\"}"}
-              while (parsed.detail && typeof parsed.detail === "string") {
-                try {
-                  const inner = JSON.parse(parsed.detail);
-                  parsed = inner;
-                } catch {
-                  errorMessage = parsed.detail;
-                  break;
-                }
-              }
-              if (parsed.error) errorMessage = parsed.error;
-              else if (parsed.message) errorMessage = parsed.message;
-              else if (typeof parsed.detail === "string") errorMessage = parsed.detail;
-            } catch {
-              if (rawText) errorMessage = rawText;
-            }
-          } catch {}
-          console.error("[video-gen] External API error:", errorMessage);
-          controller.enqueue(new Uint8Array([0x02]));
-          controller.enqueue(new TextEncoder().encode(errorMessage));
-          controller.close();
-          return;
+        if (!videoBytes || videoBytes.byteLength === 0) {
+          throw new Error(lastError);
         }
-
-        // Read response
-        const contentType = externalResponse.headers.get("content-type") || "";
-        let videoBytes: Uint8Array;
-
-        if (
-          contentType.includes("video/") ||
-          contentType.includes("application/octet-stream") ||
-          contentType.includes("binary/octet-stream")
-        ) {
-          // Direct video binary
-          videoBytes = new Uint8Array(await externalResponse.arrayBuffer());
-        } else {
-          // Might be JSON with a video URL — read as buffer first
-          const rawBuffer = await externalResponse.arrayBuffer();
-          let jsonData: any = null;
-
-          try {
-            jsonData = JSON.parse(new TextDecoder().decode(rawBuffer));
-          } catch {
-            // Not JSON — treat as video binary
-            videoBytes = new Uint8Array(rawBuffer);
-          }
-
-          if (jsonData) {
-            // Look for video URL in common field names
-            const videoUrl =
-              jsonData.videoUrl ||
-              jsonData.video_url ||
-              jsonData.url ||
-              jsonData.download_url ||
-              (typeof jsonData.output === "string" ? jsonData.output : null) ||
-              (Array.isArray(jsonData.output) ? jsonData.output[0] : null) ||
-              jsonData.result;
-
-            if (typeof videoUrl === "string" && videoUrl.startsWith("http")) {
-              console.log("[video-gen] Downloading video from URL:", videoUrl);
-              const dlResponse = await fetch(videoUrl);
-              if (!dlResponse.ok) {
-                throw new Error("Failed to download video from URL");
-              }
-              videoBytes = new Uint8Array(await dlResponse.arrayBuffer());
-            } else {
-              throw new Error(
-                jsonData.error ||
-                  jsonData.detail ||
-                  jsonData.message ||
-                  "Unexpected response from video API"
-              );
-            }
-          }
-        }
-
-        console.log(`[video-gen] Success, video size: ${videoBytes!.byteLength} bytes`);
 
         // Send success marker + video bytes
         controller.enqueue(new Uint8Array([0x01]));
 
         // Stream video in chunks to avoid memory spikes
-        const CHUNK_SIZE = 64 * 1024; // 64KB chunks
-        for (let i = 0; i < videoBytes!.byteLength; i += CHUNK_SIZE) {
-          controller.enqueue(videoBytes!.slice(i, i + CHUNK_SIZE));
+        const CHUNK_SIZE = 64 * 1024;
+        for (let i = 0; i < videoBytes.byteLength; i += CHUNK_SIZE) {
+          controller.enqueue(videoBytes.slice(i, i + CHUNK_SIZE));
         }
 
         controller.close();
