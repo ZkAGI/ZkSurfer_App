@@ -1,5 +1,6 @@
 'use client';
 import { FC, useState, useEffect, useRef, ReactNode } from 'react';
+import { Paperclip } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useRouter, useParams } from 'next/navigation';
@@ -399,29 +400,151 @@ const HomeContent: FC = () => {
     return finalEvent;
   };
 
-  const handleSendMessage = async (message: string, command?: string) => {
-    if (!message.trim()) return;
+  const handleSendMessage = async (message: string, command?: string, files?: File[]) => {
+    if (!message.trim() && (!files || files.length === 0)) return;
 
     const fullMessage = message.trim();
 
     // Add user message
     const userMessage: Message = {
       role: 'user',
-      content: message,
-      type: command ? 'command' : 'text',
+      content: files && files.length > 0 ? (
+        <div className="space-y-2">
+          {fullMessage && <div className="text-white">{fullMessage}</div>}
+          <div className="text-sm text-gray-400">
+            Files: {files.map(f => f.name).join(', ')}
+          </div>
+        </div>
+      ) : message,
+      type: (command || (files && files.length > 0)) ? 'command' : 'text',
       command,
     };
     setDisplayMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
-      // ── /swarm or /create-swarm (COMING SOON) ──
-      if (command === '/swarm' || fullMessage.startsWith('/create-swarm') || fullMessage.startsWith('/swarm')) {
-        setDisplayMessages(prev => [...prev, {
-          role: 'assistant',
-          content: 'The Agent Swarm feature is coming soon. Stay tuned!',
-          type: 'text'
-        }]);
+      // ── /generate-private ──
+      if (command === '/generate-private' || fullMessage.startsWith('/generate-private') || command === 'generate-private') {
+        
+        if (!files || files.length === 0) {
+          setDisplayMessages(prev => [...prev, {
+            role: 'assistant',
+            content: 'To generate a ZK proof, please upload your files (PDF/DOC/TXT) using the attachment button, then run this command again.',
+            type: 'text',
+          }]);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!publicKey) {
+          toast.error('Please connect your wallet first.');
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          // 1. Create KB
+          const kbSuffix = Math.floor(10000000 + Math.random() * 90000000).toString();
+          const walletAddr = publicKey.toString();
+          
+          const createRes = await fetch('/api/kb/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              user_id: walletAddr,
+              kb_name: kbSuffix,
+              is_public: true
+            }),
+          });
+          
+          if (!createRes.ok) throw new Error('Failed to create Knowledge Base');
+          const { kb_id } = await createRes.json();
+
+          // 2. Upload files
+          const form = new FormData();
+          form.append('user_id', walletAddr);
+          form.append('kb_id', kb_id);
+          files.forEach(f => {
+            form.append('files', f, f.name);
+          });
+
+          const upRes = await fetch('/api/kb/upload/private', { 
+            method: 'POST', 
+            body: form 
+          });
+          
+          if (!upRes.ok) throw new Error('Failed to upload files');
+          const uploadResult = await upRes.json();
+
+          if (!uploadResult.created_assets || uploadResult.created_assets.length === 0) {
+            throw new Error('No assets were created during upload');
+          }
+
+          const assetIds = uploadResult.created_assets;
+
+          // 3. Generate proofs for each file
+          const proofResults = [];
+          for (const assetId of assetIds) {
+            const proofRes = await fetch('/api/kb/proofs/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                kb_id: kb_id,
+                asset_id: assetId
+              }),
+            });
+
+            if (proofRes.ok) {
+              const proofData = await proofRes.json();
+              proofResults.push(proofData);
+
+              // Auto-download each proof
+              if (proofData.proof_url) {
+                try {
+                  const dlRes = await fetch(proofData.proof_url);
+                  const blob = await dlRes.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `proof-${proofData.proof_id || 'private'}.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                } catch (e) {
+                  console.warn("Auto-download failed for proof:", proofData.proof_id, e);
+                }
+              }
+            }
+          }
+
+          setDisplayMessages(prev => [...prev, {
+            role: 'assistant',
+            content: (
+              <div className="space-y-3">
+                <div className="text-[#34d399] font-bold">✅ {proofResults.length} ZK Proof(s) Generated Successfully!</div>
+                {proofResults.map((p, idx) => (
+                  <div key={idx} className="bg-black/30 p-3 rounded-lg border border-white/10 font-mono text-xs break-all">
+                    <div className="text-gray-500 mb-1">PROOF ID ({idx + 1}):</div>
+                    <div className="text-[#a78bfa]">{p.proof_id}</div>
+                  </div>
+                ))}
+                <div className="text-sm text-gray-300">
+                  You can now use these Proof IDs with <code className="text-[#a78bfa]">/zk-prove</code> to verify your documents privately.
+                </div>
+              </div>
+            ) as any,
+            type: 'text',
+          }]);
+        } catch (err: any) {
+          console.error('Proof generation error:', err);
+          setDisplayMessages(prev => [...prev, {
+            role: 'assistant',
+            content: `Error generating ZK proof: ${err.message}`,
+            type: 'text',
+          }]);
+        }
+        
         setIsLoading(false);
         return;
       }
@@ -627,18 +750,6 @@ const HomeContent: FC = () => {
         return;
       }
 
-      // ── /zk-prove or /generate-private ──
-      if (command === '/zk-prove' || command === '/generate-private' ||
-          fullMessage.startsWith('/zk-prove') || fullMessage.startsWith('/generate-private')) {
-        setDisplayMessages(prev => [...prev, {
-          role: 'assistant',
-          content: 'To generate a ZK proof, please upload your files (PDF/DOC/TXT) using the attachment button, then run this command again. The system will create a private knowledge base and generate zero-knowledge proofs for your documents.',
-          type: 'text',
-        }]);
-        setIsLoading(false);
-        return;
-      }
-
       // ── /privacy-ai ──
       if (command === '/privacy-ai' || fullMessage.startsWith('/privacy-ai')) {
         const query = fullMessage.replace(/^\/privacy-ai\s*/, '').trim();
@@ -696,6 +807,55 @@ const HomeContent: FC = () => {
           setDisplayMessages(prev => [...prev, {
             role: 'assistant',
             content: `Error creating medical proof: ${err.message}`,
+            type: 'text',
+          }]);
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // ── /zk-prove (VERIFY) ──
+      if (command === '/zk-prove' || fullMessage.startsWith('/zk-prove ')) {
+        const proof = fullMessage.replace(/^\/zk-prove\s*/, '').trim();
+        if (!proof) {
+          setDisplayMessages(prev => [...prev, {
+            role: 'assistant',
+            content: 'Please provide a proof ID to verify. Usage: /zk-prove your_proof_id_here',
+            type: 'text'
+          }]);
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          const response = await fetch('https://zynapse.zkagi.ai/api/verify-proof', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'api-key': API_KEY,
+            },
+            body: JSON.stringify({ proof }),
+          });
+
+          if (!response.ok) throw new Error('Failed to verify proof');
+          const result = await response.json();
+
+          setDisplayMessages(prev => [...prev, {
+            role: 'assistant',
+            content: (
+              <div className="space-y-2">
+                <div className="text-[#34d399] font-bold">✅ Proof Verification Result:</div>
+                <div className="bg-black/30 p-3 rounded-lg border border-white/10 font-mono text-xs break-all">
+                  {JSON.stringify(result, null, 2)}
+                </div>
+              </div>
+            ) as any,
+            type: 'text',
+          }]);
+        } catch (err: any) {
+          setDisplayMessages(prev => [...prev, {
+            role: 'assistant',
+            content: `Error verifying proof: ${err.message}`,
             type: 'text',
           }]);
         }
@@ -818,9 +978,11 @@ const HomeContent: FC = () => {
 
   const handleCardClick = (command: string) => {
     if (command === 'create-swarm') {
-      useAgentCart.getState().setFlowGateOpen(true);
+      // Swarm is disabled (Coming Soon)
+      return;
     } else if (command === 'video-agent') {
-      setShowVideoAgent(true);
+      // Video Agent is disabled (Server Down)
+      return;
     } else if (command === 'prediction-agent') {
       setShowPredictionAgent(true);
     } else if (command === 'voice-agent') {

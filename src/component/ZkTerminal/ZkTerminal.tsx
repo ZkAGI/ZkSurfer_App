@@ -128,7 +128,7 @@ interface PastPredictionDay {
 }
 
 interface ZkTerminalProps {
-  onSendMessage?: (message: string, command?: string) => void;
+  onSendMessage?: (message: string, command?: string, files?: File[]) => void;
   onCardClick?: (command: string) => void;
   onOpenReport?: () => void;
   onViewPastReport?: (day: PastPredictionDay) => void;
@@ -175,7 +175,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   const [pluginStatus, setPluginStatus] = useState(false);
   const [pluginMemory, setPluginMemory] = useState(true);
   const [litChip, setLitChip] = useState<string | null>(null);
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Past predictions data
@@ -271,19 +271,19 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   }, []);
 
   const handleSend = () => {
-    if (!inputVal.trim() && !attachedFile) return;
-    onSendMessage?.(inputVal, activeCmd || undefined);
+    if (!inputVal.trim() && attachedFiles.length === 0) return;
+    onSendMessage?.(inputVal, activeCmd || undefined, attachedFiles.length > 0 ? attachedFiles : undefined);
     setInputVal("");
     setActiveCmd(null);
     setShowCmdPalette(false);
-    setAttachedFile(null);
+    setAttachedFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAttachedFile(file);
+    const files = e.target.files;
+    if (files) {
+      setAttachedFiles(prev => [...prev, ...Array.from(files)]);
     }
   };
 
@@ -1182,38 +1182,39 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                       </div>
 
                       {/* Attached file preview */}
-                      {attachedFile && (
+                      {attachedFiles.length > 0 && (
                         <div style={{
                           display: "flex", alignItems: "center", gap: 8,
                           padding: "6px 12px",
                           borderTop: "1px solid rgba(255,255,255,0.06)",
+                          overflowX: "auto",
                         }}>
-                          <div style={{
-                            display: "flex", alignItems: "center", gap: 6,
-                            padding: "4px 10px", borderRadius: 8,
-                            background: "rgba(167,139,250,0.1)",
-                            border: "1px solid rgba(167,139,250,0.25)",
-                            fontSize: 12, color: "#a78bfa",
-                            fontFamily: "'DM Mono', monospace",
-                          }}>
-                            <Paperclip size={11} />
-                            <span style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {attachedFile.name}
-                            </span>
-                            <span style={{ color: "#6b7280", fontSize: 11 }}>
-                              ({(attachedFile.size / 1024).toFixed(1)}KB)
-                            </span>
-                            <button
-                              onClick={() => { setAttachedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                              style={{
-                                background: "none", border: "none", cursor: "pointer",
-                                color: "#6b7280", display: "flex", alignItems: "center",
-                                padding: 0, marginLeft: 2,
-                              }}
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
+                          {attachedFiles.map((file, idx) => (
+                            <div key={idx} style={{
+                              display: "flex", alignItems: "center", gap: 6,
+                              padding: "4px 10px", borderRadius: 8,
+                              background: "rgba(167,139,250,0.1)",
+                              border: "1px solid rgba(167,139,250,0.25)",
+                              fontSize: 12, color: "#a78bfa",
+                              fontFamily: "'DM Mono', monospace",
+                              flexShrink: 0,
+                            }}>
+                              <Paperclip size={11} />
+                              <span style={{ maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {file.name}
+                              </span>
+                              <button
+                                onClick={() => { setAttachedFiles(prev => prev.filter((_, i) => i !== idx)); }}
+                                style={{
+                                  background: "none", border: "none", cursor: "pointer",
+                                  color: "#6b7280", display: "flex", alignItems: "center",
+                                  padding: 0, marginLeft: 2,
+                                }}
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       )}
 
@@ -1244,14 +1245,14 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                         <button
                           onClick={() => fileInputRef.current?.click()}
                           style={{
-                            background: attachedFile ? "rgba(167,139,250,0.15)" : "none",
-                            border: attachedFile ? "1px solid rgba(167,139,250,0.3)" : "none",
+                            background: attachedFiles.length > 0 ? "rgba(167,139,250,0.15)" : "none",
+                            border: attachedFiles.length > 0 ? "1px solid rgba(167,139,250,0.3)" : "none",
                             cursor: "pointer",
                             display: "flex", alignItems: "center",
-                            color: attachedFile ? "#a78bfa" : "#374151",
+                            color: attachedFiles.length > 0 ? "#a78bfa" : "#374151",
                             padding: 3, borderRadius: 5,
                           }}
-                          title={attachedFile ? attachedFile.name : "Attach file"}
+                          title={attachedFiles.length > 0 ? `${attachedFiles.length} files attached` : "Attach files"}
                         >
                           <Paperclip size={15} />
                         </button>
@@ -1910,17 +1911,16 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         style={{
-                          background: attachedFile ? "rgba(167,139,250,0.15)" : "none",
-                          border: attachedFile ? "1px solid rgba(167,139,250,0.3)" : "none",
+                          background: attachedFiles.length > 0 ? "rgba(167,139,250,0.15)" : "none",
+                          border: attachedFiles.length > 0 ? "1px solid rgba(167,139,250,0.3)" : "none",
                           cursor: "pointer", display: "flex", alignItems: "center",
-                          color: attachedFile ? "#a78bfa" : "#374151",
+                          color: attachedFiles.length > 0 ? "#a78bfa" : "#374151",
                           padding: 3, borderRadius: 5,
                         }}
-                        title={attachedFile ? attachedFile.name : "Attach file"}
+                        title={attachedFiles.length > 0 ? `${attachedFiles.length} files attached` : "Attach files"}
                       >
                         <Paperclip size={15} />
-                      </button>
-                      <button
+                      </button>                      <button
                         onClick={handleSend}
                         disabled={isLoading}
                         style={{
