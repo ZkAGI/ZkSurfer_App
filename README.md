@@ -48,7 +48,7 @@ ZkTerminal is a unified command interface that combines AI agents, zero-knowledg
 | **Framework** | Next.js 16, React 19, TypeScript 5 |
 | **Styling** | Tailwind CSS, Framer Motion, Radix UI |
 | **Blockchain** | Solana (web3.js, wallet-adapter), Ethereum (ethers, wagmi, viem), HyperLiquid |
-| **Wallets** | Phantom, Dynamic Labs, Privy, Magic, Civic Auth, RainbowKit |
+| **Wallets** | Phantom, Dynamic Labs, Privy, Magic, RainbowKit |
 | **AI/ML** | OpenAI, DeepSeek, Mistral, Xenova Transformers, MCP SDK |
 | **State** | Zustand, TanStack React Query, SWR |
 | **Auth** | NextAuth |

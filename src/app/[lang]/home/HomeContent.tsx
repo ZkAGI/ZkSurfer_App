@@ -415,9 +415,13 @@ const HomeContent: FC = () => {
     setIsLoading(true);
 
     try {
-      // ── /swarm or /create-swarm ──
+      // ── /swarm or /create-swarm (COMING SOON) ──
       if (command === '/swarm' || fullMessage.startsWith('/create-swarm') || fullMessage.startsWith('/swarm')) {
-        useAgentCart.getState().setFlowGateOpen(true);
+        setDisplayMessages(prev => [...prev, {
+          role: 'assistant',
+          content: 'The Agent Swarm feature is coming soon. Stay tuned!',
+          type: 'text'
+        }]);
         setIsLoading(false);
         return;
       }
@@ -443,6 +447,8 @@ const HomeContent: FC = () => {
         }
 
         const { credits: currentCredits, apiKey: currentApiKey } = useModelStore.getState();
+        const imageGenStartTime = Date.now();
+        const creditsBeforeImageGen = currentCredits;
         try {
           const response = await streamChatResponse({
             selectedModel: 'Mistral',
@@ -455,11 +461,15 @@ const HomeContent: FC = () => {
           const finalEvent = await readImageStream(response);
 
           if (finalEvent) {
+            const imageGenTimeTaken = Date.now() - imageGenStartTime;
+            const creditsAfterImageGen = useModelStore.getState().credits;
+            const creditsUsedImageGen = Math.max(0, creditsBeforeImageGen - creditsAfterImageGen);
             setDisplayMessages(prev => [...prev, {
               role: 'assistant',
               content: finalEvent.content,
               type: 'image',
               command: 'image-gen',
+              stats: { timeTakenMs: imageGenTimeTaken, tokensEstimated: 0, creditsUsed: creditsUsedImageGen, model: 'Image Gen' },
             }]);
           } else {
             setDisplayMessages(prev => [...prev, {
@@ -494,6 +504,8 @@ const HomeContent: FC = () => {
         }
 
         const { credits: currentCredits, apiKey: currentApiKey } = useModelStore.getState();
+        const mintStartTime = Date.now();
+        const creditsBeforeMint = currentCredits;
         try {
           const response = await streamChatResponse({
             selectedModel: 'Mistral',
@@ -506,11 +518,15 @@ const HomeContent: FC = () => {
           const finalEvent = await readImageStream(response);
 
           if (finalEvent) {
+            const mintTimeTaken = Date.now() - mintStartTime;
+            const creditsAfterMint = useModelStore.getState().credits;
+            const creditsUsedMint = Math.max(0, creditsBeforeMint - creditsAfterMint);
             setDisplayMessages(prev => [...prev, {
               role: 'assistant',
               content: finalEvent.content,
               type: 'image',
               command: 'image-gen',
+              stats: { timeTakenMs: mintTimeTaken, tokensEstimated: 0, creditsUsed: creditsUsedMint, model: 'Image Gen' },
             }]);
           } else {
             setDisplayMessages(prev => [...prev, {
@@ -531,197 +547,13 @@ const HomeContent: FC = () => {
         return;
       }
 
-      // ── /video-gen ──
+      // ── /video-gen (SERVER DOWN) ──
       if (command === '/video-gen' || fullMessage.startsWith('/video-gen')) {
-        const prompt = fullMessage.replace(/^\/video-gen\s*/, '').trim();
-        if (!prompt) {
-          setDisplayMessages(prev => [...prev, {
-            role: 'assistant',
-            content: 'Please provide a prompt for video generation. Usage: /video-gen your prompt here',
-            type: 'text',
-          }]);
-          setIsLoading(false);
-          return;
-        }
-
-        try {
-          let { apiKey: currentApiKey, credits: currentCredits } = useModelStore.getState();
-
-          // Auto-fetch or create API key if not available
-          if (!currentApiKey) {
-            const walletAddress = publicKey?.toString() ?? '';
-            if (!walletAddress) {
-              setDisplayMessages(prev => [...prev, {
-                role: 'assistant',
-                content: 'Please connect your wallet first to generate videos.',
-                type: 'text',
-              }]);
-              setIsLoading(false);
-              return;
-            }
-
-            setDisplayMessages(prev => [...prev, {
-              role: 'assistant',
-              content: 'Setting up your API key... Please wait.',
-              type: 'text',
-            }]);
-
-            const headersList = {
-              'Accept': '*/*',
-              'api-key': 'zk-123321',
-              'Content-Type': 'application/json',
-            };
-            const bodyContent = JSON.stringify({ wallet_address: walletAddress });
-
-            // Try to add user first, then generate key if user exists
-            const addUserResponse = await fetch('https://zynapse.zkagi.ai/add-user', {
-              method: 'POST',
-              body: bodyContent,
-              headers: headersList,
-            });
-            const addUserData = await addUserResponse.json();
-
-            let generatedKey = '';
-            if (addUserResponse.status === 200 && addUserData.api_keys?.length > 0) {
-              generatedKey = addUserData.api_keys[0];
-            } else if (addUserResponse.status === 400 && addUserData.detail === 'User already exists') {
-              // Fetch existing keys first
-              const keysResponse = await fetch(API_KEYS_URL, {
-                method: 'POST',
-                headers: headersList,
-                body: bodyContent,
-              });
-              if (keysResponse.ok) {
-                const keysData = await keysResponse.json();
-                const keys = keysData.api_keys || [];
-                if (keys.length > 0) {
-                  generatedKey = keys[0];
-                }
-              }
-              // If no existing keys, generate a new one
-              if (!generatedKey) {
-                const genRes = await fetch('https://zynapse.zkagi.ai/generate-api-key', {
-                  method: 'POST',
-                  body: bodyContent,
-                  headers: headersList,
-                });
-                const genData = await genRes.json();
-                if (genData.api_key) {
-                  generatedKey = genData.api_key;
-                }
-              }
-            }
-
-            if (!generatedKey) {
-              setDisplayMessages(prev => [...prev, {
-                role: 'assistant',
-                content: 'Could not generate API key. Please try the /api command manually.',
-                type: 'text',
-              }]);
-              setIsLoading(false);
-              return;
-            }
-
-            currentApiKey = generatedKey;
-            useModelStore.getState().setApiKey(generatedKey);
-
-            // Fetch credits for the new key
-            try {
-              const balanceResponse = await fetch(BALANCE_API_URL, {
-                method: 'GET',
-                headers: {
-                  'Accept': '*/*',
-                  'Authorization': `Bearer ${generatedKey}`,
-                  'Content-Type': 'application/json',
-                },
-              });
-              if (balanceResponse.ok) {
-                const balanceData = await balanceResponse.json();
-                currentCredits = balanceData.credit_balance || 0;
-                useModelStore.getState().setCredits(currentCredits);
-              }
-            } catch {
-              // Continue with 0 credits if balance check fails
-            }
-          }
-
-          if (currentCredits <= 0) {
-            setDisplayMessages(prev => [...prev, {
-              role: 'assistant',
-              content: 'Insufficient credits for video generation. Please top up your credits to continue.',
-              type: 'text',
-            }]);
-            setIsLoading(false);
-            return;
-          }
-
-          // Call through our server route (streaming).
-          // Server-side Node.js fetch works with the external API; browser fetch doesn't.
-          // Streaming bypasses Vercel's 300s limit (maxDuration = TTFB only for streams).
-          // Server retries up to 3 times on timeout errors automatically.
-          const response = await fetch('/api/video-gen', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': currentApiKey,
-              'x-current-credits': currentCredits.toString(),
-            },
-            body: JSON.stringify({ prompt }),
-          });
-
-          if (!response.ok) {
-            const errBody = await response.text();
-            let errMsg = 'Video generation failed';
-            try { errMsg = JSON.parse(errBody).error || errMsg; } catch { errMsg = errBody || errMsg; }
-            throw new Error(errMsg);
-          }
-
-          // Read the streamed response
-          // Protocol: 0x00=heartbeat, 0x01=video follows, 0x02=error follows
-          const buffer = new Uint8Array(await response.arrayBuffer());
-
-          // Strip leading heartbeat bytes (0x00)
-          let offset = 0;
-          while (offset < buffer.length && buffer[offset] === 0x00) offset++;
-
-          if (offset >= buffer.length) {
-            throw new Error('Empty response from video generation');
-          }
-
-          if (buffer[offset] === 0x01) {
-            // Success — remaining bytes are the video
-            const videoData = buffer.slice(offset + 1);
-            const blob = new Blob([videoData], { type: 'video/mp4' });
-            const videoUrl = URL.createObjectURL(blob);
-            setDisplayMessages(prev => [...prev, {
-              role: 'assistant',
-              content: videoUrl,
-              type: 'video',
-              command: 'video-gen',
-            }]);
-          } else if (buffer[offset] === 0x02) {
-            // Error — remaining bytes are the error message
-            const errorMsg = new TextDecoder().decode(buffer.slice(offset + 1));
-            throw new Error(errorMsg);
-          } else {
-            // Unknown format — try treating as video
-            const blob = new Blob([buffer], { type: 'video/mp4' });
-            const videoUrl = URL.createObjectURL(blob);
-            setDisplayMessages(prev => [...prev, {
-              role: 'assistant',
-              content: videoUrl,
-              type: 'video',
-              command: 'video-gen',
-            }]);
-          }
-        } catch (err: any) {
-          console.error('Video generation error:', err);
-          setDisplayMessages(prev => [...prev, {
-            role: 'assistant',
-            content: `Error generating video: ${err.message}`,
-            type: 'text',
-          }]);
-        }
+        setDisplayMessages(prev => [...prev, {
+          role: 'assistant',
+          content: 'The Video Generation server is currently down for maintenance. Please try again later.',
+          type: 'text',
+        }]);
         setIsLoading(false);
         return;
       }

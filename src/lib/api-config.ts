@@ -70,7 +70,6 @@ export const clientConfig = {
     pastApi: process.env.NEXT_PUBLIC_PAST_PREDICTION_API || '',
   },
   services: {
-    civicClientId: process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID || '',
     chainGptApiKey: process.env.NEXT_PUBLIC_CHAINGPT_API_KEY || '',
     magicPublishableKey: process.env.NEXT_PUBLIC_MAGIC_PUBLISHABLE_KEY || '',
     apifyToken: process.env.NEXT_PUBLIC_APIFY_TOKEN || '',

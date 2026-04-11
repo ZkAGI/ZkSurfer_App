@@ -186,7 +186,6 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 ) : (
                   <div className="text-center py-8 text-dsMuted text-sm font-dmSans">
                     <p>No agents created yet</p>
-                    <p className="mt-1 text-xs opacity-70">Use /create-swarm to get started</p>
                   </div>
                 )}
               </div>

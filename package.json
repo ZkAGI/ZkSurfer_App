@@ -18,7 +18,6 @@
     "@aarc-xyz/eth-connector": "^0.2.0",
     "@aarc-xyz/fundkit-web-sdk": "^0.2.0",
     "@auth/core": "^0.34.2",
-    "@civic/auth-web3": "^0.7.2",
     "@coral-xyz/anchor": "^0.29",
     "@dynamic-labs/sdk-react-core": "^2.3.7",
     "@dynamic-labs/solana": "^2.3.7",

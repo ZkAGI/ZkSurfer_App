@@ -19,32 +19,34 @@ import { CustomWalletButton } from '@/component/ui/CustomWalletButton';
 
 const CARDS = [
   {
-    num: "01", icon: Bot, color: "#a78bfa", bg: "rgba(167,139,250,0.1)",
-    title: "Create Agent Swarm",
-    desc: "Deploy autonomous AGI swarms to run and scale your business with zero human intervention.",
-    tag: "Popular",
-    command: "create-swarm"
-  },
-  {
-    num: "02", icon: Video, color: "#a78bfa", bg: "rgba(167,139,250,0.1)",
-    title: "Video Agent",
-    desc: "Generate AI-powered videos — set topic, tone & style, then let the agent create.",
-    tag: "New",
-    command: "video-agent"
-  },
-  {
-    num: "03", icon: Lock, color: "#60a5fa", bg: "rgba(96,165,250,0.1)",
+    num: "01", icon: Lock, color: "#60a5fa", bg: "rgba(96,165,250,0.1)",
     title: "Create Privacy",
     desc: "Upload files privately, generate zk-proof JSON automatically with /generate-private.",
     tag: "ZkAGI",
     command: "generate-private"
   },
   {
-    num: "04", icon: Bot, color: "#7c6af7", bg: "rgba(124,106,247,0.1)",
+    num: "02", icon: Bot, color: "#7c6af7", bg: "rgba(124,106,247,0.1)",
     title: "Prediction Agent",
     desc: "Set up an autonomous trading bot — AI-powered signals, risk controls, auto-execution.",
     tag: "New",
     command: "prediction-agent"
+  },
+  {
+    num: "03", icon: Bot, color: "#a78bfa", bg: "rgba(167,139,250,0.1)",
+    title: "Create Agent Swarm",
+    desc: "Deploy autonomous AGI swarms to run and scale your business with zero human intervention.",
+    tag: "Coming Soon",
+    command: "create-swarm",
+    disabled: true
+  },
+  {
+    num: "04", icon: Video, color: "#ef4444", bg: "rgba(239,68,68,0.1)",
+    title: "Video Agent",
+    desc: "Generate AI-powered videos — set topic, tone & style, then let the agent create.",
+    tag: "Server Down",
+    command: "video-agent",
+    disabled: true
   },
 ];
 
@@ -62,24 +64,24 @@ const NAV: NavItem[] = [
 ];
 
 const CHIP_COMMANDS = [
-  { cmd: "/swarm", icon: Users, color: "#a78bfa" },
-  { cmd: "/image-gen", icon: ImageIcon, color: "#34d399" },
   { cmd: "/zk-prove", icon: Shield, color: "#60a5fa" },
   { cmd: "/analyze", icon: Activity, color: "#f59e0b" },
+  { cmd: "/image-gen", icon: ImageIcon, color: "#34d399" },
   { cmd: "/mint", icon: Sparkles, color: "#f472b6" },
-  { cmd: "/video-gen", icon: Video, color: "#f472b6" },
   { cmd: "/api", icon: Key, color: "#60a5fa" },
+  { cmd: "/swarm", icon: Users, color: "#a78bfa", disabled: true },
+  { cmd: "/video-gen", icon: Video, color: "#ef4444", disabled: true },
 ];
 
 const CMD_PALETTE = [
-  { cmd: "/image-gen", color: "#a78bfa", bg: "rgba(167,139,250,0.12)", desc: "Image generation with or without ticker — mint as NFT", icon: ImageIcon },
-  { cmd: "/create-swarm", color: "#34d399", bg: "rgba(52,211,153,0.12)", desc: "Open Swarm builder — create your autonomous org", icon: Users },
-  { cmd: "/api", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", desc: "Generate your Zynapse API key", icon: Key },
+  { cmd: "/generate-private", color: "#a78bfa", bg: "rgba(167,139,250,0.12)", desc: "Upload PDF/DOC/TXT — generate zk-proof JSON", icon: Lock },
   { cmd: "/medical-proof-create", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", desc: "Create private medical knowledge base with ZK proofs", icon: Activity },
   { cmd: "/medical-proof-verify", color: "#34d399", bg: "rgba(52,211,153,0.12)", desc: "Verify a medical ZK proof using KB ID and proof ID", icon: Shield },
-  { cmd: "/video-gen", color: "#f472b6", bg: "rgba(244,114,182,0.12)", desc: "Enter a prompt to generate a video", icon: Video },
-  { cmd: "/generate-private", color: "#a78bfa", bg: "rgba(167,139,250,0.12)", desc: "Upload PDF/DOC/TXT — generate zk-proof JSON", icon: Lock },
+  { cmd: "/image-gen", color: "#a78bfa", bg: "rgba(167,139,250,0.12)", desc: "Image generation with or without ticker — mint as NFT", icon: ImageIcon },
+  { cmd: "/api", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", desc: "Generate your Zynapse API key", icon: Key },
   { cmd: "/privacy-ai", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", desc: "Upload a zk-proof + ask a question about its contents", icon: Eye },
+  { cmd: "/create-swarm", color: "#34d399", bg: "rgba(52,211,153,0.12)", desc: "Open Swarm builder — create your autonomous org (Coming Soon)", icon: Users, disabled: true },
+  { cmd: "/video-gen", color: "#ef4444", bg: "rgba(239,68,68,0.12)", desc: "Enter a prompt to generate a video (Server Down)", icon: Video, disabled: true },
 ];
 
 interface MessageStats {
@@ -173,6 +175,8 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   const [pluginStatus, setPluginStatus] = useState(false);
   const [pluginMemory, setPluginMemory] = useState(true);
   const [litChip, setLitChip] = useState<string | null>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Past predictions data
   const [pastPredictions, setPastPredictions] = useState<PastPredictionDay[]>([]);
@@ -267,11 +271,20 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   }, []);
 
   const handleSend = () => {
-    if (!inputVal.trim()) return;
+    if (!inputVal.trim() && !attachedFile) return;
     onSendMessage?.(inputVal, activeCmd || undefined);
     setInputVal("");
     setActiveCmd(null);
     setShowCmdPalette(false);
+    setAttachedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachedFile(file);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -302,6 +315,9 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   };
 
   const handleCmdPick = (cmd: string) => {
+    const command = CMD_PALETTE.find(c => c.cmd === cmd);
+    if (command && (command as any).disabled) return;
+    
     setInputVal(cmd + ' ');
     setShowCmdPalette(false);
     highlightChip(cmd);
@@ -320,9 +336,10 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   };
 
   const handleCardClick = (command: string) => {
-    if (command === 'create-swarm') {
-      setFlowGateOpen(true);
-    } else if (command === 'video-agent' || command === 'prediction-agent' || command === 'voice-agent') {
+    if (command === 'create-swarm' || command === 'video-agent') {
+      // Swarm and Video Agent are disabled
+      return;
+    } else if (command === 'prediction-agent' || command === 'voice-agent') {
       onCardClick?.(command);
     } else {
       onCardClick?.(command);
@@ -535,39 +552,46 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
           </div>
           <div style={{ padding: "3px 10px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
             {[
-              { icon: Video, label: "Video Agent", color: "#a78bfa", command: "video-agent" },
+              { icon: Video, label: "Video Agent", color: "#ef4444", command: "video-agent", status: "Server Down", disabled: true },
               { icon: TrendingUp, label: "Prediction Agent", color: "#7c6af7", command: "prediction-agent" },
               { icon: Mic, label: "Voice Agent", color: "#f472b6", command: "voice-agent" },
             ].map(agent => {
               const AgentIcon = agent.icon;
+              const isDisabled = agent.disabled;
               return (
                 <div
                   key={agent.command}
-                  onClick={() => onCardClick?.(agent.command)}
+                  onClick={() => !isDisabled && onCardClick?.(agent.command)}
                   style={{
                     display: "flex", alignItems: "center", gap: 8,
                     padding: "7px 8px", borderRadius: 8,
-                    cursor: "pointer", transition: "all 0.15s",
+                    cursor: isDisabled ? "not-allowed" : "pointer", 
+                    transition: "all 0.15s",
                     background: "transparent",
+                    opacity: isDisabled ? 0.6 : 1,
                   }}
                   onMouseEnter={e => {
+                    if (isDisabled) return;
                     (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)";
                   }}
                   onMouseLeave={e => {
+                    if (isDisabled) return;
                     (e.currentTarget as HTMLElement).style.background = "transparent";
                   }}
                 >
                   <div style={{
                     width: 24, height: 24, borderRadius: 6,
-                    background: `${agent.color}12`,
-                    border: `1px solid ${agent.color}25`,
+                    background: isDisabled ? "rgba(255,255,255,0.04)" : `${agent.color}12`,
+                    border: `1px solid ${isDisabled ? "rgba(255,255,255,0.08)" : agent.color + "25"}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0,
                   }}>
-                    <AgentIcon size={11} color={agent.color} />
+                    <AgentIcon size={11} color={isDisabled ? "#374151" : agent.color} />
                   </div>
-                  <span style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500 }}>{agent.label}</span>
-                  <Plus size={10} color="#374151" style={{ marginLeft: "auto" }} />
+                  <span style={{ fontSize: 12, color: isDisabled ? "#6b7280" : "#9ca3af", flex: 1 }}>{agent.label}</span>
+                  {agent.status && (
+                    <span style={{ fontSize: 8, fontWeight: 700, color: agent.color, opacity: 0.8, textTransform: "uppercase" }}>{agent.status}</span>
+                  )}
                 </div>
               );
             })}
@@ -862,24 +886,28 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                         }}>
                           {filteredCmds.map(c => {
                             const Icon = c.icon;
+                            const isDisabled = (c as any).disabled;
                             return (
                               <div
                                 key={c.cmd}
-                                onClick={() => handleCmdPick(c.cmd)}
+                                onClick={() => !isDisabled && handleCmdPick(c.cmd)}
                                 style={{
                                   padding: "11px 13px", borderRadius: 11,
                                   border: "1px solid rgba(255,255,255,0.06)",
-                                  cursor: "pointer",
+                                  cursor: isDisabled ? "not-allowed" : "pointer",
                                   background: "rgba(255,255,255,0.02)",
                                   transition: "all 0.15s",
                                   display: "flex", alignItems: "flex-start", gap: 11,
+                                  opacity: isDisabled ? 0.6 : 1,
                                 }}
                                 onMouseEnter={e => {
+                                  if (isDisabled) return;
                                   (e.currentTarget as HTMLElement).style.background = "rgba(167,139,250,0.07)";
                                   (e.currentTarget as HTMLElement).style.borderColor = "rgba(167,139,250,0.25)";
                                   (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
                                 }}
                                 onMouseLeave={e => {
+                                  if (isDisabled) return;
                                   (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
                                   (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)";
                                   (e.currentTarget as HTMLElement).style.transform = "none";
@@ -887,14 +915,14 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                               >
                                 <div style={{
                                   width: 32, height: 32, borderRadius: 9,
-                                  background: c.bg,
+                                  background: isDisabled ? "rgba(255,255,255,0.04)" : c.bg,
                                   display: "flex", alignItems: "center", justifyContent: "center",
                                   flexShrink: 0, marginTop: 1,
                                 }}>
-                                  <Icon size={14} color={c.color} />
+                                  <Icon size={14} color={isDisabled ? "#374151" : c.color} />
                                 </div>
                                 <div>
-                                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12.5, fontWeight: 500, color: c.color, marginBottom: 3 }}>{c.cmd}</div>
+                                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12.5, fontWeight: 500, color: isDisabled ? "#6b7280" : c.color, marginBottom: 3 }}>{c.cmd}</div>
                                   <div style={{ fontSize: 11, color: "#374151", lineHeight: 1.45 }}>{c.desc}</div>
                                 </div>
                               </div>
@@ -1128,10 +1156,11 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                         {CHIP_COMMANDS.map(chip => {
                           const Icon = chip.icon;
                           const isLit = litChip === chip.cmd;
+                          const isDisabled = (chip as any).disabled;
                           return (
                             <div
                               key={chip.cmd}
-                              onClick={() => handleChipClick(chip.cmd)}
+                              onClick={() => !isDisabled && handleChipClick(chip.cmd)}
                               style={{
                                 display: "flex", alignItems: "center", gap: 5,
                                 padding: "4px 11px", borderRadius: 8,
@@ -1139,16 +1168,54 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                                 background: isLit ? "rgba(167,139,250,0.08)" : "rgba(255,255,255,0.025)",
                                 color: isLit ? "#a78bfa" : "#6b7280",
                                 fontSize: 12, fontFamily: "'DM Mono', monospace",
-                                cursor: "pointer", whiteSpace: "nowrap",
+                                cursor: isDisabled ? "not-allowed" : "pointer", 
+                                whiteSpace: "nowrap",
                                 transition: "all 0.15s", flexShrink: 0,
+                                opacity: isDisabled ? 0.5 : 1,
                               }}
                             >
-                              <Icon size={11} color={chip.color} />
+                              <Icon size={11} color={isDisabled ? "#374151" : chip.color} />
                               {chip.cmd}
                             </div>
                           );
                         })}
                       </div>
+
+                      {/* Attached file preview */}
+                      {attachedFile && (
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 8,
+                          padding: "6px 12px",
+                          borderTop: "1px solid rgba(255,255,255,0.06)",
+                        }}>
+                          <div style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            padding: "4px 10px", borderRadius: 8,
+                            background: "rgba(167,139,250,0.1)",
+                            border: "1px solid rgba(167,139,250,0.25)",
+                            fontSize: 12, color: "#a78bfa",
+                            fontFamily: "'DM Mono', monospace",
+                          }}>
+                            <Paperclip size={11} />
+                            <span style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {attachedFile.name}
+                            </span>
+                            <span style={{ color: "#6b7280", fontSize: 11 }}>
+                              ({(attachedFile.size / 1024).toFixed(1)}KB)
+                            </span>
+                            <button
+                              onClick={() => { setAttachedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                              style={{
+                                background: "none", border: "none", cursor: "pointer",
+                                color: "#6b7280", display: "flex", alignItems: "center",
+                                padding: 0, marginLeft: 2,
+                              }}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Input Footer */}
                       <div style={{
@@ -1167,11 +1234,25 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                           <Activity size={11} />
                           {credits?.toFixed(2) || "0.00"}
                         </div>
-                        <button style={{
-                          background: "none", border: "none", cursor: "pointer",
-                          display: "flex", alignItems: "center",
-                          color: "#374151", padding: 3, borderRadius: 5,
-                        }}>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*,.pdf,.txt,.csv,.json,.doc,.docx"
+                          onChange={handleFileSelect}
+                          style={{ display: "none" }}
+                        />
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          style={{
+                            background: attachedFile ? "rgba(167,139,250,0.15)" : "none",
+                            border: attachedFile ? "1px solid rgba(167,139,250,0.3)" : "none",
+                            cursor: "pointer",
+                            display: "flex", alignItems: "center",
+                            color: attachedFile ? "#a78bfa" : "#374151",
+                            padding: 3, borderRadius: 5,
+                          }}
+                          title={attachedFile ? attachedFile.name : "Attach file"}
+                        >
                           <Paperclip size={15} />
                         </button>
                         <button
@@ -1237,23 +1318,26 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                   }}>
                     {CARDS.map((card, i) => {
                       const Icon = card.icon;
+                      const isDisabled = (card as any).disabled;
                       return (
                         <div
                           key={card.num}
-                          onClick={() => handleCardClick(card.command)}
+                          onClick={() => !isDisabled && handleCardClick(card.command)}
                           style={{
                             background: "rgba(255,255,255,0.03)",
-                            border: hoveredCard === i ? "1px solid rgba(167,139,250,0.28)" : "1px solid rgba(255,255,255,0.06)",
+                            border: hoveredCard === i && !isDisabled ? "1px solid rgba(167,139,250,0.28)" : "1px solid rgba(255,255,255,0.06)",
                             borderRadius: 13, padding: "16px 18px",
-                            cursor: "pointer", textAlign: "left",
+                            cursor: isDisabled ? "not-allowed" : "pointer", 
+                            textAlign: "left",
                             display: "flex", flexDirection: "column", gap: 10,
                             transition: "all 0.2s",
-                            transform: hoveredCard === i ? "translateY(-2px)" : "none",
-                            boxShadow: hoveredCard === i ? "0 14px 44px rgba(0,0,0,0.4)" : "none",
+                            transform: hoveredCard === i && !isDisabled ? "translateY(-2px)" : "none",
+                            boxShadow: hoveredCard === i && !isDisabled ? "0 14px 44px rgba(0,0,0,0.4)" : "none",
                             position: "relative", overflow: "hidden",
+                            opacity: isDisabled ? 0.7 : 1,
                           }}
-                          onMouseEnter={() => setHoveredCard(i)}
-                          onMouseLeave={() => setHoveredCard(null)}
+                          onMouseEnter={() => !isDisabled && setHoveredCard(i)}
+                          onMouseLeave={() => !isDisabled && setHoveredCard(null)}
                         >
                           {/* Hover bg */}
                           <div style={{
@@ -1274,26 +1358,26 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                                 <span style={{
                                   fontSize: 9, fontWeight: 700,
                                   letterSpacing: "0.07em", textTransform: "uppercase",
-                                  color: card.num === "03" ? "#a78bfa" : card.color,
+                                  color: card.tag === "Coming Soon" ? "#a78bfa" : (isDisabled && card.tag !== "Server Down" ? "#6b7280" : card.color),
                                   padding: "2px 7px",
-                                  background: card.num === "03" ? "rgba(167,139,250,0.1)" : card.bg,
+                                  background: card.tag === "Coming Soon" ? "rgba(167,139,250,0.1)" : (isDisabled && card.tag !== "Server Down" ? "rgba(255,255,255,0.05)" : card.bg),
                                   borderRadius: 99,
-                                  border: card.num === "03" ? "1px solid rgba(167,139,250,0.2)" : `1px solid ${card.color}22`,
+                                  border: card.tag === "Coming Soon" ? "1px solid rgba(167,139,250,0.2)" : `1px solid ${isDisabled && card.tag !== "Server Down" ? "rgba(255,255,255,0.1)" : card.color + "22"}`,
                                 }}>{card.tag}</span>
                               )}
                               <div style={{
                                 width: 30, height: 30, borderRadius: 8,
-                                background: card.bg,
+                                background: isDisabled ? "rgba(255,255,255,0.05)" : card.bg,
                                 display: "flex", alignItems: "center", justifyContent: "center",
                               }}>
-                                <Icon size={14} color={card.color} />
+                                <Icon size={14} color={isDisabled ? "#6b7280" : card.color} />
                               </div>
                             </div>
                           </div>
 
                           <div style={{ position: "relative" }}>
                             <div style={{
-                              fontSize: 14, fontWeight: 700, color: "#f1f5f9",
+                              fontSize: 14, fontWeight: 700, color: isDisabled ? "#6b7280" : "#f1f5f9",
                               letterSpacing: "-0.2px",
                               fontFamily: "'Syne', sans-serif",
                               marginBottom: 3,
@@ -1307,14 +1391,18 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
 
                           <div style={{
                             width: 22, height: 22, borderRadius: 6,
-                            background: hoveredCard === i ? card.bg : "rgba(255,255,255,0.03)",
-                            border: `1px solid ${hoveredCard === i ? card.color + "44" : "rgba(255,255,255,0.06)"}`,
+                            background: (hoveredCard === i && !isDisabled) ? card.bg : "rgba(255,255,255,0.03)",
+                            border: `1px solid ${(hoveredCard === i && !isDisabled) ? card.color + "44" : "rgba(255,255,255,0.06)"}`,
                             display: "flex", alignItems: "center", justifyContent: "center",
                             transition: "all 0.15s",
                             alignSelf: "flex-end",
                             position: "relative",
                           }}>
-                            <ArrowUpRight size={11} color={hoveredCard === i ? card.color : "#374151"} />
+                            {isDisabled ? (
+                              <Lock size={11} color="#374151" />
+                            ) : (
+                              <ArrowUpRight size={11} color={hoveredCard === i ? card.color : "#374151"} />
+                            )}
                           </div>
                         </div>
                       );
@@ -1509,12 +1597,14 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                                 ? `${msg.stats.timeTakenMs}ms`
                                 : `${(msg.stats.timeTakenMs / 1000).toFixed(1)}s`}
                             </span>
-                            <span style={{
-                              fontSize: 11, color: "#4b5563",
-                              fontFamily: "'DM Mono', monospace",
-                            }}>
-                              ~{msg.stats.tokensEstimated} tokens
-                            </span>
+                            {msg.stats.tokensEstimated > 0 && (
+                              <span style={{
+                                fontSize: 11, color: "#4b5563",
+                                fontFamily: "'DM Mono', monospace",
+                              }}>
+                                ~{msg.stats.tokensEstimated} tokens
+                              </span>
+                            )}
                             {msg.stats.creditsUsed > 0 && (
                               <span style={{
                                 fontSize: 11, color: "#4b5563",
@@ -1680,24 +1770,28 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                         }}>
                           {filteredCmds.map(c => {
                             const Icon = c.icon;
+                            const isDisabled = (c as any).disabled;
                             return (
                               <div
                                 key={c.cmd}
-                                onClick={() => handleCmdPick(c.cmd)}
+                                onClick={() => !isDisabled && handleCmdPick(c.cmd)}
                                 style={{
                                   padding: "11px 13px", borderRadius: 11,
                                   border: "1px solid rgba(255,255,255,0.06)",
-                                  cursor: "pointer",
+                                  cursor: isDisabled ? "not-allowed" : "pointer",
                                   background: "rgba(255,255,255,0.02)",
                                   transition: "all 0.15s",
                                   display: "flex", alignItems: "flex-start", gap: 11,
+                                  opacity: isDisabled ? 0.6 : 1,
                                 }}
                                 onMouseEnter={e => {
+                                  if (isDisabled) return;
                                   (e.currentTarget as HTMLElement).style.background = "rgba(167,139,250,0.07)";
                                   (e.currentTarget as HTMLElement).style.borderColor = "rgba(167,139,250,0.25)";
                                   (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
                                 }}
                                 onMouseLeave={e => {
+                                  if (isDisabled) return;
                                   (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
                                   (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)";
                                   (e.currentTarget as HTMLElement).style.transform = "none";
@@ -1705,14 +1799,14 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                               >
                                 <div style={{
                                   width: 32, height: 32, borderRadius: 9,
-                                  background: c.bg,
+                                  background: isDisabled ? "rgba(255,255,255,0.04)" : c.bg,
                                   display: "flex", alignItems: "center", justifyContent: "center",
                                   flexShrink: 0, marginTop: 1,
                                 }}>
-                                  <Icon size={14} color={c.color} />
+                                  <Icon size={14} color={isDisabled ? "#374151" : c.color} />
                                 </div>
                                 <div>
-                                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12.5, fontWeight: 500, color: c.color, marginBottom: 3 }}>{c.cmd}</div>
+                                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12.5, fontWeight: 500, color: isDisabled ? "#6b7280" : c.color, marginBottom: 3 }}>{c.cmd}</div>
                                   <div style={{ fontSize: 11, color: "#374151", lineHeight: 1.45 }}>{c.desc}</div>
                                 </div>
                               </div>
@@ -1773,10 +1867,11 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                       {CHIP_COMMANDS.map(chip => {
                         const Icon = chip.icon;
                         const isLit = litChip === chip.cmd;
+                        const isDisabled = (chip as any).disabled;
                         return (
                           <div
                             key={chip.cmd}
-                            onClick={() => handleChipClick(chip.cmd)}
+                            onClick={() => !isDisabled && handleChipClick(chip.cmd)}
                             style={{
                               display: "flex", alignItems: "center", gap: 5,
                               padding: "4px 11px", borderRadius: 8,
@@ -1784,16 +1879,17 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                               background: isLit ? "rgba(167,139,250,0.08)" : "rgba(255,255,255,0.025)",
                               color: isLit ? "#a78bfa" : "#6b7280",
                               fontSize: 12, fontFamily: "'DM Mono', monospace",
-                              cursor: "pointer", whiteSpace: "nowrap",
+                              cursor: isDisabled ? "not-allowed" : "pointer", 
+                              whiteSpace: "nowrap",
                               transition: "all 0.15s", flexShrink: 0,
+                              opacity: isDisabled ? 0.5 : 1,
                             }}
                           >
-                            <Icon size={11} color={chip.color} />
+                            <Icon size={11} color={isDisabled ? "#374151" : chip.color} />
                             {chip.cmd}
                           </div>
                         );
-                      })}
-                    </div>
+                      })}                    </div>
 
                     <div style={{
                       display: "flex", alignItems: "center", gap: 8,
@@ -1811,7 +1907,17 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                         <Activity size={11} />
                         {credits?.toFixed(2) || "0.00"}
                       </div>
-                      <button style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "#374151", padding: 3, borderRadius: 5 }}>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{
+                          background: attachedFile ? "rgba(167,139,250,0.15)" : "none",
+                          border: attachedFile ? "1px solid rgba(167,139,250,0.3)" : "none",
+                          cursor: "pointer", display: "flex", alignItems: "center",
+                          color: attachedFile ? "#a78bfa" : "#374151",
+                          padding: 3, borderRadius: 5,
+                        }}
+                        title={attachedFile ? attachedFile.name : "Attach file"}
+                      >
                         <Paperclip size={15} />
                       </button>
                       <button

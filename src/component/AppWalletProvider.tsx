@@ -246,28 +246,10 @@ import { clusterApiUrl } from "@solana/web3.js";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { CustomWalletModalProvider } from "./ui/CustomWalletModalProvider";
 import { MagicWalletAdapter, MagicWalletName } from "./MagicWalletAdapter";
-import { CivicAuthProvider } from "@civic/auth-web3/react";
 import type { WalletName } from "@solana/wallet-adapter-base";
 import { Component, type ReactNode, type ErrorInfo } from "react";
 
-/** Catches CivicAuthError silently so it doesn't break the app on localhost */
-class CivicErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  state = { hasError: false };
-  static getDerivedStateFromError() { return { hasError: false }; } // don't hide children
-  componentDidCatch(error: Error, _info: ErrorInfo) {
-    if (error.name === 'CivicAuthError' || error.message?.includes('Failed to fetch')) {
-      // Silently swallow Civic auth network errors (e.g. on localhost)
-      return;
-    }
-    throw error; // re-throw non-Civic errors
-  }
-  render() { return this.props.children; }
-}
-
 /** ---------- constants ---------- */
-const CIVIC_WALLET_NAME = "Civic";
-const isCivicName = (name?: string) => !!name && /civic/i.test(name);
-
 // Our namespaced keys (so extensions won’t touch them)
 const ZK_ADDR_KEY = "zk:connectedWalletAddress";
 const ZK_LAST_KEY = "zk:lastWallet"; // stores JSON: { name: string }
@@ -366,14 +348,10 @@ const WalletInitializer = () => {
       }
 
       const list = wallets.map((w) => ((w as any)?.name ?? "").toString());
-      const hasDesired = list.some((n) =>
-        desired === MagicWalletName ? n === MagicWalletName : isCivicName(desired) ? isCivicName(n) : n === desired
-      );
+      const hasDesired = list.some((n) => n === desired);
 
       if (hasDesired) {
-        const toSelect = isCivicName(desired)
-          ? CIVIC_WALLET_NAME
-          : desired;
+        const toSelect = desired;
 
         console.log(`Auto-selecting ${toSelect}`);
         select(toSelect === MagicWalletName ? MagicWalletName : asWalletName(toSelect));
@@ -478,7 +456,7 @@ export default function AppWalletProvider({
     })();
   }, [endpoint, adapterInitialized]);
 
-  // Wallet list (Civic is discovered via CivicAuthProvider + Wallet Standard)
+  // Wallet list (Phantom is primary, Magic is added if available)
   const wallets = useMemo(() => {
     const arr: any[] = [new PhantomWalletAdapter()];
     if (magicAdapter) arr.push(magicAdapter);
@@ -492,13 +470,7 @@ export default function AppWalletProvider({
           <WalletInitializer />
           <PersistentConnectionManager />
           <CustomWalletModalProvider>
-            <CivicErrorBoundary>
-              <CivicAuthProvider
-                clientId={process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID || ""}
-              >
-                {children}
-              </CivicAuthProvider>
-            </CivicErrorBoundary>
+            {children}
           </CustomWalletModalProvider>
         </WalletProvider>
       </MagicAdapterContext.Provider>

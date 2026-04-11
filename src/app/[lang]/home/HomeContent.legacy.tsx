@@ -3847,12 +3847,17 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         }
 
        if (fullMessage.startsWith('/create-swarm')) {
-  openCreateSwarmPopup();  // ✅ Use the correct function
-  setSwarmMode(false);
-  setInputMessage('');
-  if (inputRef.current) inputRef.current.style.height = '2.5rem';
-  return;
-}
+          setDisplayMessages(prev => [...prev, {
+            role: 'assistant',
+            content: 'The Agent Swarm feature is coming soon. Stay tuned!',
+            type: 'text'
+          }]);
+          setSwarmMode(false);
+          setInputMessage('');
+          if (inputRef.current) inputRef.current.style.height = '2.5rem';
+          setIsLoading(false);
+          return;
+        }
 
 if (fullMessage.trim() === '/exit-medical-chat') {
     const { exitChatMode } = useMedicalProofStore.getState();
@@ -5012,28 +5017,13 @@ ${data?.answers?.[0] ?? '—'}`
 
 
         if (fullMessage.startsWith('/video-gen')) {
-            // 1. Extract the prompt after the command
-            const promptText = fullMessage.replace('/video-gen', '').trim();
-            if (!promptText) {
-                toast.error('Please provide a prompt after /video-gen.');
-                return;
-            }
-
-            // 2. Show the user’s own message in the chat window
-            const userMessage: Message = {
-                role: 'user',
-                content: fullMessage,
-                type: 'text',
-            };
-            setDisplayMessages((prev) => [...prev, userMessage]);
-
-            // 3. Clear the input & set loading state
+            setDisplayMessages(prev => [...prev, {
+                role: 'assistant',
+                content: 'The Video Generation server is currently down for maintenance. Please try again later.',
+                type: 'text'
+            }]);
             setInputMessage('');
-            setIsLoading(true);
-
-            // 4. Call our helper to actually hit /api/video-gen
-            await processVideoGen(promptText);
-
+            if (inputRef.current) inputRef.current.style.height = '2.5rem';
             setIsLoading(false);
             return;
         }
@@ -7280,19 +7270,21 @@ if (isCreateAgent) {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-5xl">
                                                 {(() => {
                                                     const cardMeta = [
-                                                        { num: '01', Icon: Bot, color: '#a78bfa', tag: 'popular' as const },
-                                                        { num: '02', Icon: ImageIcon, color: '#34d399', tag: null },
-                                                        { num: '03', Icon: Shield, color: '#60a5fa', tag: 'zkagi' as const },
-                                                        { num: '04', Icon: TrendingUp, color: '#f59e0b', tag: null },
+                                                        { num: '01', Icon: Shield, color: '#60a5fa', tag: 'zkagi' as const, disabled: false },
+                                                        { num: '02', Icon: TrendingUp, color: '#f59e0b', tag: null, disabled: false },
+                                                        { num: '03', Icon: Bot, color: '#a78bfa', tag: 'coming-soon' as const, disabled: true },
+                                                        { num: '04', Icon: Bot, color: '#ef4444', tag: 'server-down' as const, disabled: true },
                                                     ];
                                                     return dictionary?.commands.map((cmd, index) => {
-                                                        const meta = cardMeta[index] || { num: `0${index + 1}`, Icon: Bot, color: '#a78bfa', tag: null };
+                                                        const meta = cardMeta[index] || { num: `0${index + 1}`, Icon: Bot, color: '#a78bfa', tag: null, disabled: false };
                                                         const CardIcon = meta.Icon;
+                                                        const isDisabled = (meta as any).disabled;
                                                         return (
                                                             <div
                                                                 key={index}
-                                                                className="ds-feature-card group"
+                                                                className={`ds-feature-card group ${isDisabled ? 'opacity-60 cursor-not-allowed' : ''}`}
                                                                 onClick={() => {
+                                                                    if (isDisabled) return;
                                                                     if (cmd.label?.trim().toLowerCase() === 'create agent') {
                                                                         startCreateAgentFlow();
                                                                     } else if (cmd.command === '/create-swarm') {
@@ -7306,8 +7298,14 @@ if (isCreateAgent) {
                                                                 <div className="flex items-center justify-between mb-4">
                                                                     <span className="ds-badge-number font-dmMono">{meta.num}</span>
                                                                     {meta.tag && (
-                                                                        <span className={meta.tag === 'popular' ? 'ds-badge-popular' : 'ds-badge-zkagi'}>
-                                                                            {meta.tag === 'popular' ? 'Popular' : 'ZkAGI'}
+                                                                        <span className={
+                                                                            meta.tag === 'popular' ? 'ds-badge-popular' : 
+                                                                            (meta.tag === 'coming-soon' ? 'ds-badge-zkagi !bg-zkPurple/10 !text-zkPurple !border-zkPurple/20' : 
+                                                                            (meta.tag === 'server-down' ? 'ds-badge-zkagi !bg-red-500/10 !text-red-500 !border-red-500/20' : 'ds-badge-zkagi'))
+                                                                        }>
+                                                                            {meta.tag === 'popular' ? 'Popular' : 
+                                                                            (meta.tag === 'coming-soon' ? 'Coming Soon' : 
+                                                                            (meta.tag === 'server-down' ? 'Server Down' : 'ZkAGI'))}
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -7551,20 +7549,6 @@ if (isCreateAgent) {
                                                     value={inputMessage}
                                                     onChange={handleInputChange}
                                                   onKeyDown={(e) => {
-  if (
-    e.key === 'Enter' &&
-    !e.shiftKey &&
-    inputMessage.trim().toLowerCase().startsWith('/create-swarm')
-  ) {
-    e.preventDefault();
-    e.stopPropagation();  // ✅ Stop event from bubbling
-    setInputMessage('');  // ✅ Clear input IMMEDIATELY
-    if (inputRef.current) inputRef.current.style.height = '2.5rem';
-    setSwarmMode(false);
-    useAgentCart.getState().setFlowGateOpen(true);  // Open modal
-    return;  // ❌ Don't call handleSubmit
-  }
-
   if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
     if (!inputMessage.trim()) { e.preventDefault(); return; }
     e.preventDefault();
