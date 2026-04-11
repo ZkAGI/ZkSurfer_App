@@ -1,6 +1,6 @@
 'use client';
 import { FC, useState, useEffect, useRef, ReactNode } from 'react';
-import { Paperclip } from 'lucide-react';
+import { Paperclip, FileJson, Download, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useRouter, useParams } from 'next/navigation';
@@ -119,6 +119,7 @@ const HomeContent: FC = () => {
   const [showPredictionAgent, setShowPredictionAgent] = useState(false);
   const [showVoiceAgent, setShowVoiceAgent] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
+  const [viewingProofJson, setViewingProofJson] = useState<any | null>(null);
 
   // Initialize credits
   useEffect(() => {
@@ -400,6 +401,22 @@ const HomeContent: FC = () => {
     return finalEvent;
   };
 
+  const readJsonFile = (file: File): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const json = JSON.parse(e.target?.result as string);
+          resolve(json);
+        } catch (err) {
+          reject(new Error('Failed to parse JSON file'));
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
+  };
+
   const handleSendMessage = async (message: string, command?: string, files?: File[]) => {
     if (!message.trim() && (!files || files.length === 0)) return;
 
@@ -496,24 +513,29 @@ const HomeContent: FC = () => {
 
             if (proofRes.ok) {
               const proofData = await proofRes.json();
+              
+              // Use our proxy for download to avoid CORS issues and IP exposure
+              const proxyDownloadUrl = `/api/kb/proofs/download?kb_id=${kb_id}&asset_id=${assetId}`;
+              proofData.proxy_download_url = proxyDownloadUrl;
+              
               proofResults.push(proofData);
 
-              // Auto-download each proof
-              if (proofData.proof_url) {
-                try {
-                  const dlRes = await fetch(proofData.proof_url);
+              // Auto-download as soon as available
+              try {
+                const dlRes = await fetch(proxyDownloadUrl);
+                if (dlRes.ok) {
                   const blob = await dlRes.blob();
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = `proof-${proofData.proof_id || 'private'}.json`;
+                  a.download = `${assetId}.json`;
                   document.body.appendChild(a);
                   a.click();
                   window.URL.revokeObjectURL(url);
                   document.body.removeChild(a);
-                } catch (e) {
-                  console.warn("Auto-download failed for proof:", proofData.proof_id, e);
                 }
+              } catch (e) {
+                console.warn("Auto-download failed for proof:", assetId, e);
               }
             }
           }
@@ -521,16 +543,55 @@ const HomeContent: FC = () => {
           setDisplayMessages(prev => [...prev, {
             role: 'assistant',
             content: (
-              <div className="space-y-3">
-                <div className="text-[#34d399] font-bold">✅ {proofResults.length} ZK Proof(s) Generated Successfully!</div>
+              <div className="space-y-4 w-full max-w-md">
+                <div className="text-[#34d399] font-bold flex items-center gap-2">
+                  <span>✅ {proofResults.length} ZK Proof(s) Generated!</span>
+                </div>
+                
                 {proofResults.map((p, idx) => (
-                  <div key={idx} className="bg-black/30 p-3 rounded-lg border border-white/10 font-mono text-xs break-all">
-                    <div className="text-gray-500 mb-1">PROOF ID ({idx + 1}):</div>
-                    <div className="text-[#a78bfa]">{p.proof_id}</div>
+                  <div key={idx} className="bg-[#171D3D] border border-white/10 rounded-xl overflow-hidden group">
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-10 h-10 rounded-lg bg-zkPurple/10 flex items-center justify-center text-zkPurple shrink-0">
+                          <FileJson size={20} />
+                        </div>
+                        <div className="overflow-hidden">
+                          <div className="text-sm font-medium text-white truncate">{p.asset_id}.json</div>
+                          <div className="text-[10px] text-gray-500 font-mono truncate uppercase">ID: {p.asset_id}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button 
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(p.proxy_download_url);
+                              const json = await res.json();
+                              setViewingProofJson(json);
+                            } catch (err) {
+                              toast.error('Failed to load JSON content');
+                            }
+                          }}
+                          className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                          title="View JSON"
+                        >
+                          <FileJson size={16} />
+                        </button>
+                        <a 
+                          href={p.proxy_download_url} 
+                          download={`${p.asset_id}.json`}
+                          className="p-2 rounded-lg bg-zkPurple/20 hover:bg-zkPurple/30 text-zkPurple transition-colors"
+                          title="Download"
+                        >
+                          <Download size={16} />
+                        </a>
+                      </div>
+                    </div>
                   </div>
                 ))}
-                <div className="text-sm text-gray-300">
-                  You can now use these Proof IDs with <code className="text-[#a78bfa]">/zk-prove</code> to verify your documents privately.
+                
+                <div className="text-xs text-gray-400 italic px-1">
+                  You can now use these Proof IDs with <code className="text-[#a78bfa] font-bold">/zk-prove</code> to verify your documents privately.
                 </div>
               </div>
             ) as any,
@@ -814,13 +875,53 @@ const HomeContent: FC = () => {
         return;
       }
 
-      // ── /zk-prove (VERIFY) ──
-      if (command === '/zk-prove' || fullMessage.startsWith('/zk-prove ')) {
-        const proof = fullMessage.replace(/^\/zk-prove\s*/, '').trim();
+      // ── /zk-prove (VERIFY or PRIVACY AI) ──
+      if (command === '/zk-prove' || fullMessage.startsWith('/zk-prove')) {
+        const query = fullMessage.replace(/^\/zk-prove\s*/, '').trim();
+        const jsonFile = files?.find(f => f.name.endsWith('.json'));
+
+        if (jsonFile && query) {
+          // File-based Privacy AI flow
+          try {
+            const proofJson = await readJsonFile(jsonFile);
+            const response = await fetch('/api/privacy-ai', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                query,
+                proof_json: proofJson,
+                kb_id: '',
+                top_k: 5,
+                model: '',
+              }),
+            });
+
+            if (!response.ok) throw new Error('Privacy AI request failed');
+            const data = await response.json();
+
+            setDisplayMessages(prev => [...prev, {
+              role: 'assistant',
+              content: data?.answers?.[0] ?? 'No answer received.',
+              type: 'text',
+            }]);
+          } catch (err: any) {
+            console.error('Privacy AI error:', err);
+            setDisplayMessages(prev => [...prev, {
+              role: 'assistant',
+              content: `Error processing privacy query: ${err.message}`,
+              type: 'text',
+            }]);
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        // Fallback to simple string verification
+        const proof = query;
         if (!proof) {
           setDisplayMessages(prev => [...prev, {
             role: 'assistant',
-            content: 'Please provide a proof ID to verify. Usage: /zk-prove your_proof_id_here',
+            content: 'Please provide a proof ID to verify, or upload a JSON proof and ask a question. Usage: /zk-prove your_proof_id_here',
             type: 'text'
           }]);
           setIsLoading(false);
@@ -1091,6 +1192,39 @@ const HomeContent: FC = () => {
 
   return (
     <div className="relative">
+      {/* JSON Proof Viewer Modal */}
+      {viewingProofJson && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0B0F1A] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <div className="flex items-center gap-2 text-zkPurple">
+                <FileJson size={18} />
+                <span className="font-semibold">ZK Proof Content</span>
+              </div>
+              <button 
+                onClick={() => setViewingProofJson(null)}
+                className="p-1 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-auto flex-1 font-mono text-xs text-[#a78bfa] leading-relaxed">
+              <pre className="whitespace-pre-wrap break-all">
+                {JSON.stringify(viewingProofJson, null, 2)}
+              </pre>
+            </div>
+            <div className="p-4 border-t border-white/5 flex justify-end bg-white/5">
+              <button 
+                onClick={() => setViewingProofJson(null)}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ZkTerminal
         onSendMessage={handleSendMessage}
         onCardClick={handleCardClick}

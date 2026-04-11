@@ -284,6 +284,13 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
     }
   };
 
+  const getPlaceholder = () => {
+    if (activeCmd === "/zk-prove") {
+      return "Upload the zkProof and ask the question";
+    }
+    return "Message ZkTerminal or type / to invoke command palette";
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       if (showCmdPalette) {
@@ -301,6 +308,23 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
 
   const handleInputChange = (val: string) => {
     setInputVal(val);
+
+    // Sync activeCmd with what's actually in the input
+    if (val.startsWith('/')) {
+      const firstSpace = val.indexOf(' ');
+      const potentialCmd = firstSpace !== -1 ? val.slice(0, firstSpace) : val;
+      
+      // Check if it's a known command from our list
+      const known = CMD_PALETTE.find(c => c.cmd === potentialCmd) || CHIP_COMMANDS.find(c => c.cmd === potentialCmd);
+      if (known) {
+        setActiveCmd(known.cmd);
+      } else {
+        setActiveCmd(null);
+      }
+    } else {
+      setActiveCmd(null);
+    }
+
     // Only show command palette while typing the command itself (before any space)
     if (val.startsWith('/') && !val.includes(' ')) {
       setShowCmdPalette(true);
@@ -316,6 +340,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
     if (command && (command as any).disabled) return;
     
     setInputVal(cmd + ' ');
+    setActiveCmd(cmd);
     setShowCmdPalette(false);
     highlightChip(cmd);
     inputRef.current?.focus();
@@ -328,6 +353,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
 
   const handleChipClick = (cmd: string) => {
     setInputVal(cmd + ' ');
+    setActiveCmd(cmd);
     highlightChip(cmd);
     inputRef.current?.focus();
   };
@@ -1135,7 +1161,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                           fontSize: 14, resize: "none", lineHeight: 1.5,
                           display: "block", height: 52,
                         }}
-                        placeholder="Message ZkTerminal or type / to invoke command palette"
+                        placeholder={getPlaceholder()}
                         value={inputVal}
                         onChange={e => handleInputChange(e.target.value)}
                         onKeyDown={handleKeyDown}
@@ -1237,7 +1263,9 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                           type="file"
                           accept="image/*,.pdf,.txt,.csv,.json,.doc,.docx"
                           onChange={handleFileSelect}
+                          onClick={(e) => { (e.target as HTMLInputElement).value = ''; }}
                           style={{ display: "none" }}
+                          multiple
                         />
                         <button
                           onClick={() => fileInputRef.current?.click()}
@@ -1847,7 +1875,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                         fontSize: 14, resize: "none", lineHeight: 1.5, display: "block",
                         height: 52,
                       }}
-                      placeholder="Message ZkTerminal or type / to invoke command palette"
+                      placeholder={getPlaceholder()}
                       value={inputVal}
                       onChange={e => handleInputChange(e.target.value)}
                       onKeyDown={handleKeyDown}
