@@ -7299,13 +7299,11 @@ if (isCreateAgent) {
                                                                     <span className="ds-badge-number font-dmMono">{meta.num}</span>
                                                                     {meta.tag && (
                                                                         <span className={
-                                                                            meta.tag === 'popular' ? 'ds-badge-popular' : 
-                                                                            (meta.tag === 'coming-soon' ? 'ds-badge-zkagi !bg-zkPurple/10 !text-zkPurple !border-zkPurple/20' : 
-                                                                            (meta.tag === 'server-down' ? 'ds-badge-zkagi !bg-red-500/10 !text-red-500 !border-red-500/20' : 'ds-badge-zkagi'))
+                                                                            meta.tag === 'coming-soon' ? 'ds-badge-zkagi !bg-zkPurple/10 !text-zkPurple !border-zkPurple/20' : 
+                                                                            (meta.tag === 'server-down' ? 'ds-badge-zkagi !bg-red-500/10 !text-red-500 !border-red-500/20' : 'ds-badge-zkagi')
                                                                         }>
-                                                                            {meta.tag === 'popular' ? 'Popular' : 
-                                                                            (meta.tag === 'coming-soon' ? 'Coming Soon' : 
-                                                                            (meta.tag === 'server-down' ? 'Server Down' : 'ZkAGI'))}
+                                                                            {meta.tag === 'coming-soon' ? 'Coming Soon' : 
+                                                                            (meta.tag === 'server-down' ? 'Server Down' : 'ZkAGI')}
                                                                         </span>
                                                                     )}
                                                                 </div>

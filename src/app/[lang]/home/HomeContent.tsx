@@ -483,7 +483,7 @@ const HomeContent: FC = () => {
           const assetIds = uploadResult.created_assets;
 
           // 3. Generate proofs for each file
-          const proofResults = [];
+          const proofResults: any[] = [];
           for (const assetId of assetIds) {
             const proofRes = await fetch('/api/kb/proofs/generate', {
               method: 'POST',

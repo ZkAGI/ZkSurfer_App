@@ -65,10 +65,8 @@ const NAV: NavItem[] = [
 
 const CHIP_COMMANDS = [
   { cmd: "/zk-prove", icon: Shield, color: "#60a5fa" },
-  { cmd: "/analyze", icon: Activity, color: "#f59e0b" },
   { cmd: "/image-gen", icon: ImageIcon, color: "#34d399" },
   { cmd: "/mint", icon: Sparkles, color: "#f472b6" },
-  { cmd: "/api", icon: Key, color: "#60a5fa" },
   { cmd: "/swarm", icon: Users, color: "#a78bfa", disabled: true },
   { cmd: "/video-gen", icon: Video, color: "#ef4444", disabled: true },
 ];
@@ -78,7 +76,6 @@ const CMD_PALETTE = [
   { cmd: "/medical-proof-create", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", desc: "Create private medical knowledge base with ZK proofs", icon: Activity },
   { cmd: "/medical-proof-verify", color: "#34d399", bg: "rgba(52,211,153,0.12)", desc: "Verify a medical ZK proof using KB ID and proof ID", icon: Shield },
   { cmd: "/image-gen", color: "#a78bfa", bg: "rgba(167,139,250,0.12)", desc: "Image generation with or without ticker — mint as NFT", icon: ImageIcon },
-  { cmd: "/api", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", desc: "Generate your Zynapse API key", icon: Key },
   { cmd: "/privacy-ai", color: "#60a5fa", bg: "rgba(96,165,250,0.12)", desc: "Upload a zk-proof + ask a question about its contents", icon: Eye },
   { cmd: "/create-swarm", color: "#34d399", bg: "rgba(52,211,153,0.12)", desc: "Open Swarm builder — create your autonomous org (Coming Soon)", icon: Users, disabled: true },
   { cmd: "/video-gen", color: "#ef4444", bg: "rgba(239,68,68,0.12)", desc: "Enter a prompt to generate a video (Server Down)", icon: Video, disabled: true },
