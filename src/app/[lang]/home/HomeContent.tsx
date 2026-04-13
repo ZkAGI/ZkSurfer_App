@@ -1103,10 +1103,6 @@ const HomeContent: FC = () => {
   };
 
   const handleViewPastReport = (day: PastPredictionData) => {
-    if (!isSubscribed) {
-      setShowSubscriptionModal(true);
-      return;
-    }
     // Process the past prediction day data so ReportSidebar can render it
     const processedDay: PastPredictionData = {
       fetched_date: day.fetched_date,

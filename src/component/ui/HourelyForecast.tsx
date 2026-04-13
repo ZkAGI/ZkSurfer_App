@@ -2102,6 +2102,7 @@
 // export default HourlyPredictionsTable;
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 interface HourlyForecast {
   time: string;
@@ -3004,9 +3005,22 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
       </div>
 
       {/* Expanded Modal */}
-      {isExpanded && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}>
-          <div className="rounded-2xl w-full max-w-7xl max-h-[90vh] overflow-hidden" style={{ background: 'linear-gradient(180deg, #0c1019, #080b12)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 32px 64px rgba(0,0,0,0.5)' }}>
+      {isExpanded && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-[9999] p-4" 
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            if (e.target === e.currentTarget) setIsExpanded(false);
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div 
+            className="rounded-2xl w-full max-w-7xl max-h-[90vh] overflow-hidden" 
+            style={{ background: 'linear-gradient(180deg, #0c1019, #080b12)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 32px 64px rgba(0,0,0,0.5)' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <h2 className="text-lg font-bold flex items-center space-x-2.5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -3015,7 +3029,11 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
                 <span style={{ color: '#64748b' }}> - Detailed View</span>
               </h2>
               <button
-                onClick={() => setIsExpanded(false)}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(false);
+                }}
                 className="transition-all p-2 rounded-lg"
                 style={{ color: '#64748b', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#f87171'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(248,113,113,0.2)'; (e.currentTarget as HTMLElement).style.transform = 'rotate(90deg)'; }}
@@ -3061,7 +3079,7 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
                   </div>
                   <div className="text-center">
                     <div className="text-gray-400">Total PnL</div>
-                    <div className={`font-bold text-lg ${getPnLColor((totalDailyPnL / tradeResults.length) * 100)}`}>
+                    <div className={`font-bold text-lg ${getPnLColor((totalDailyPnL / (tradeResults.length || 1)) * 100)}`}>
                       {totalDailyPnL >= 0 ? '+' : '-'}${Math.abs(totalDailyPnL).toFixed(2)}
                     </div>
                   </div>
@@ -3085,7 +3103,8 @@ const HourlyPredictionsTable: React.FC<HourlyPredictionsTableProps> = ({
               <Legend />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

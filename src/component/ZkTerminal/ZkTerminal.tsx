@@ -268,7 +268,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   }, []);
 
   const handleSend = () => {
-    if (!inputVal.trim() && attachedFiles.length === 0) return;
+    if (!inputVal.trim() && !activeCmd && attachedFiles.length === 0) return;
     onSendMessage?.(inputVal, activeCmd || undefined, attachedFiles.length > 0 ? attachedFiles : undefined);
     setInputVal("");
     setActiveCmd(null);
@@ -285,8 +285,14 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   };
 
   const getPlaceholder = () => {
-    if (activeCmd === "/zk-prove") {
+    if (activeCmd === "/zk-prove" || activeCmd === "/privacy-ai") {
       return "Upload the zkProof and ask the question";
+    }
+    if (activeCmd === "/generate-private") {
+      return "Upload document (PDF, DOC, TXT) to generate ZK proof";
+    }
+    if (activeCmd === "/image-gen") {
+      return "Enter prompt or ticker for image generation";
     }
     return "Message ZkTerminal or type / to invoke command palette";
   };
@@ -321,8 +327,8 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
       } else {
         setActiveCmd(null);
       }
-    } else {
-      setActiveCmd(null);
+    } else if (val === "") {
+      // Keep activeCmd if it was set via chip even if input is empty
     }
 
     // Only show command palette while typing the command itself (before any space)
@@ -339,7 +345,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
     const command = CMD_PALETTE.find(c => c.cmd === cmd);
     if (command && (command as any).disabled) return;
     
-    setInputVal(cmd + ' ');
+    setInputVal("");
     setActiveCmd(cmd);
     setShowCmdPalette(false);
     highlightChip(cmd);
@@ -352,7 +358,7 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
   };
 
   const handleChipClick = (cmd: string) => {
-    setInputVal(cmd + ' ');
+    setInputVal("");
     setActiveCmd(cmd);
     highlightChip(cmd);
     inputRef.current?.focus();
@@ -366,7 +372,8 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
       onCardClick?.(command);
     } else {
       onCardClick?.(command);
-      setInputVal(`/${command} `);
+      setInputVal("");
+      setActiveCmd(`/${command}`);
       inputRef.current?.focus();
     }
   };
@@ -1150,6 +1157,30 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                       transition: "border-color 0.2s, box-shadow 0.2s",
                       boxShadow: inputFocused ? "0 0 0 3px rgba(124,106,247,0.07)" : "none",
                     }}>
+                      {activeCmd && (
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 7,
+                          padding: "7px 14px",
+                          background: "rgba(167,139,250,0.12)",
+                          borderBottom: "1px solid rgba(167,139,250,0.2)",
+                        }}>
+                          <Terminal size={12} color="#a78bfa" />
+                          <span style={{ fontSize: 11.5, fontWeight: 600, color: "#a78bfa", fontFamily: "'DM Mono', monospace" }}>
+                            {activeCmd}
+                          </span>
+                          <button
+                            onClick={() => { setActiveCmd(null); }}
+                            style={{
+                              marginLeft: "auto", background: "none", border: "none",
+                              cursor: "pointer", color: "#4b5563",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              padding: 2, borderRadius: 4,
+                            }}
+                          >
+                            <X size={13} />
+                          </button>
+                        </div>
+                      )}
                       <textarea
                         ref={inputRef}
                         className="input-ta"
@@ -1258,15 +1289,6 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                           <Activity size={11} />
                           {credits?.toFixed(2) || "0.00"}
                         </div>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*,.pdf,.txt,.csv,.json,.doc,.docx"
-                          onChange={handleFileSelect}
-                          onClick={(e) => { (e.target as HTMLInputElement).value = ''; }}
-                          style={{ display: "none" }}
-                          multiple
-                        />
                         <button
                           onClick={() => fileInputRef.current?.click()}
                           style={{
@@ -1864,6 +1886,30 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
                     boxShadow: inputFocused ? "0 0 0 3px rgba(124,106,247,0.07)" : "none",
                     transition: "border-color 0.2s, box-shadow 0.2s",
                   }}>
+                    {activeCmd && (
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 7,
+                        padding: "7px 14px",
+                        background: "rgba(167,139,250,0.12)",
+                        borderBottom: "1px solid rgba(167,139,250,0.2)",
+                      }}>
+                        <Terminal size={12} color="#a78bfa" />
+                        <span style={{ fontSize: 11.5, fontWeight: 600, color: "#a78bfa", fontFamily: "'DM Mono', monospace" }}>
+                          {activeCmd}
+                        </span>
+                        <button
+                          onClick={() => { setActiveCmd(null); }}
+                          style={{
+                            marginLeft: "auto", background: "none", border: "none",
+                            cursor: "pointer", color: "#4b5563",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            padding: 2, borderRadius: 4,
+                          }}
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    )}
                     <textarea
                       ref={inputRef}
                       className="input-ta"
@@ -2664,6 +2710,15 @@ const ZkTerminal: FC<ZkTerminalProps> = ({
             </div>
           </aside>
         )}
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileSelect}
+          style={{ display: 'none' }}
+          accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.txt,.json"
+        />
       </div>
     </>
   );
